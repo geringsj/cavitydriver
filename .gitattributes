@@ -1,0 +1,6 @@
+# auto text files LF normalization
+* text=auto
+
+# detect .pdf binary files
+*.pdf diff=astextplain
+*.PDF diff=astextplain
