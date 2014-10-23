@@ -7,7 +7,7 @@
 #ifndef TYPEDEF
 #define TYPEDEF
 
-#include "template.h"
+#include "template.hpp"
 
 /*! Creates a type name for RealType */
 typedef double RealType;

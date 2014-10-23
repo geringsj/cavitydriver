@@ -4,7 +4,7 @@
  * @date 2012
  */
 
-#include "typedef.h"
+#include "typedef.hpp"
 
 #ifndef IO_HPP_
 #define IO_HPP_
@@ -40,7 +40,58 @@ public:
 		     GridFunctionType & u, GridFunctionType & v,
 		     GridFunctionType & p, const PointType & delta, int step);
 
+
+  /**
+	* @brief Write the current state of the simulation parameters to stdout.
+	*/
+  void writeSimParamToSTDOUT();
+
+  RealType getXLength() const { return simparam.xLength; };
+  RealType getYLength() const { return simparam.yLength; };
+  int getIMax() const { return simparam.iMax; };
+  int getJMax() const { return simparam.jMax; };
+  RealType getTEnd() const { return simparam.tEnd; };
+  RealType getDeltaT() const { return simparam.deltaT; };
+  RealType getTau() const { return simparam.tau; };
+  RealType getDeltaVec() const { return simparam.deltaVec; };
+  int getIterMax() const { return simparam.iterMax; };
+  RealType getEps() const { return simparam.eps; };
+  RealType getOmg() const { return simparam.omg; };
+  RealType getAlpha() const { return simparam.alpha; };
+  RealType getRe() const { return simparam.re; };
+  RealType getGx() const { return simparam.gx; };
+  RealType getGy() const { return simparam.gy; };
+  RealType getUi() const { return simparam.ui; };
+  RealType getVi() const { return simparam.vi; };
+  RealType getPi() const { return simparam.pi; };
+  int getXProcs() const { return simparam.xProcs; };
+  int getYProcs() const { return simparam.yProcs; };
+
 private:
+
+//! Struct that holds the simulation parameters.
+	struct {
+		RealType xLength;
+		RealType yLength;
+		int iMax;
+		int jMax;
+		RealType tEnd;
+		RealType deltaT;
+		RealType tau;
+		RealType deltaVec;
+		int iterMax;
+		RealType eps;
+		RealType omg;
+		RealType alpha;
+		RealType re;
+		RealType gx;
+		RealType gy;
+		RealType ui;
+		RealType vi;
+		RealType pi;
+		int xProcs;
+		int yProcs;
+	} simparam;
 
 //! Path where to write the vtk files.
   char *output;

@@ -1,8 +1,14 @@
 #include "IO.hpp"
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 IO::IO (char *input, char *output)
 {
-  //ToDo Read the file with the simulations parameters
+  //Read the file with the simulations parameters
+  readInputfile(input);
+  this->output = output;
 }
 
 IO::~IO ()
@@ -13,7 +19,185 @@ IO::~IO ()
 void
 IO::readInputfile (char *filename)
 {
-  //ToDo Store the input parameters.
+  //Store the input parameters.
+	std::ifstream file (filename, std::ios::in);// | std::ios::binary);
+
+	if(! file.is_open() ) 
+		std::cerr << "ERROR: could not open file \"" << filename << "\"" << "\"" << std::endl;
+
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	std::size_t foundat;
+
+	/* pretty much look for every option we support, one by one.
+	 * this way we also ignore substring that have nothing to do with 
+	 * configuration parameters at all, e.g. comments */
+
+	foundat = buffer.str().find("xLength=");
+	if(foundat != std::string::npos)
+		simparam.xLength = ::strtod(&buffer.str()[foundat+8], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'xLength' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("yLength=");
+	if(foundat != std::string::npos)
+		simparam.yLength = ::strtod(&buffer.str()[foundat+8], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'yLength' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("iMax=");
+	if(foundat != std::string::npos)
+		simparam.iMax = ::strtol(&buffer.str()[foundat+5], 0, 10);
+	else
+		std::cerr << "ERROR: could not find parameter 'iMax' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("jMax=");
+	if(foundat != std::string::npos)
+		simparam.jMax = ::strtol(&buffer.str()[foundat+5], 0, 10);
+	else
+		std::cerr << "ERROR: could not find parameter 'jMax' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("tEnd=");
+	if(foundat != std::string::npos)
+		simparam.tEnd = ::strtod(&buffer.str()[foundat+5], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'tEnd' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("deltaT=");
+	if(foundat != std::string::npos)
+		simparam.deltaT = ::strtod(&buffer.str()[foundat+7], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'deltaT' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("tau=");
+	if(foundat != std::string::npos)
+		simparam.tau = ::strtod(&buffer.str()[foundat+4], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'tau' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("deltaVec=");
+	if(foundat != std::string::npos)
+		simparam.deltaVec = ::strtod(&buffer.str()[foundat+9], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'deltaVec' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("iterMax=");
+	if(foundat != std::string::npos)
+		simparam.iterMax = ::strtol(&buffer.str()[foundat+8], 0, 10);
+	else
+		std::cerr << "ERROR: could not find parameter 'iterMax' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("eps=");
+	if(foundat != std::string::npos)
+		simparam.eps = ::strtod(&buffer.str()[foundat+4], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'tau' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("omg=");
+	if(foundat != std::string::npos)
+		simparam.omg = ::strtod(&buffer.str()[foundat+4], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'omg' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("alpha=");
+	if(foundat != std::string::npos)
+		simparam.alpha = ::strtod(&buffer.str()[foundat+6], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'alpha' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("re=");
+	if(foundat != std::string::npos)
+		simparam.re = ::strtod(&buffer.str()[foundat+3], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 're' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("gx=");
+	if(foundat != std::string::npos)
+		simparam.gx = ::strtod(&buffer.str()[foundat+3], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'gx' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("gy=");
+	if(foundat != std::string::npos)
+		simparam.gy = ::strtod(&buffer.str()[foundat+3], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'gy' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("ui=");
+	if(foundat != std::string::npos)
+		simparam.ui = ::strtod(&buffer.str()[foundat+3], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'ui' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("vi=");
+	if(foundat != std::string::npos)
+		simparam.vi = ::strtod(&buffer.str()[foundat+3], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'vi' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("pi=");
+	if(foundat != std::string::npos)
+		simparam.pi = ::strtod(&buffer.str()[foundat+3], 0);
+	else
+		std::cerr << "ERROR: could not find parameter 'pi' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("xProcs=");
+	if (foundat != std::string::npos)
+		simparam.xProcs = ::strtol(&buffer.str()[foundat + 7], 0, 10);
+	else
+		std::cerr << "ERROR: could not find parameter 'xProcs' in file \"" << filename << "\"" << std::endl;
+
+	foundat = buffer.str().find("yProcs=");
+	if (foundat != std::string::npos)
+		simparam.yProcs = ::strtol(&buffer.str()[foundat + 7], 0, 10);
+	else
+		std::cerr << "ERROR: could not find parameter 'yProcs' in file \"" << filename << "\"" << std::endl;
+}
+
+void 
+IO::writeSimParamToSTDOUT()
+{
+	std::cout << "SimParam: " << std::endl <<
+		"xLength=" <<
+		simparam.xLength << std::endl <<
+		"yLength=" <<
+		simparam.yLength << std::endl <<
+		"iMax=" <<
+		simparam.iMax << std::endl <<
+		"jMax=" <<
+		simparam.jMax << std::endl <<
+		"tEnd=" <<
+		simparam.tEnd << std::endl <<
+		"deltaT=" <<
+		simparam.deltaT << std::endl <<
+		"tau=" <<
+		simparam.tau << std::endl <<
+		"deltaVec=" <<
+		simparam.deltaVec << std::endl <<
+		"iterMax=" <<
+		simparam.iterMax << std::endl <<
+		"eps=" <<
+		simparam.eps << std::endl <<
+		"omg=" <<
+		simparam.omg << std::endl <<
+		"alpha=" <<
+		simparam.alpha << std::endl <<
+		"re=" <<
+		simparam.re << std::endl <<
+		"gx=" <<
+		simparam.gx << std::endl <<
+		"gy=" <<
+		simparam.gy << std::endl <<
+		"ui=" <<
+		simparam.ui << std::endl <<
+		"vi=" <<
+		simparam.vi << std::endl <<
+		"pi=" <<
+		simparam.pi << std::endl <<
+		"xProcs=" <<
+		simparam.xProcs << std::endl <<
+		"yProcs=" <<
+		simparam.yProcs << std::endl;
 }
 
 
