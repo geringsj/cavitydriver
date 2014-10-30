@@ -58,8 +58,10 @@ public:
 	 *
 	 */
 	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end);
-
 private:
+	StencilType stencil;
+	int stencilwidth;
+	const PointType& h;
 };
 
 #endif
