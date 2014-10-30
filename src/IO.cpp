@@ -1,3 +1,11 @@
+/**
+ * Working with Windows, so we need to disable the warnings in order to uses
+ * sprintf.
+ */
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "IO.hpp"
 
 #include <iostream>
