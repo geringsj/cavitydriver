@@ -9,6 +9,8 @@
 
 #include "template.hpp"
 
+typedef unsigned int uint;
+
 /*! Creates a type name for RealType */
 typedef double RealType;
 
