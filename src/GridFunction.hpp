@@ -11,6 +11,8 @@ private:
 	MultiIndexType griddimension;
 	RealType* rawmemory;
 
+	void init(const uint dimX, const uint dimY);
+
 public:
 	GridFunction(const uint dimX, const uint dimY);
 	GridFunction(const MultiIndexType griddimension);

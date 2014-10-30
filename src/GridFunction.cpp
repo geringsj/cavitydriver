@@ -1,6 +1,6 @@
 #include "GridFunction.hpp"
 
-GridFunction::GridFunction(const uint dimX, const uint dimY)
+void GridFunction::init(const uint dimX, const uint dimY)
 {
 	griddimension[0] = dimX;
 	griddimension[1] = dimY;
@@ -12,9 +12,14 @@ GridFunction::GridFunction(const uint dimX, const uint dimY)
 		this->gridfunction[i] = rawmemory + i*dimX;
 }
 
-GridFunction::GridFunction(const MultiIndexType griddimension) 
-	: GridFunction(griddimension[0], griddimension[1])
+GridFunction::GridFunction(const uint dimX, const uint dimY)
 {
+	this->init(dimX, dimY);
+}
+
+GridFunction::GridFunction(const MultiIndexType griddimension) 
+{
+	this->init(griddimension[0], griddimension[1]);
 }
 
 GridFunction::~GridFunction()
