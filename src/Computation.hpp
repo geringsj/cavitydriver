@@ -5,6 +5,7 @@
  */
 
 #include "typedef.hpp"
+#include "GridFunction.hpp"
 
 #ifndef Computation_HPP_
 #define Computation_HPP_

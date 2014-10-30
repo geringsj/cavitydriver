@@ -1,5 +1,6 @@
 
-CC=g++
+#CXX=g++
+CXX=clang++
 CPPFLAGS=-Wall -g -Wextra -Isrc -std=c++11 
 #-Iexternal/include/
 LDFLAGS=
@@ -30,10 +31,10 @@ build:
 	@mkdir -p out
 
 $(MAIN_BIN): $(MAIN) $(OBJECTS)
-	$(CC) $(CPPFLAGS) -o $(MAIN_BIN) $(MAIN) $(OBJECTS) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) -o $(MAIN_BIN) $(MAIN) $(OBJECTS) $(LDFLAGS)
 
 $(TESTS_OBJ): $(TESTS_SRC) $(OBJECTS)
-	$(CC) $(CPPFLAGS) -o $@ $(patsubst bin/%,tests/%.cpp,$@) $(filter src%,$^) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) -o $@ $(patsubst bin/%,tests/%.cpp,$@) $(filter src%,$^) $(LDFLAGS)
 
 .PHONY: clean
 clean:

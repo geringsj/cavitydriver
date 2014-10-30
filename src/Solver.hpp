@@ -1,7 +1,7 @@
 #ifndef Solver_hpp
 #define Solver_hpp
 
-#include "Gridfunction.hpp"
+#include "GridFunction.hpp"
 #include "typedef.hpp"
 
 namespace Solver

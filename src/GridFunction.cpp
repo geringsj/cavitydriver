@@ -1,6 +1,6 @@
-#include "Gridfunction.hpp"
+#include "GridFunction.hpp"
 
-Gridfunction::Gridfunction(const uint dimX, const uint dimY)
+GridFunction::GridFunction(const uint dimX, const uint dimY)
 {
 	griddimension[0] = dimX;
 	griddimension[1] = dimY;
@@ -12,12 +12,12 @@ Gridfunction::Gridfunction(const uint dimX, const uint dimY)
 		this->gridfunction[i] = rawmemory + i*dimX;
 }
 
-Gridfunction::Gridfunction(const MultiIndexType griddimension) 
-	: Gridfunction(griddimension[0], griddimension[1])
+GridFunction::GridFunction(const MultiIndexType griddimension) 
+	: GridFunction(griddimension[0], griddimension[1])
 {
 }
 
-Gridfunction::~Gridfunction()
+GridFunction::~GridFunction()
 {
 	for(int i=0; i<this->griddimension[1]; i++)
 		this->gridfunction[i] = NULL;
@@ -27,19 +27,19 @@ Gridfunction::~Gridfunction()
 	this->rawmemory = NULL;
 }
 
-GridFunctionType Gridfunction::getGridfunction()
+GridFunctionType GridFunction::getGridFunction()
 {
 	return this->gridfunction;
 }
 
-MultiIndexType Gridfunction::getGridDimension()
+MultiIndexType GridFunction::getGridDimension()
 {
 	return this->griddimension;
 }
 
 #define forall(F,S,B,E) for(int F=B[0];F<=E[0];F++)for(int S=B[1];S<=E[1];S++)
 
-void Gridfunction::setGridfunction(
+void GridFunction::setGridFunction(
 	const MultiIndexType begin, 
 	const MultiIndexType end, 
 	const RealType value)
@@ -50,7 +50,7 @@ void Gridfunction::setGridfunction(
 	}
 }
 
-void Gridfunction::scaleGridfunction(
+void GridFunction::scaleGridFunction(
 	const MultiIndexType begin, 
 	const MultiIndexType end, 
 	const RealType scale)
@@ -61,7 +61,7 @@ void Gridfunction::scaleGridfunction(
 	}
 }
 
-void Gridfunction::setGridfunction(
+void GridFunction::setGridFunction(
 	const MultiIndexType begin, 
 	const MultiIndexType end, 
 	const RealType factor, 
@@ -73,7 +73,7 @@ void Gridfunction::setGridfunction(
 	}
 }
 
-void Gridfunction::setGridfunction(
+void GridFunction::setGridFunction(
 	const MultiIndexType begin, 
 	const MultiIndexType end, 
 	const RealType factor, 
@@ -87,7 +87,7 @@ void Gridfunction::setGridfunction(
 	}
 }
 
-void Gridfunction::setGridfunction(
+void GridFunction::setGridFunction(
 	const MultiIndexType begin, 
 	const MultiIndexType end, 
 	const RealType factor, 
@@ -102,7 +102,7 @@ void Gridfunction::setGridfunction(
 	}
 }
 
-void Gridfunction::addToGridfunction(
+void GridFunction::addToGridFunction(
 	const MultiIndexType begin, 
 	const MultiIndexType end, 
 	const RealType factor, 
@@ -114,7 +114,7 @@ void Gridfunction::addToGridfunction(
 	}
 }
 
-RealType Gridfunction::getMaxValueGridfunction(
+RealType GridFunction::getMaxValueGridFunction(
 	const MultiIndexType begin, 
 	const MultiIndexType end)
 {
@@ -128,12 +128,12 @@ RealType Gridfunction::getMaxValueGridfunction(
 	return max;
 }
 
-RealType Gridfunction::getMaxValueGridfunction()
+RealType GridFunction::getMaxValueGridFunction()
 {
 	MultiIndexType begin; begin[0]=0; begin[1]=0;
 	MultiIndexType end; 
 	end[0]=this->griddimension[0]; end[1]=griddimension[1];
 	/* TODO off by one? */
-	return getMaxValueGridfunction(begin,end);
+	return getMaxValueGridFunction(begin,end);
 }
 

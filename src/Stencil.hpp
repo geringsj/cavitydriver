@@ -4,18 +4,19 @@
  * @date 2014
  */
 
-#include "typedef.hpp"
 
 #ifndef Stencil_HPP_
 #define Stencil_HPP_
 
+#include "typedef.hpp"
+#include "GridFunction.hpp"
 
 
 class Stencil
 {
 public:
 	/** ctor */
-	Stencil(int stencilwidth, const PointType& h);
+	Stencil(int stencilwidth, const PointType h);
 	/** dtor */
 	~Stencil();
 	/**
@@ -39,8 +40,8 @@ public:
 	/**
 	 *
 	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-		RealType factor);
+	//void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
+	//	RealType factor);
 	/**
 	 *
 	 */
@@ -61,8 +62,8 @@ public:
 	/**
 	 *
 	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-		RealType factor, GridFunctionType& sourcegridfunction);
+	//void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
+	//	RealType factor, GridFunctionType& sourcegridfunction);
 	/**
 	 *
 	 */
@@ -70,7 +71,7 @@ public:
 private:
 	StencilType stencil;
 	int stencilwidth;
-	const PointType& h;
+	const PointType h;
 };
 
 #endif

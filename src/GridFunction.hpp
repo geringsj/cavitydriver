@@ -1,6 +1,10 @@
+
+#ifndef GridFunction_hpp
+#define GridFunction_hpp
+
 #include "typedef.hpp"
 
-class Gridfunction
+class GridFunction
 {
 private:
 	GridFunctionType gridfunction;
@@ -8,45 +12,47 @@ private:
 	RealType* rawmemory;
 
 public:
-	Gridfunction(const uint dimX, const uint dimY);
-	Gridfunction(const MultiIndexType griddimension);
-	virtual ~Gridfunction();
+	GridFunction(const uint dimX, const uint dimY);
+	GridFunction(const MultiIndexType griddimension);
+	virtual ~GridFunction();
 
-	GridFunctionType getGridfunction();	
+	GridFunctionType getGridFunction();	
 	MultiIndexType getGridDimension();
-	void setGridfunction(
+	void setGridFunction(
 		const MultiIndexType begin, 
 		const MultiIndexType end, 
 		const RealType value);
-	void scaleGridfunction(
+	void scaleGridFunction(
 		const MultiIndexType begin, 
 		const MultiIndexType end, 
 		const RealType scale);
-	void setGridfunction(
+	void setGridFunction(
 		const MultiIndexType begin, 
 		const MultiIndexType end, 
 		const RealType factor, 
 		const GridFunctionType sourcegridfunction);
-	void setGridfunction(
+	void setGridFunction(
 		const MultiIndexType begin, 
 		const MultiIndexType end, 
 		const RealType factor, 
 		const GridFunctionType sourcegridfunction, 
 		const MultiIndexType offset);
-	void setGridfunction(
+	void setGridFunction(
 		const MultiIndexType begin, 
 		const MultiIndexType end, 
 		const RealType factor, 
 		const GridFunctionType sourcegridfunction, 
 		const MultiIndexType offset, 
 		const RealType constant);
-	void addToGridfunction (
+	void addToGridFunction (
 		const MultiIndexType begin, 
 		const MultiIndexType end, 
 		const RealType factor, 
 		const GridFunctionType sourcegridfunction);
-	RealType getMaxValueGridfunction(
+	RealType getMaxValueGridFunction(
 		const MultiIndexType begin, 
 		const MultiIndexType end);
-	RealType getMaxValueGridfunction();
+	RealType getMaxValueGridFunction();
 };
+
+#endif

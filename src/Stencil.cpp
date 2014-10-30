@@ -1,9 +1,8 @@
 #include "Stencil.hpp"
 
-
-Stencil::Stencil(int stencilwidth, const PointType& h)
+Stencil::Stencil(int stencilwidth, const PointType h)
+	: stencilwidth(stencilwidth) , h(h) 
 {
-
 }
 
 Stencil::~Stencil()
@@ -34,11 +33,11 @@ void Stencil::setFxxStencil(const MultiIndexType& begin,
 
 }
 
-void Stencil::setFxxStencil(const MultiIndexType& begin, 
-							const MultiIndexType& end, RealType factor)
-{
-
-}
+//void Stencil::setFxxStencil(const MultiIndexType& begin, 
+//							const MultiIndexType& end, RealType factor)
+//{
+//
+//}
 
 void Stencil::setFxxStencil(const MultiIndexType& begin, 
 							const MultiIndexType& end, RealType factor,
@@ -63,12 +62,12 @@ void Stencil::setFxxStencil(const MultiIndexType& begin,
 
 }
 
-void Stencil::setFxxStencil(const MultiIndexType& begin, 
-							const MultiIndexType& end, RealType factor, 
-							GridFunctionType& sourcegridfunction)
-{
-
-}
+//void Stencil::setFxxStencil(const MultiIndexType& begin, 
+//							const MultiIndexType& end, RealType factor, 
+//							GridFunctionType& sourcegridfunction)
+//{
+//
+//}
 
 void Stencil::setFxxStencil(const MultiIndexType& begin,
 							const MultiIndexType& end)
