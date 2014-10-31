@@ -30,44 +30,19 @@ public:
 	/**
 	 *
 	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-		RealType value);
+	void setFxxStencil();
 	/**
-	 *
-	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-		RealType factor, MultiIndexType& offset);
+	*
+	*/
+	void setFxyStencil();
 	/**
-	 *
-	 */
-	//void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-	//	RealType factor);
+	*
+	*/
+	void setFyxStencil();
 	/**
-	 *
-	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-		RealType factor, GridFunctionType& sourcegridfunction);
-	/**
-	 *
-	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-		RealType factor, GridFunctionType& sourcegridfunction,
-		MultiIndexType& offset);
-	/**
-	 *
-	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-		RealType factor, GridFunctionType& sourcegridfunction,
-		MultiIndexType& offset, RealType constant);
-	/**
-	 *
-	 */
-	//void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end,
-	//	RealType factor, GridFunctionType& sourcegridfunction);
-	/**
-	 *
-	 */
-	void setFxxStencil(const MultiIndexType& begin, const MultiIndexType& end);
+	*
+	*/
+	void setFyyStencil();
 private:
 	StencilType stencil;
 	int stencilwidth;

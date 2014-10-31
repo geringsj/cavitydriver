@@ -20,57 +20,26 @@ void Stencil::ApplyStencilOperator(const MultiIndexType& gridbegin,
 
 }
 
-void Stencil::setFxxStencil(const MultiIndexType& begin, 
-							const MultiIndexType& end, RealType value)
+void Stencil::setFxxStencil()
+{
+	stencil[-1][0] = 1.0 / (h[0] * h[0]);
+	stencil[1][0] = 1.0 / (h[0] * h[0]);
+	stencil[0][-1] = 0.0;
+	stencil[0][1] = 0.0;
+	stencil[0][0] = -2.0 / (h[0] * h[0]);
+}
+
+void Stencil::setFxyStencil()
 {
 
 }
 
-void Stencil::setFxxStencil(const MultiIndexType& begin, 
-							const MultiIndexType& end, RealType factor,
-							MultiIndexType& offset)
+void Stencil::setFyxStencil()
 {
 
 }
 
-//void Stencil::setFxxStencil(const MultiIndexType& begin, 
-//							const MultiIndexType& end, RealType factor)
-//{
-//
-//}
-
-void Stencil::setFxxStencil(const MultiIndexType& begin, 
-							const MultiIndexType& end, RealType factor,
-							GridFunctionType& sourcegridfunction)
-{
-
-}
-
-void Stencil::setFxxStencil(const MultiIndexType& begin, 
-							const MultiIndexType& end, RealType factor,
-							GridFunctionType& sourcegridfunction, 
-							MultiIndexType& offset)
-{
-
-}
-
-void Stencil::setFxxStencil(const MultiIndexType& begin,
-							const MultiIndexType& end, RealType factor,
-							GridFunctionType& sourcegridfunction,
-							MultiIndexType& offset, RealType constant)
-{
-
-}
-
-//void Stencil::setFxxStencil(const MultiIndexType& begin, 
-//							const MultiIndexType& end, RealType factor, 
-//							GridFunctionType& sourcegridfunction)
-//{
-//
-//}
-
-void Stencil::setFxxStencil(const MultiIndexType& begin,
-							const MultiIndexType& end)
+void Stencil::setFyyStencil()
 {
 
 }
