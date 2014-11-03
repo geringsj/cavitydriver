@@ -7,9 +7,9 @@ void GridFunction::init(const uint dimX, const uint dimY)
 	/* TODO dim == 0 ? => warning */
 
 	this->rawmemory = new RealType[dimX*dimY];
-	this->gridfunction = new RealType*[dimY];
-	for(uint i=0; i<dimY; i++)
-		this->gridfunction[i] = rawmemory + i*dimX;
+	this->gridfunction = new RealType*[dimX];
+	for(uint i=0; i<dimX; i++)
+		this->gridfunction[i] = rawmemory + i*dimY;
 }
 
 GridFunction::GridFunction(const uint dimX, const uint dimY)
@@ -24,7 +24,7 @@ GridFunction::GridFunction(const MultiIndexType griddimension)
 
 GridFunction::~GridFunction()
 {
-	for(int i=0; i<this->griddimension[1]; i++)
+	for(int i=0; i<this->griddimension[0]; i++)
 		this->gridfunction[i] = NULL;
 	delete[] this->gridfunction;
 	this->gridfunction = NULL;
@@ -137,8 +137,7 @@ RealType GridFunction::getMaxValueGridFunction()
 {
 	MultiIndexType begin; begin[0]=0; begin[1]=0;
 	MultiIndexType end; 
-	end[0]=this->griddimension[0]; end[1]=griddimension[1];
-	/* TODO off by one? */
+	end[0]=this->griddimension[0]-1; end[1]=this->griddimension[1]-1;
 	return getMaxValueGridFunction(begin,end);
 }
 

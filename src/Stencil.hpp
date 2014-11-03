@@ -28,24 +28,27 @@ public:
 		const MultiIndexType& gridwriteend, 
 		const GridFunction sourcegridfunction, GridFunction imagegridfunction);
 	/**
+	*
+	*/
+	void setFxStencil();
+	/**
+	*
+	*/
+	void setFyStencil();
+	/**
 	 *
 	 */
+	void setFFxStencil();
+	void setFFyStencil();
 	void setFxxStencil();
-	/**
-	*
-	*/
-	void setFxyStencil();
-	/**
-	*
-	*/
-	void setFyxStencil();
 	/**
 	*
 	*/
 	void setFyyStencil();
 private:
+	RealType rawmemory[9];
 	StencilType stencil;
-	int stencilwidth;
+	const int stencilwidth;
 	const PointType h;
 };
 

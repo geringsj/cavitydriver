@@ -324,12 +324,12 @@ IO::writeVTKFile (const MultiIndexType & griddimension, GridFunctionType & u,
   IndexType iMax = griddimension[0] - 1;
   IndexType jMax = griddimension[1] - 1;
 
-  char numstr[21];
-  sprintf (numstr, "%d", step);
+  //char numstr[21];
+  //sprintf (numstr, "%d", step);
   std::string filename;
   filename.append ("./");
   filename.append ("field_");
-  filename.append (numstr);
+  filename.append (std::to_string(step));
   filename.append (".vts");
 
   std::filebuf fb;

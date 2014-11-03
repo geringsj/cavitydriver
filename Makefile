@@ -38,7 +38,7 @@ $(TESTS_OBJ): $(TESTS_SRC) $(OBJECTS)
 
 .PHONY: clean
 clean:
-	rm -rf bin $(OBJECTS)
+	rm -rf bin $(OBJECTS) src/*.hpp.gch
 
 new: clean all
 
