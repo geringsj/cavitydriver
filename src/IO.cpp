@@ -327,7 +327,26 @@ IO::writeVTKFile (const MultiIndexType & griddimension, GridFunctionType & u,
   //char numstr[21];
   //sprintf (numstr, "%d", step);
   std::string filename;
-  filename.append ("./");
+  filename.append("./");
+  filename.append (output);
+  filename.append("/");
+
+  // Test if the directory exits, if not create it.
+  std::filebuf test_dir;
+  test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
+
+  if (!test_dir.is_open())
+  {
+	  // Directory doesn't exist.
+      #if defined(_WIN64)
+		CreateDirectory(filename.c_str(),NULL);
+      #elif defined(_WIN32)
+		CreateDirectory(filename.c_str(),NULL);
+      #elif defined(__linux)
+	    mkdir(filename.c_str())
+	  #endif
+  }
+  
   filename.append ("field_");
   filename.append (std::to_string(step));
   filename.append (".vts");
