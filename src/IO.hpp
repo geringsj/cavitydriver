@@ -12,6 +12,9 @@
 #include <iostream>
 #include <fstream>
 
+#ifdef _MSC_VER
+#include <windows.h>
+#endif
 
 class IO
 {
