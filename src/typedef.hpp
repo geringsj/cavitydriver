@@ -29,4 +29,15 @@ typedef GridFunctionType StencilType;
 /*! Creates a type name for PointType */
 typedef Array < RealType, 2 > PointType;
 
+/**
+ * Additional typedefs
+ */
+
+#include "GridFunction.hpp"
+
+typedef uint DimensionType;
+
+typedef Array < IndexType, 3 > Index3D;
+typedef Array < RealType, 3 > Point3D;
+
 #endif

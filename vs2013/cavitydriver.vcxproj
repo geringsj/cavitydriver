@@ -128,6 +128,7 @@
   <ItemGroup>
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\src\Computation.cpp" />
+    <ClCompile Include="..\src\Domain.cpp" />
     <ClCompile Include="..\src\GridFunction.cpp" />
     <ClCompile Include="..\src\IO.cpp" />
     <ClCompile Include="..\src\Solver.cpp" />
@@ -135,11 +136,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\Computation.hpp" />
+    <ClInclude Include="..\src\Domain.hpp" />
     <ClInclude Include="..\src\GridFunction.hpp" />
     <ClInclude Include="..\src\IO.hpp" />
     <ClInclude Include="..\src\Solver.hpp" />
     <ClInclude Include="..\src\Stencil.hpp" />
     <ClInclude Include="..\src\Stencil2.hpp" />
+    <ClInclude Include="..\src\Structs.hpp" />
     <ClInclude Include="..\src\template.hpp" />
     <ClInclude Include="..\src\typedef.hpp" />
   </ItemGroup>
