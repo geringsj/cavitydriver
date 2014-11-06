@@ -231,6 +231,113 @@ public:
 		}
 	}
 
+	inline void setBools(
+		StencilOperator type, bool* x, bool* y, bool* z, 
+		bool* a_x, bool* a_y, bool* a_z, int* _h)
+	{
+
+		switch (type)
+		{
+		case Stencil::StencilOperator::Fx_forward:
+			*x = true;
+			*y = *z = *a_x = *a_y = *a_z = false;
+			*_h = 0;
+			break;
+		case Stencil::StencilOperator::Fy_forward:
+			*y = true;
+			*x = *z = *a_x = *a_y = *a_z = false;
+			*_h = 1;
+			break;
+		case Stencil::StencilOperator::Fx_backward:
+			*x = true;
+			*y = *z = *a_x = *a_y = *a_z = false;
+			*_h = 0;
+			break;
+		case Stencil::StencilOperator::Fy_backward:
+			*y = true;
+			*x = *z = *a_x = *a_y = *a_z = false;
+			*_h = 1;
+			break;
+		case Stencil::StencilOperator::Fxx:
+			*x = true;
+			*y = *z = *a_x = *a_y = *a_z = false;
+			*_h = 0;
+			break;
+		case Stencil::StencilOperator::Fyy:
+			*y = true;
+			*x = *z = *a_x = *a_y = *a_z = false;
+			*_h = 1;
+			break;
+		case Stencil::StencilOperator::FFx:
+			*x = true;
+			*a_x = true; // ??????????
+			*y = *z = *a_y = *a_z = false;
+			*_h = 0;
+			break;
+		case Stencil::StencilOperator::FFy:
+			*y = true;
+			*a_y = true;  // ??????????
+			*x = *z = *a_x = *a_z = false;
+			*_h = 1;
+			break;
+		case Stencil::StencilOperator::FGx:
+			*x = true;
+			*a_x = true; // ??????????
+			*y = *z = *a_y = *a_z = false;
+			*_h = 0;
+			break;
+		case Stencil::StencilOperator::FGy:
+			*y = true;
+			*a_y = true;  // ??????????
+			*x = *z = *a_x = *a_z = false;
+			*_h = 1;
+			break;
+		default:
+			// Okay should not happen.
+			*x = *y = *z = *a_x = *a_y = *a_z = false; 
+			*_h = 0;
+			break;
+		}
+	}
+
+	typedef void _forward(
+		GridFunction*, GridFunction*, 
+		int, int, int, bool, bool, bool, PointType,int);
+	static void forwardFunc(
+		GridFunction* target, GridFunction* F, 
+		int i, int j, int k, bool x, bool y, bool z, PointType h, int _h)
+	{
+		GridFunctionType T_type = target->getGridFunction();
+		GridFunctionType F_type = F->getGridFunction();
+		T_type[i][j] = (F_type[i + x][j + y] - F_type[i][j]) / h[_h];
+	}
+
+	inline void applyStencilOperator(
+		StencilOperator type,
+		const MultiIndexType& gridreadbegin,
+		const MultiIndexType& gridreadend,
+		const MultiIndexType& gridwritebegin,
+		const MultiIndexType& gridwriteend,
+		GridFunction* targetgridfunction,
+		GridFunction* sourcegridfunction1,
+		GridFunction* sourcegridfunction2 = nullptr)
+	{
+		_forward* forward = forwardFunc;
+
+		bool x, y, z, a_x, a_y, a_z;
+		int _h = 0;
+		setBools(type, &x, &y, &z, &a_x, &a_y, &a_z,&_h);
+		if (type == StencilOperator::Fx_forward 
+			|| type == StencilOperator::Fy_forward)
+		{
+			forall(i, j, gridreadbegin, gridreadend)
+			{
+				forwardFunc(targetgridfunction, sourcegridfunction1,
+					i, j, 0, x, y, z, h, _h);
+			}
+		}
+	}
+
 	enum class StencilOperator {
 		Fx_forward,
 		Fy_forward,
