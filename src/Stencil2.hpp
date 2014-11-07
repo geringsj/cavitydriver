@@ -234,6 +234,7 @@ public:
 	typedef void _difference(
 		GridFunction*, GridFunction*, GridFunction*,
 		int, int, int, bool, bool, bool, PointType, int);
+
 	static void forwardDiv(
 		GridFunction* target, GridFunction* F, GridFunction* G,
 		int i, int j, int k, bool x, bool y, bool z, PointType h, int _h)
@@ -241,6 +242,24 @@ public:
 		GridFunctionType T_type = target->getGridFunction();
 		GridFunctionType F_type = F->getGridFunction();
 		T_type[i][j] = (F_type[i + x][j + y] - F_type[i][j]) / h[_h];
+	}
+
+	static void backwardDiv(
+		GridFunction* target, GridFunction* F, GridFunction* G,
+		int i, int j, int k, bool x, bool y, bool z, PointType h, int _h)
+	{
+	}
+
+	static void centralDiv(
+		GridFunction* target, GridFunction* F, GridFunction* G,
+		int i, int j, int k, bool x, bool y, bool z, PointType h, int _h)
+	{
+	}
+
+	static void FFxFFyFGxFGy(
+		GridFunction* target, GridFunction* F, GridFunction* G,
+		int i, int j, int k, bool x, bool y, bool z, PointType h, int _h)
+	{
 	}
 
 	inline _difference* GetDifferenceOperator(
@@ -266,39 +285,46 @@ public:
 			*x = true;
 			*y = *z = *a_x = *a_y = *a_z = false;
 			*_h = 0;
+			return backwardDiv;
 			break;
 		case Stencil::StencilOperator::Fy_backward:
 			*y = true;
 			*x = *z = *a_x = *a_y = *a_z = false;
 			*_h = 1;
+			return backwardDiv;
 			break;
 		case Stencil::StencilOperator::Fxx:
 			*x = true;
 			*y = *z = *a_x = *a_y = *a_z = false;
 			*_h = 0;
+			return centralDiv;
 			break;
 		case Stencil::StencilOperator::Fyy:
 			*y = true;
 			*x = *z = *a_x = *a_y = *a_z = false;
 			*_h = 1;
+			return centralDiv;
 			break;
 		case Stencil::StencilOperator::FFx:
 			*x = true;
 			*a_x = true; // ??????????
 			*y = *z = *a_y = *a_z = false;
 			*_h = 0;
+			return FFxFFyFGxFGy;
 			break;
 		case Stencil::StencilOperator::FFy:
 			*y = true;
 			*a_y = true;  // ??????????
 			*x = *z = *a_x = *a_z = false;
 			*_h = 1;
+			return FFxFFyFGxFGy;
 			break;
 		case Stencil::StencilOperator::FGx:
 			*x = true;
 			*a_x = true; // ??????????
 			*y = *z = *a_y = *a_z = false;
 			*_h = 0;
+			return FFxFFyFGxFGy;
 			break;
 		case Stencil::StencilOperator::FGy:
 			*y = true;
@@ -310,6 +336,7 @@ public:
 			// Okay should not happen.
 			*x = *y = *z = *a_x = *a_y = *a_z = false; 
 			*_h = 0;
+			return FFxFFyFGxFGy;
 			break;
 		}
 	}
