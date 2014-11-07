@@ -231,7 +231,19 @@ public:
 		}
 	}
 
-	inline void setBools(
+	typedef void _difference(
+		GridFunction*, GridFunction*, GridFunction*,
+		int, int, int, bool, bool, bool, PointType, int);
+	static void forwardDiv(
+		GridFunction* target, GridFunction* F, GridFunction* G,
+		int i, int j, int k, bool x, bool y, bool z, PointType h, int _h)
+	{
+		GridFunctionType T_type = target->getGridFunction();
+		GridFunctionType F_type = F->getGridFunction();
+		T_type[i][j] = (F_type[i + x][j + y] - F_type[i][j]) / h[_h];
+	}
+
+	inline _difference* setBools(
 		StencilOperator type, bool* x, bool* y, bool* z, 
 		bool* a_x, bool* a_y, bool* a_z, int* _h)
 	{
@@ -242,11 +254,13 @@ public:
 			*x = true;
 			*y = *z = *a_x = *a_y = *a_z = false;
 			*_h = 0;
+			return forwardDiv;
 			break;
 		case Stencil::StencilOperator::Fy_forward:
 			*y = true;
 			*x = *z = *a_x = *a_y = *a_z = false;
 			*_h = 1;
+			return forwardDiv;
 			break;
 		case Stencil::StencilOperator::Fx_backward:
 			*x = true;
@@ -300,18 +314,6 @@ public:
 		}
 	}
 
-	typedef void _forward(
-		GridFunction*, GridFunction*, 
-		int, int, int, bool, bool, bool, PointType,int);
-	static void forwardFunc(
-		GridFunction* target, GridFunction* F, 
-		int i, int j, int k, bool x, bool y, bool z, PointType h, int _h)
-	{
-		GridFunctionType T_type = target->getGridFunction();
-		GridFunctionType F_type = F->getGridFunction();
-		T_type[i][j] = (F_type[i + x][j + y] - F_type[i][j]) / h[_h];
-	}
-
 	inline void applyStencilOperator(
 		StencilOperator type,
 		const MultiIndexType& gridreadbegin,
@@ -322,19 +324,13 @@ public:
 		GridFunction* sourcegridfunction1,
 		GridFunction* sourcegridfunction2 = nullptr)
 	{
-		_forward* forward = forwardFunc;
-
 		bool x, y, z, a_x, a_y, a_z;
 		int _h = 0;
-		setBools(type, &x, &y, &z, &a_x, &a_y, &a_z,&_h);
-		if (type == StencilOperator::Fx_forward 
-			|| type == StencilOperator::Fy_forward)
+		_difference* difference = setBools(type, &x, &y, &z, &a_x, &a_y, &a_z, &_h);
+		forall(i, j, gridreadbegin, gridreadend)
 		{
-			forall(i, j, gridreadbegin, gridreadend)
-			{
-				forwardFunc(targetgridfunction, sourcegridfunction1,
-					i, j, 0, x, y, z, h, _h);
-			}
+			difference(targetgridfunction, sourcegridfunction1,
+				sourcegridfunction2, i, j, 0/*k*/, x, y, z, h, _h);
 		}
 	}
 
