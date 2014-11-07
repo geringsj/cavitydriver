@@ -37,7 +37,4 @@ typedef Array < RealType, 2 > PointType;
 
 typedef uint DimensionType;
 
-typedef Array < IndexType, 3 > Index3D;
-typedef Array < RealType, 3 > Point3D;
-
 #endif
