@@ -243,7 +243,7 @@ public:
 		T_type[i][j] = (F_type[i + x][j + y] - F_type[i][j]) / h[_h];
 	}
 
-	inline _difference* setBools(
+	inline _difference* GetDifferenceOperator(
 		StencilOperator type, bool* x, bool* y, bool* z, 
 		bool* a_x, bool* a_y, bool* a_z, int* _h)
 	{
@@ -326,7 +326,8 @@ public:
 	{
 		bool x, y, z, a_x, a_y, a_z;
 		int _h = 0;
-		_difference* difference = setBools(type, &x, &y, &z, &a_x, &a_y, &a_z, &_h);
+		_difference* difference = GetDifferenceOperator(
+			type, &x, &y, &z, &a_x, &a_y, &a_z, &_h);
 		forall(i, j, gridreadbegin, gridreadend)
 		{
 			difference(targetgridfunction, sourcegridfunction1,
