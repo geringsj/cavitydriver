@@ -209,17 +209,17 @@ IO::writeSimParamToSTDOUT()
 }
 
 
-#define Element(field,ic) ((field)[(ic)[0]][(ic)[1]])
+#define Element(field,ic) ((field)((ic)[0],(ic)[1]))
 
-RealType
-  IO::interpolateVelocityU (RealType x, RealType y, GridFunctionType & u,
-			    const PointType & delta)
+Real
+  IO::interpolateVelocityU (Real x, Real y, GridFunction & u,
+			    const Point & delta)
 {
 
-  RealType deltaX = delta[0];
-  RealType deltaY = delta[1];
+  Real deltaX = delta[0];
+  Real deltaY = delta[1];
 
-  MultiIndexType index;
+  Index index;
 
   // Computation of u(x,y)
   index[0] = ((int) (x / deltaX)) + 1;
@@ -227,30 +227,30 @@ RealType
 
   // The coordinates of the cell corners
 
-  RealType x1 = (index[0] - 1) * deltaX;
-  RealType x2 = index[0] * deltaX;
-  RealType y1 = ((index[1] - 1) - 0.5) * deltaY;
-  RealType y2 = (index[1] - 0.5) * deltaY;
+  Real x1 = (index[0] - 1) * deltaX;
+  Real x2 = index[0] * deltaX;
+  Real y1 = ((index[1] - 1) - 0.5) * deltaY;
+  Real y2 = (index[1] - 0.5) * deltaY;
 
-  MultiIndexType offset;
+  Index offset;
 
   offset[0] = index[0] - 1;
   offset[1] = index[1] - 1;
 
-  RealType u1 = Element (u, offset);	// datafields->u->getField ()[i - 1][j - 1];
+  Real u1 = Element(u, offset);	// datafields->u->getField ()[i - 1][j - 1];
 
   offset[0] = index[0];
   offset[1] = index[1] - 1;
 
-  RealType u2 = Element (u, offset);	//datafields->u->getField ()[i][j - 1];
+  Real u2 = Element(u, offset);	//datafields->u->getField ()[i][j - 1];
 
   offset[0] = index[0] - 1;
   offset[1] = index[1];
 
-  RealType u3 = Element (u, offset);	//datafields->u->getField ()[i - 1][j];
-  RealType u4 = Element (u, index);
+  Real u3 = Element(u, offset);	//datafields->u->getField ()[i - 1][j];
+  Real u4 = Element(u, index);
 
-  RealType
+  Real
     uInterploated =
     (1.0 / (deltaX * deltaY)) * ((x2 - x) * (y2 - y) *
 				 u1 + (x - x1) * (y2 -
@@ -263,46 +263,46 @@ RealType
 }
 
 
-RealType
-  IO::interpolateVelocityV (RealType x, RealType y, GridFunctionType & v,
-			    const PointType & delta)
+Real
+  IO::interpolateVelocityV (Real x, Real y, GridFunction & v,
+			    const Point & delta)
 {
-  RealType deltaX = delta[0];
-  RealType deltaY = delta[1];
+  Real deltaX = delta[0];
+  Real deltaY = delta[1];
 
   // Computation of v(x,y)
-  MultiIndexType index;
+  Index index;
   index[0] = ((int) ((x + (deltaX / 2)) / deltaX)) + 1;
   index[1] = ((int) (y / deltaY)) + 1;
 
   // The coordinates of the cell corners
 
-  RealType x1 = ((index[0] - 1) - 0.5) * deltaX;
-  RealType x2 = (index[0] - 0.5) * deltaX;
-  RealType y1 = (index[1] - 1) * deltaY;
-  RealType y2 = index[1] * deltaY;
+  Real x1 = ((index[0] - 1) - 0.5) * deltaX;
+  Real x2 = (index[0] - 0.5) * deltaX;
+  Real y1 = (index[1] - 1) * deltaY;
+  Real y2 = index[1] * deltaY;
 
-  MultiIndexType offset;
+  Index offset;
 
   offset[0] = index[0] - 1;
   offset[1] = index[1] - 1;
 
-  RealType v1 = Element (v, offset);	//datafields->v->getField ()[i - 1][j - 1];
+  Real v1 = Element (v, offset);	//datafields->v->getField ()[i - 1][j - 1];
 
   offset[0] = index[0];
   offset[1] = index[1] - 1;
 
-  RealType v2 = Element (v, offset);	//datafields->v->getField ()[i][j - 1];
+  Real v2 = Element (v, offset);	//datafields->v->getField ()[i][j - 1];
 
   offset[0] = index[0] - 1;
   offset[1] = index[1];
 
-  RealType v3 = Element (v, offset);	//datafields->v->getField ()[i - 1][j];
+  Real v3 = Element (v, offset);	//datafields->v->getField ()[i - 1][j];
 
 
-  RealType v4 = Element (v, index);	//datafields->v->getField ()[i][j];
+  Real v4 = Element (v, index);	//datafields->v->getField ()[i][j];
 
-  RealType
+  Real
     vInterpolated =
     (1.0 / (deltaX * deltaY)) * ((x2 - x) * (y2 - y) *
 				 v1 + (x - x1) * (y2 -
@@ -313,16 +313,19 @@ RealType
   return vInterpolated;
 }
 
+#if defined(__linux)
+	#include "sys/stat.h"
+#endif
 void
-IO::writeVTKFile (const MultiIndexType & griddimension, GridFunctionType & u,
-		  GridFunctionType & v, GridFunctionType & p,
-		  const PointType & delta, int step)
+IO::writeVTKFile (const Index & griddimension, GridFunction & u,
+		  GridFunction & v, GridFunction & p,
+		  const Point & delta, int step)
 {
-  RealType deltaX = delta[0];
-  RealType deltaY = delta[1];
+  Real deltaX = delta[0];
+  Real deltaY = delta[1];
 
-  IndexType iMax = griddimension[0] - 1;
-  IndexType jMax = griddimension[1] - 1;
+  int iMax = griddimension[0] - 1;
+  int jMax = griddimension[1] - 1;
 
   //char numstr[21];
   //sprintf (numstr, "%d", step);
@@ -339,11 +342,11 @@ IO::writeVTKFile (const MultiIndexType & griddimension, GridFunctionType & u,
   {
 	  // Directory doesn't exist.
       #if defined(_WIN64)
-		CreateDirectory(filename.c_str(),NULL);
+			CreateDirectory(filename.c_str(),NULL);
       #elif defined(_WIN32)
-		CreateDirectory(filename.c_str(),NULL);
+			CreateDirectory(filename.c_str(),NULL);
       #elif defined(__linux)
-	    mkdir(filename.c_str())
+			mkdir(filename.c_str(),0700);
 	  #endif
   }
   
@@ -387,11 +390,11 @@ IO::writeVTKFile (const MultiIndexType & griddimension, GridFunctionType & u,
     std::endl;
   for (int i = 0; i < iMax; ++i)
     {
-      RealType x = i * deltaX;
+      Real x = i * deltaX;
 
       for (int j = 0; j < jMax; ++j)
 	{
-	  RealType y = j * deltaY;
+	  Real y = j * deltaY;
 
 	  os << std::scientific << interpolateVelocityU (x, y, u,
 							 delta) << " " <<
@@ -406,7 +409,7 @@ IO::writeVTKFile (const MultiIndexType & griddimension, GridFunctionType & u,
     {
       for (int j = 0; j <= jMax; ++j)
 	{
-	  os << std::scientific << p[i][j] << " ";
+	  os << std::scientific << p(i,j) << " ";
 
 	}
       os << std::endl;

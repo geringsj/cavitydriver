@@ -2,59 +2,73 @@
 #ifndef GridFunction_hpp
 #define GridFunction_hpp
 
-#include "typedef.hpp"
+#include "Structs.hpp"
 
 class GridFunction
 {
 private:
-	GridFunctionType gridfunction;
-	MultiIndexType griddimension;
-	RealType* rawmemory;
+	Dimension dimension;
+	Real* grid;
 
-	void init(const uint dimX, const uint dimY);
+	void init(const uint dimX, const uint dimY, const uint dimZ);
 
 public:
-	GridFunction(const uint dimX, const uint dimY);
-	GridFunction(const MultiIndexType griddimension);
+	GridFunction();
+	GridFunction(const uint dimX, const uint dimY, const uint dimZ = 1);
+	GridFunction(const Index griddimension);
 	virtual ~GridFunction();
 
-	GridFunctionType getGridFunction();	
-	MultiIndexType getGridDimension();
+	inline Real& operator[](int i){ /* TODO multi dimension? */
+		return this->grid[i];
+	}
+	inline Real& operator()(int i){
+		return this->grid[i];
+	}
+	inline Real operator()(int i) const {
+		return this->grid[i];
+	}
+	inline Real& operator()(int i, int j){
+		return this->grid[i * dimension.j + j];
+	}
+	inline Real operator()(int i, int j) const { 
+		return this->grid[i * dimension.j + j];
+	}
+	inline Real& operator()(int i, int j, int k){ /* TODO !? */
+		return this->grid[i * dimension.j * dimension.k + j * dimension.k + k];
+	}
+	inline Real operator()(int i, int j, int k) const {
+		return this->grid[i * dimension.j * dimension.k + j * dimension.k + k];
+	}
+
+	Index getGridDimension() const;
 	void setGridFunction(
-		const MultiIndexType begin, 
-		const MultiIndexType end, 
-		const RealType value);
+		const Index begin, const Index end, 
+		const Real value);
 	void scaleGridFunction(
-		const MultiIndexType begin, 
-		const MultiIndexType end, 
-		const RealType scale);
+		const Index begin, const Index end, 
+		const Real scale);
 	void setGridFunction(
-		const MultiIndexType begin, 
-		const MultiIndexType end, 
-		const RealType factor, 
-		const GridFunctionType sourcegridfunction);
+		const Index begin, const Index end, 
+		const Real factor, 
+		const GridFunction sourcegridfunction);
 	void setGridFunction(
-		const MultiIndexType begin, 
-		const MultiIndexType end, 
-		const RealType factor, 
-		const GridFunctionType sourcegridfunction, 
-		const MultiIndexType offset);
+		const Index begin, const Index end, 
+		const Real factor, 
+		const GridFunction sourcegridfunction, 
+		const Index offset);
 	void setGridFunction(
-		const MultiIndexType begin, 
-		const MultiIndexType end, 
-		const RealType factor, 
-		const GridFunctionType sourcegridfunction, 
-		const MultiIndexType offset, 
-		const RealType constant);
+		const Index begin, const Index end, 
+		const Real factor, 
+		const GridFunction sourcegridfunction, 
+		const Index offset, 
+		const Real constant);
 	void addToGridFunction (
-		const MultiIndexType begin, 
-		const MultiIndexType end, 
-		const RealType factor, 
-		const GridFunctionType sourcegridfunction);
-	RealType getMaxValueGridFunction(
-		const MultiIndexType begin, 
-		const MultiIndexType end);
-	RealType getMaxValueGridFunction();
+		const Index begin, const Index end, 
+		const Real factor, 
+		const GridFunction sourcegridfunction);
+	Real getMaxValueGridFunction(
+		const Index begin, const Index end);
+	Real getMaxValueGridFunction();
 };
 
 #endif

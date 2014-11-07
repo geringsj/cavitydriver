@@ -1,143 +1,135 @@
 #include "GridFunction.hpp"
 
-void GridFunction::init(const uint dimX, const uint dimY)
+void GridFunction::init(const uint dimX, const uint dimY, const uint dimZ = 1)
 {
-	griddimension[0] = dimX;
-	griddimension[1] = dimY;
-	/* TODO dim == 0 ? => warning */
+	dimension[0] = dimX;
+	dimension[1] = dimY;
+	dimension[2] = dimZ;
 
-	this->rawmemory = new RealType[dimX*dimY];
-	this->gridfunction = new RealType*[dimX];
-	for(uint i=0; i<dimX; i++)
-		this->gridfunction[i] = rawmemory + i*dimY;
+	this->grid = new Real[dimX*dimY*dimZ];
 }
 
-GridFunction::GridFunction(const uint dimX, const uint dimY)
+GridFunction::GridFunction(const uint dimX, const uint dimY, const uint dimZ)
 {
-	this->init(dimX, dimY);
+	this->init(dimX, dimY, dimZ);
 }
 
-GridFunction::GridFunction(const MultiIndexType griddimension) 
+GridFunction::GridFunction()
 {
-	this->init(griddimension[0], griddimension[1]);
+}
+
+GridFunction::GridFunction(Index griddimension) 
+{
+	this->init(griddimension[0], griddimension[1], griddimension[2]);
 }
 
 GridFunction::~GridFunction()
 {
-	for(int i=0; i<this->griddimension[0]; i++)
-		this->gridfunction[i] = NULL;
-	delete[] this->gridfunction;
-	this->gridfunction = NULL;
-	delete[] this->rawmemory;
-	this->rawmemory = NULL;
+	delete[] this->grid;
+	this->grid = NULL;
 }
 
-GridFunctionType GridFunction::getGridFunction()
+Index GridFunction::getGridDimension() const
 {
-	return this->gridfunction;
-}
-
-MultiIndexType GridFunction::getGridDimension()
-{
-	return this->griddimension;
+	return this->dimension;
 }
 
 #define forall(F,S,B,E) for(int F=B[0];F<=E[0];F++)for(int S=B[1];S<=E[1];S++)
 
 void GridFunction::setGridFunction(
-	const MultiIndexType begin, 
-	const MultiIndexType end, 
-	const RealType value)
+	const Index begin, 
+	const Index end, 
+	const Real value)
 {
 	forall(i,j,begin,end)
 	{
-		this->gridfunction[i][j] = value;
+		this->operator()(i,j) = value;
 	}
 }
 
 void GridFunction::scaleGridFunction(
-	const MultiIndexType begin, 
-	const MultiIndexType end, 
-	const RealType scale)
+	const Index begin, 
+	const Index end, 
+	const Real scale)
 {
 	forall(i,j,begin,end)
 	{
-		this->gridfunction[i][j] *= scale;
+		this->operator()(i,j) *= scale;
 	}
 }
 
 void GridFunction::setGridFunction(
-	const MultiIndexType begin, 
-	const MultiIndexType end, 
-	const RealType factor, 
-	const GridFunctionType sourcegridfunction)
+	const Index begin, 
+	const Index end, 
+	const Real factor, 
+	const GridFunction sourcegridfunction)
 {
 	forall(i,j,begin,end)
 	{
-		this->gridfunction[i][j] = factor*sourcegridfunction[i][j];
+		this->operator()(i,j) = factor*sourcegridfunction(i,j);
 	}
 }
 
 void GridFunction::setGridFunction(
-	const MultiIndexType begin, 
-	const MultiIndexType end, 
-	const RealType factor, 
-	const GridFunctionType sourcegridfunction, 
-	const MultiIndexType offset)
+	Index begin, 
+	Index end, 
+	const Real factor, 
+	const GridFunction sourcegridfunction, 
+	Index offset)
 {
 	forall(i,j,begin,end)
 	{
-		this->gridfunction[i][j] = 
-			factor*sourcegridfunction[offset[0]+i][offset[1]+j];
+		this->operator()(i,j) = 
+			factor*sourcegridfunction(offset[0]+i,offset[1]+j);
 	}
 }
 
 void GridFunction::setGridFunction(
-	const MultiIndexType begin, 
-	const MultiIndexType end, 
-	const RealType factor, 
-	const GridFunctionType sourcegridfunction, 
-	const MultiIndexType offset, 
-	const RealType constant)
+	const Index begin, 
+	const Index end, 
+	const Real factor, 
+	const GridFunction sourcegridfunction, 
+	const Index offset, 
+	const Real constant)
 {
 	forall(i,j,begin,end)
 	{
-		this->gridfunction[i][j] = 
-			factor*sourcegridfunction[offset[0]+i][offset[1]+j]+constant;
+		this->operator()(i,j) = 
+			factor*sourcegridfunction(offset[0]+i,offset[1]+j)+constant;
 	}
 }
 
 void GridFunction::addToGridFunction(
-	const MultiIndexType begin, 
-	const MultiIndexType end, 
-	const RealType factor, 
-	const GridFunctionType sourcegridfunction)
+	const Index begin, 
+	const Index end, 
+	const Real factor, 
+	const GridFunction sourcegridfunction)
 {
 	forall(i,j,begin,end)
 	{
-		this->gridfunction[i][j] += factor*sourcegridfunction[i][j];
+		this->operator()(i,j) += factor*sourcegridfunction(i,j);
 	}
 }
 
-RealType GridFunction::getMaxValueGridFunction(
-	const MultiIndexType begin, 
-	const MultiIndexType end)
+Real GridFunction::getMaxValueGridFunction(
+	const Index begin, 
+	const Index end)
 {
-	RealType max = this->gridfunction[0][0];
+	Real max = this->operator()(0,0);
 
 	forall(i,j,begin,end)
 	{
-		if(max < this->gridfunction[i][j])
-			max = this->gridfunction[i][j];
+		if(max < this->operator()(i,j))
+			max = this->operator()(i,j);
 	}
 	return max;
 }
 
-RealType GridFunction::getMaxValueGridFunction()
+Real GridFunction::getMaxValueGridFunction()
 {
-	MultiIndexType begin; begin[0]=0; begin[1]=0;
-	MultiIndexType end; 
-	end[0]=this->griddimension[0]-1; end[1]=this->griddimension[1]-1;
+	Index begin; begin[0]=1; begin[1]=1;
+	Index end; 
+	end[0]=this->dimension[0]-1; end[1]=this->dimension[1]-1;
 	return getMaxValueGridFunction(begin,end);
 }
 

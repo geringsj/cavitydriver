@@ -4,32 +4,41 @@
  * @date 2014
  */
 
-#include "typedef.hpp"
-#include "GridFunction.hpp"
-
 #ifndef Computation_HPP_
 #define Computation_HPP_
 
+#include "Structs.hpp"
+#include "Domain.hpp"
 
-
-class Computation
+namespace Computation
 {
-public:
-	/** ctor */
-	Computation();
-	/** dtor */
-	~Computation();
-	RealType computeTimestep(RealType uMax, RealType vMax, RealType tau, 
-		const PointType& h, RealType Re);
-	void computeNewVelocities(GridFunction* u, GridFunction* v,
-		GridFunctionType& f, GridFunctionType& g,
-		GridFunctionType& p, const PointType& delta, RealType deltaT);
-	void computeMomentumEquations(GridFunctionType& f, GridFunctionType& g,
-		GridFunction* u, GridFunction* v, GridFunctionType& gx,
-		GridFunctionType& gy, const PointType& delta, RealType deltaT);
-	void setBoundaryX(GridFunction x);
-	void computeRighthandSide(GridFunction* rhs, GridFunctionType& f,
-		GridFunctionType& g, const PointType& delta, RealType deltaT);
+	Real computeTimestep(
+		Domain& domain,
+		//const Real uMax, const Real vMax, const Point h, 
+		const Real tau, const Real Re);
+
+	//void setBoundaryX(GridFunction& x);
+
+	void computeMomentumEquationsFGH(
+		Domain& domain,
+		//GridFunction& f, GridFunction& g,
+		//GridFunction& u, GridFunction& v, 
+		//GridFunction& gx, GridFunction& gy, const Point delta, 
+		const Real deltaT);
+
+	void computeRighthandSide(
+		Domain& domain,
+		//GridFunction& rhs, GridFunction& f, GridFunction& g, const Point delta, 
+		const Real deltaT);
+
+	/* solve for p in SOR here */
+
+	void computeNewVelocities(
+		Domain& domain,
+		//GridFunction& u, GridFunction& v,
+		//GridFunction& f, GridFunction& g,
+		//GridFunction& p, const Point delta, 
+		const Real deltaT);
 };
 
 #endif

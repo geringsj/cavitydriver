@@ -4,10 +4,12 @@
  * @date 2012
  */
 
-#include "typedef.hpp"
-
 #ifndef IO_HPP_
 #define IO_HPP_
+
+#include "Structs.hpp"
+
+#include "GridFunction.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -39,9 +41,9 @@ public:
    * \param delta The mesh width in x direction and y direction
    * \param step The number of the timestep.
    */
-  void writeVTKFile (const MultiIndexType & griddimension,
-		     GridFunctionType & u, GridFunctionType & v,
-		     GridFunctionType & p, const PointType & delta, int step);
+  void writeVTKFile (const Index & griddimension,
+		     GridFunction & u, GridFunction & v,
+		     GridFunction & p, const Point & delta, int step);
 
 
   /**
@@ -49,24 +51,24 @@ public:
 	*/
   void writeSimParamToSTDOUT();
 
-  RealType getXLength() const { return simparam.xLength; };
-  RealType getYLength() const { return simparam.yLength; };
+  Real getXLength() const { return simparam.xLength; };
+  Real getYLength() const { return simparam.yLength; };
   int getIMax() const { return simparam.iMax; };
   int getJMax() const { return simparam.jMax; };
-  RealType getTEnd() const { return simparam.tEnd; };
-  RealType getDeltaT() const { return simparam.deltaT; };
-  RealType getTau() const { return simparam.tau; };
-  RealType getDeltaVec() const { return simparam.deltaVec; };
+  Real getTEnd() const { return simparam.tEnd; };
+  Real getDeltaT() const { return simparam.deltaT; };
+  Real getTau() const { return simparam.tau; };
+  Real getDeltaVec() const { return simparam.deltaVec; };
   int getIterMax() const { return simparam.iterMax; };
-  RealType getEps() const { return simparam.eps; };
-  RealType getOmg() const { return simparam.omg; };
-  RealType getAlpha() const { return simparam.alpha; };
-  RealType getRe() const { return simparam.re; };
-  RealType getGx() const { return simparam.gx; };
-  RealType getGy() const { return simparam.gy; };
-  RealType getUi() const { return simparam.ui; };
-  RealType getVi() const { return simparam.vi; };
-  RealType getPi() const { return simparam.pi; };
+  Real getEps() const { return simparam.eps; };
+  Real getOmg() const { return simparam.omg; };
+  Real getAlpha() const { return simparam.alpha; };
+  Real getRe() const { return simparam.re; };
+  Real getGx() const { return simparam.gx; };
+  Real getGy() const { return simparam.gy; };
+  Real getUi() const { return simparam.ui; };
+  Real getVi() const { return simparam.vi; };
+  Real getPi() const { return simparam.pi; };
   int getXProcs() const { return simparam.xProcs; };
   int getYProcs() const { return simparam.yProcs; };
 
@@ -74,24 +76,24 @@ private:
 
 //! Struct that holds the simulation parameters.
 	struct {
-		RealType xLength;
-		RealType yLength;
+		Real xLength;
+		Real yLength;
 		int iMax;
 		int jMax;
-		RealType tEnd;
-		RealType deltaT;
-		RealType tau;
-		RealType deltaVec;
+		Real tEnd;
+		Real deltaT;
+		Real tau;
+		Real deltaVec;
 		int iterMax;
-		RealType eps;
-		RealType omg;
-		RealType alpha;
-		RealType re;
-		RealType gx;
-		RealType gy;
-		RealType ui;
-		RealType vi;
-		RealType pi;
+		Real eps;
+		Real omg;
+		Real alpha;
+		Real re;
+		Real gx;
+		Real gy;
+		Real ui;
+		Real vi;
+		Real pi;
 		int xProcs;
 		int yProcs;
 	} simparam;
@@ -114,8 +116,8 @@ private:
    * \param u The gridfunction u.
    * \param delta The mesh width in x direction and y direction.
    */
-  RealType interpolateVelocityU (RealType x, RealType y, GridFunctionType & u,
-				 const PointType & delta);
+  Real interpolateVelocityU (Real x, Real y, GridFunction & u,
+				 const Point & delta);
 
   //! Method interpolates the velocity for v in the staggered grid.
   /*!
@@ -124,8 +126,8 @@ private:
    * \param u The gridfunction v.
    * \param delta The mesh width in x direction and y direction.
    */
-  RealType interpolateVelocityV (RealType x, RealType y, GridFunctionType & v,
-				 const PointType & delta);
+  Real interpolateVelocityV (Real x, Real y, GridFunction & v,
+				 const Point & delta);
 
 };
 

@@ -1,57 +1,122 @@
+//! Used sane typedefs 
+/*!
+ * @author becherml, friesfn, geringsj
+ * @date 2014
+ */
+
 #ifndef Structs_h
 #define Structs_h
 
-#include "typedef.hpp"
+// struct Dimension3D
+// {
+// 	Dimension3D() : m_x(0), m_y(0), m_z(0) {}
+// 	Dimension3D(DimensionType x, DimensionType y, DimensionType z = 1)
+// 		: m_x(x), m_y(y), m_z(z) {} 
+// 
+// 	DimensionType m_x,m_y,m_z;
+// 
+// 	DimensionType operator[](uint index)
+// 	{
+// 		switch (index)
+// 		{
+// 		case 0:
+// 			return m_x;
+// 		case 1:
+// 			return m_y;
+// 		case 2:
+// 			return m_z;
+// 		default:
+// 			return 0;
+// 		}
+// 	}
+// };
 
-struct Dimension3D
+
+#define NULL nullptr
+
+#define DIMENSIONS 2
+
+typedef unsigned int uint;
+
+typedef double Real;
+
+struct Index
 {
-	Dimension3D() : m_x(0), m_y(0), m_z(0) {}
-	Dimension3D(DimensionType x, DimensionType y, DimensionType z = 1)
-		: m_x(x), m_y(y), m_z(z) {} 
+	Index() : i(0), j(0), k(0) {}
+	Index(int i, int j, int k = 0)
+		: i(i), j(j), k(k) {} 
 
-	DimensionType m_x,m_y,m_z;
+	int i,j,k;
 
-	DimensionType operator[](uint index)
+	int& operator[](const uint index)
 	{
 		switch (index)
 		{
 		case 0:
-			return m_x;
+			return i;
 		case 1:
-			return m_y;
+			return j;
 		case 2:
-			return m_z;
+			return k;
 		default:
-			return 0;
+			return i;
 		}
 	}
-};
-
-struct Grid3D
-{
-	Grid3D(Dimension3D dimension)
-		: m_u(dimension.m_x,dimension.m_y),
-		m_v(dimension.m_x,dimension.m_y),
-		m_w(dimension.m_x,dimension.m_y) {}
-
-	GridFunction m_u;
-	GridFunction m_v;
-	GridFunction m_w;
-
-	GridFunction& operator[](uint index)
+	int operator[](const uint index) const
 	{
 		switch (index)
 		{
+		case 0:
+			return i;
 		case 1:
-			return m_u;
+			return j;
 		case 2:
-			return m_v;
-		case 3:
-			return m_w;
+			return k;
 		default:
-			exit(-1); //not to sure about this
+			return i;
 		}
 	}
 };
+typedef Index Dimension;
+
+struct Point 
+{
+	Point() : x(0), y(0), z(0) {}
+	Point(Real x, Real y, Real z = 0)
+		: x(x), y(y), z(z) {} 
+
+	Real x,y,z;
+
+	Real& operator[](const uint index)
+	{
+		switch (index)
+		{
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		default:
+			return x;
+		}
+	}
+	Real operator[](const uint index) const
+	{
+		switch (index)
+		{
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		default:
+			return x;
+		}
+	}
+};
+typedef Point Delta;
+
 
 #endif
