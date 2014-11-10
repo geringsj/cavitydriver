@@ -58,6 +58,16 @@ void GridFunction::scaleGridFunction(
 	}
 }
 
+void GridFunction::divideGridFunction(
+	const Index begin, const Index end, 
+	const Real factor)
+{
+	forall(i,j,begin,end)
+	{
+		this->operator()(i,j) /= factor;
+	}
+}
+
 void GridFunction::setGridFunction(
 	const Index begin, 
 	const Index end, 

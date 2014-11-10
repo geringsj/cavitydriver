@@ -141,17 +141,17 @@ public:
 		const Index& gridreadend,
 		const Index& gridwritebegin,
 		const Index& gridwriteend, 
-		GridFunction& sourcegridfunction,
-		GridFunction& targetgridfunction)
+		GridFunction& sourcegrid,
+		GridFunction& targetgrid)
 	{
 		auto stenciloperator = 
 			getStencilOperatorFunctionSingle(stencil);
 		forall(i,j,gridreadbegin,gridreadend)
 		{
-			targetgridfunction.getGridFunction()
-					[gridwritebegin[0]+i-gridreadbegin[0]]
-					[gridwritebegin[1]+j-gridreadbegin[1]] 
-				= stenciloperator(this,i,j,sourcegridfunction);
+			targetgrid(
+					gridwritebegin[0]+i-gridreadbegin[0],
+					gridwritebegin[1]+j-gridreadbegin[1])
+				= stenciloperator(this,i,j,sourcegrid);
 		}
 	}
 
@@ -161,18 +161,18 @@ public:
 		const Index& gridreadend,
 		const Index& gridwritebegin,
 		const Index& gridwriteend, 
-		GridFunction& sourcegridfunction1,
-		GridFunction& sourcegridfunction2,
-		GridFunction& targetgridfunction)
+		GridFunction& sourcegrid,
+		GridFunction& sourcegrid2,
+		GridFunction& targetgrid)
 	{
 		auto stenciloperator = 
 			getStencilOperatorFunctionDouble(stencil);
 		forall(i,j,gridreadbegin,gridreadend)
 		{
-			targetgridfunction.getGridFunction()
-					[gridwritebegin[0]+i-gridreadbegin[0]]
-					[gridwritebegin[1]+j-gridreadbegin[1]] 
-				= stenciloperator(this,i,j,sourcegridfunction1,sourcegridfunction2);
+			targetgrid(
+					gridwritebegin[0]+i-gridreadbegin[0],
+					gridwritebegin[1]+j-gridreadbegin[1])
+				= stenciloperator(this,i,j,sourcegrid,sourcegrid2);
 		}
 	}
 

@@ -4,23 +4,21 @@
 #include "GridFunction.hpp"
 #include "Structs.hpp"
 
-#include <math.h>
-
 namespace Solver
 {
 
 	Real computeResidual(
-			GridFunction& sourcegridfunction,
-			GridFunction& rhs,
-			const Point& h,
-			int iMax, int jMax);
-	
-	void SORCycle(
-			GridFunction& gridfunction,
+			GridFunction& p,
 			GridFunction& rhs,
 			const Point& delta,
-			Real omega);
+			Dimension inner_begin, Dimension inner_end);
 	
+	void SORCycle(
+			GridFunction& p,
+			GridFunction& rhs,
+			const Point& delta,
+			Dimension inner_begin, Dimension inner_end,
+			Real omega);
 }
 
 #endif

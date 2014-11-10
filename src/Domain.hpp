@@ -4,6 +4,7 @@
 #include "Structs.hpp"
 #include "GridFunction.hpp"
 
+#include <functional>
 
 struct Grid3D
 {
@@ -40,35 +41,65 @@ struct Grid3D
 
 /**
  * The class represents the complete simulation domain.
- * Therefore it stores and manages all grid and their properties.
+ * Therefore it stores and manages all grids and their properties.
  */
 class Domain
 {
 public:
-	Domain(Dimension dimension, Point delta);
-	Domain(Dimension dimension, Point delta, Point extForces);
+	Domain(Dimension dimension, Point delta,
+		std::function<Real(Index,GridFunction&,Dimension)> in_u,
+		std::function<Real(Index,GridFunction&,Dimension)> in_v,
+		std::function<Real(Index,GridFunction&,Dimension)> in_w,
+		std::function<Real(Point)> in_gx = [](Point coord)->Real{ return coord.x*0.0; },
+		std::function<Real(Point)> in_gy = [](Point coord)->Real{ return coord.x*0.0; },
+		std::function<Real(Point)> in_gz = [](Point coord)->Real{ return coord.x*0.0; }
+		);
+
 	~Domain();
 
 	Dimension getDimension() { return m_dimension; }
+	Dimension getBeginInnerDomains() {return m_inner_begin; }
+	Dimension* getEndInnerDomain() {return m_inner_end; }
+	Dimension getEndInnerDomainU() {return m_inner_end[0]; }
+	Dimension getEndInnerDomainV() {return m_inner_end[1]; }
+	Dimension getEndInnerDomainW() {return m_inner_end[2]; }
+	Dimension getEndInnerDomainP() {return m_inner_end[3]; }
 	Point getDelta() { return m_delta; }
 
-	Grid3D& getVeolcity() { return m_velocity; }
+	Grid3D& getVeolcity() { return m_velocities; }
+	Grid3D& getPreliminaryVeolcity() { return m_preliminary_velocities_FGH; }
 
 	GridFunction& p() { return m_p; }
-	GridFunction& u() { return m_velocity.m_u; }
-	GridFunction& v() { return m_velocity.m_v; }
-	GridFunction& w() { return m_velocity.m_w; }
+	GridFunction& u() { return m_velocities.m_u; }
+	GridFunction& v() { return m_velocities.m_v; }
+	GridFunction& w() { return m_velocities.m_w; }
 	GridFunction& F() { return m_preliminary_velocities_FGH.m_u ; }
 	GridFunction& G() { return m_preliminary_velocities_FGH.m_v ; }
 	GridFunction& H() { return m_preliminary_velocities_FGH.m_w ; }
-	GridFunction& rhs() { return m_rhs; }
-	Real gx() { return m_gx; }
-	Real gy() { return m_gy; }
-	Real gz() { return m_gz; }
+	GridFunction& rhs() { return m_p_rhs; }
 
-	void setBoundary(); 
-	/* TODO use suer-given boundary functions for each side ? 
-	 * => dynamic class member function for boundary */
+	Real gx(Point coord) { return m_infunc_gx(coord); }
+	Real gy(Point coord) { return m_infunc_gy(coord); }
+	Real gz(Point coord) { return m_infunc_gz(coord); }
+
+	void setBoundaries()
+	{
+		for(uint d=0; d<DIMENSIONS; d++)
+		{
+			for(int i=m_inner_begin[0]-1; i<=m_inner_end[d][0]+1; i+=(m_inner_end[d][0]+1-(m_inner_begin[0]-1)))
+				for(int j=m_inner_begin[1]-1; j<=m_inner_end[d][1]+1; j+=(m_inner_end[d][1]+1-(m_inner_begin[1]-1)))
+					for(int k=m_inner_begin[2]-1; k<=m_inner_end[d][2]+1; k+=(m_inner_end[d][2]+1-(m_inner_begin[2]-1)))
+			{
+				Dimension current(i,j,k);
+				if(d==0)
+					u()(i,j,k) = m_infunc_u(current);
+				if(d==1)
+					v()(i,j,k) = m_infunc_v(current);
+				if(d==3)
+					w()(i,j,k) = m_infunc_w(current);
+			}
+		}
+	}
 
 private:
 	/**
@@ -78,7 +109,7 @@ private:
 	/**
 	 * Marks the inner of the domain 
 	 */
-	Dimension m_inner_begin, m_inner_end;
+	Dimension m_inner_begin, m_inner_end[4];
 
 	/**
 	 * Grid spacing
@@ -89,19 +120,27 @@ private:
 	 * Pressure Grid
 	 */
 	GridFunction m_p;
+	GridFunction m_p_rhs;
+
 	/**
-	 * Velocity grid
+	 * Velocities grid
 	 */
-	Grid3D m_velocity;
-	/**
-	 * Other grids
-	 */
+	Grid3D m_velocities;
 	Grid3D m_preliminary_velocities_FGH;
-	GridFunction m_rhs;
+
 	/**
-	 * External forces 
+	 * Input functions used to (re)set boundaries and starting conditions
 	 */
-	Real m_gx, m_gy, m_gz; /* TODO are these supposed to be GridFunctions? */
+	std::function<Real(Index)> m_infunc_u;
+	std::function<Real(Index)> m_infunc_v;
+	std::function<Real(Index)> m_infunc_w;
+
+	/**
+	 * External forces
+	 */
+	std::function<Real(Point)> m_infunc_gx;
+	std::function<Real(Point)> m_infunc_gy;
+	std::function<Real(Point)> m_infunc_gz;
 };
 
 #endif

@@ -1,6 +1,9 @@
 #include "Computation.hpp"
+#include "Stencil.hpp"
 
 #include <cmath>
+
+
 
 Real Computation::computeTimestep(
 		Domain& domain,
@@ -14,14 +17,14 @@ Real Computation::computeTimestep(
 	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();
 
 	result = std::fmin(
-			domain.getDelta()[0]*domain.getDelta()[0] *
-			domain.getDelta()[1]*domain.getDelta()[1]*Re
+			domain.getDelta().x*domain.getDelta().x *
+			domain.getDelta().y*domain.getDelta().y *Re
 			/
-			(2.0*(domain.getDelta()[0]*domain.getDelta()[0]+domain.getDelta()[1]*domain.getDelta()[1])),
+			(2.0*(domain.getDelta().x*domain.getDelta().x+domain.getDelta().y*domain.getDelta().y)),
 
 			std::fmin(
-				domain.getDelta()[0]/std::abs(uMax),
-				domain.getDelta()[1]/std::abs(vMax)
+				domain.getDelta().x/std::abs(uMax),
+				domain.getDelta().y/std::abs(vMax)
 				));
 
 	return tau * result; /* tau is some safety factor in (0,1] */
@@ -36,6 +39,21 @@ void Computation::computeMomentumEquationsFGH(
 		//GridFunction& gx, GridFunction& gy, const Point delta, 
 		const Real deltaT)
 {
+	for(uint d=0; d<DIMENSIONS; d++)
+	{
+		/* reset inner (boundary not needed here) */
+		domain.getPreliminaryVeolcity()[d].setGridFunction
+			(domain.getBeginInnerDomains(),domain.getEndInnerDomain()[d],0.0);
+
+		/* add laplace */
+		domain.getPreliminaryVeolcity()[d];
+			domain.getVeolcity()[d]; 
+		/* times 1/Re */
+		/* minus mixed terms */
+		/* plus external force */
+		/* times deltaT */
+		/* plus old direction value */
+	}
 }
 
 void Computation::computeRighthandSide(

@@ -7,7 +7,7 @@
 #ifndef Computation_HPP_
 #define Computation_HPP_
 
-#include "Structs.hpp"
+// #include "Structs.hpp"
 #include "Domain.hpp"
 
 namespace Computation

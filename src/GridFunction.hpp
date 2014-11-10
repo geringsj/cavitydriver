@@ -18,7 +18,16 @@ public:
 	GridFunction(const Index griddimension);
 	virtual ~GridFunction();
 
-	inline Real& operator[](int i){ /* TODO multi dimension? */
+	inline Real& operator[](Dimension d){
+		return this->operator()(d.i, d.j, d.k);
+	}
+	inline Real operator[](Dimension d) const {
+		return this->operator()(d.i, d.j, d.k);
+	}
+	inline Real& operator[](int i){
+		return this->grid[i];
+	}
+	inline Real operator[](int i) const {
 		return this->grid[i];
 	}
 	inline Real& operator()(int i){
@@ -47,6 +56,9 @@ public:
 	void scaleGridFunction(
 		const Index begin, const Index end, 
 		const Real scale);
+	void divideGridFunction(
+		const Index begin, const Index end, 
+		const Real factor);
 	void setGridFunction(
 		const Index begin, const Index end, 
 		const Real factor, 

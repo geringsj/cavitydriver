@@ -42,8 +42,8 @@ typedef double Real;
 
 struct Index
 {
-	Index() : i(0), j(0), k(0) {}
-	Index(int i, int j, int k = 0)
+	Index() : i(0), j(0), k(1) {}
+	Index(int i, int j, int k = 1)
 		: i(i), j(j), k(k) {} 
 
 	int i,j,k;
