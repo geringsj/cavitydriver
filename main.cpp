@@ -1,8 +1,8 @@
 #include "src/IO.hpp"
 
 // default values for the output directory and the settings file
-char *output = "out";
-char *settings = "inputvals";
+const char *output = "out";
+const char *settings = "inputvals";
 
 /**
  * Print the help text in order to show what

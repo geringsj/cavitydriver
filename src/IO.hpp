@@ -26,7 +26,7 @@ public:
    * @param input Path to the file with the simulation parameters.
    * @param outout Path to the directory for the vtk files.
    */
-  IO (char *input, char *output);
+  IO (const char *input, const char *output);
 
   //! Destructor
    ~IO ();
@@ -106,7 +106,7 @@ private:
    * 
    * @param filename The name of the file with the simulations paremters
    */
-  void readInputfile (char *filename);
+  void readInputfile (const char *filename);
 
 
   //! Method interpolates the velocity for u in the staggered grid.

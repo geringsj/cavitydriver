@@ -24,7 +24,7 @@ namespace Computation
 		//GridFunction& f, GridFunction& g,
 		//GridFunction& u, GridFunction& v, 
 		//GridFunction& gx, GridFunction& gy, const Point delta, 
-		const Real deltaT);
+		const Real deltaT, const Real Re);
 
 	void computeRighthandSide(
 		Domain& domain,

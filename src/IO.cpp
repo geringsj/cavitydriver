@@ -12,11 +12,11 @@
 #include <fstream>
 #include <sstream>
 
-IO::IO (char *input, char *output)
+IO::IO (const char *input, const char *output)
 {
   //Read the file with the simulations parameters
   readInputfile(input);
-  this->output = output;
+  this->output = (char*)output;
 }
 
 IO::~IO ()
@@ -25,7 +25,7 @@ IO::~IO ()
 }
 
 void
-IO::readInputfile (char *filename)
+IO::readInputfile (const char *filename)
 {
   //Store the input parameters.
 	std::ifstream file (filename, std::ios::in);// | std::ios::binary);
