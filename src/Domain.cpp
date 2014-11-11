@@ -5,7 +5,8 @@ Domain::Domain(Dimension dimension, Point delta,
 
 	std::function<Real(Index,GridFunction&,Dimension)> in_u,
 	std::function<Real(Index,GridFunction&,Dimension)> in_v,
-	std::function<Real(Index,GridFunction&,Dimension)> in_w,
+	std::function<Real(Index, GridFunction&, Dimension)> in_w,
+	std::function<Real(Index, GridFunction&, Dimension)> in_p,
 
 	std::function<Real(Point)> in_gx,
 	std::function<Real(Point)> in_gy,
@@ -53,6 +54,10 @@ Domain::Domain(Dimension dimension, Point delta,
 				w()(i,j,k) = m_infunc_w(current);
 		}
 	}
+	for (int i = m_inner_begin[0]; i <= m_inner_end[3][0]; i++)
+		for (int j = m_inner_begin[1]; j <= m_inner_end[3][1]; j++)
+			for (int k = m_inner_begin[2]; k <= m_inner_end[3][2]; k++)
+				p()(i,j) = in_p(Index(i, j), p(), Dimension(dimension.i + 2, dimension.j + 2, dimension.k + 2));
 	/* and boundaries */
 	this->setVelocitiesBoundaries();
 }

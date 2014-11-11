@@ -55,9 +55,9 @@ void parseArguments(int argc, char** argv)
 	}
 }
 
-Real u(Index index, GridFunction& gf, Dimension dim)
+Real u(Index index, GridFunction& gf, Dimension dim, IO& io)
 {
-	Real value = 0.0;
+	Real value = io.getUi();
 	if (index.i == 0) value = 0.0;
 	if (index.i == dim.i) value = 0.0;
 	if (index.j == 0) value = -gf(index.i, index.j + 1);
@@ -65,9 +65,9 @@ Real u(Index index, GridFunction& gf, Dimension dim)
 	return value;
 }
 
-Real v(Index index, GridFunction& gf, Dimension dim)
+Real v(Index index, GridFunction& gf, Dimension dim, IO& io)
 {
-	Real value = 0.0;
+	Real value = io.getVi();
 	if (index.i == 0) value = -gf(index.i+1, index.j);
 	if (index.i == dim.i) value = -gf(index.i-1, index.j);
 	if (index.j == 0) value = 0.0;
@@ -89,7 +89,11 @@ int main(int argc, char** argv)
 	Delta delta;
 	delta.x = io.getXLength();
 	delta.y = io.getYLength();
-	Domain domain(dim, delta, u, v, [](Index i, GridFunction& gf, Dimension dim){return 0.0; });
+	Domain domain(dim, delta,
+		std::bind(u, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::ref(io)),
+		std::bind(v, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::ref(io)),
+		[](Index i, GridFunction& gf, Dimension dim){return 0.0; }, 
+		[&io](Index i, GridFunction& gf, Dimension dim){return io.getPi(); });
 
 	/* main loop */
 	/* todo:
@@ -104,11 +108,12 @@ int main(int argc, char** argv)
 	{
 		dt = Computation::computeTimestep(domain, io.getTau(), io.getRe());
 		t += dt;
-		/* todo:
-		 * Create setDoundaries functions for F,G,H and p!!
-		 */
+		std::cout << "dt: " << dt << " , t/tmax: " << t / io.getTEnd() << std::endl;
+
 		domain.setVelocitiesBoundaries();
 		Computation::computeMomentumEquationsFGH(domain, dt, io.getRe());
+		domain.setPreliminaryVelocitiesBoundaries();
+		domain.setPressureBoundaries();
 		Computation::computeRighthandSide(domain, dt);
 
 		it = 0;

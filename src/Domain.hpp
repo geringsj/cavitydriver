@@ -50,6 +50,7 @@ public:
 		std::function<Real(Index,GridFunction&,Dimension)> in_u,
 		std::function<Real(Index,GridFunction&,Dimension)> in_v,
 		std::function<Real(Index,GridFunction&,Dimension)> in_w,
+		std::function<Real(Index, GridFunction&, Dimension)> in_p,
 		std::function<Real(Point)> in_gx = [](Point coord)->Real{ return coord.x*0.0; },
 		std::function<Real(Point)> in_gy = [](Point coord)->Real{ return coord.x*0.0; },
 		std::function<Real(Point)> in_gz = [](Point coord)->Real{ return coord.x*0.0; }
@@ -107,7 +108,24 @@ public:
 
 	void setPreliminaryVelocitiesBoundaries()
 	{
-
+		/*
+		* todo:
+		* Make me beautifull like a butterfly.
+		*/
+		for (uint d = 0; d<DIMENSIONS; d++)
+		{
+			for (int i = m_inner_begin[0] - 1; i <= m_inner_end[d][0] + 1; i += (m_inner_end[d][0] + 1 - (m_inner_begin[0] - 1)))
+				for (int j = m_inner_begin[1] - 1; j <= m_inner_end[d][1] + 1; j += (m_inner_end[d][1] + 1 - (m_inner_begin[1] - 1)))
+					//for (int k = m_inner_begin[2] - 1; k <= m_inner_end[d][2] + 1; k += (m_inner_end[d][2] + 1 - (m_inner_begin[2] - 1)))
+			{
+				if (d == 0)
+					F()(i, j) = u()(i, j);
+				if (d == 1)
+					G()(i, j) = v()(i, j);
+				if (d == 3)
+					H()(i, j) = w()(i, j);
+			}
+		}
 	}
 
 	void setPressureBoundaries()
