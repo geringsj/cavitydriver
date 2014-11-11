@@ -18,6 +18,22 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\Computation.hpp" />
+    <ClInclude Include="..\src\Domain.hpp" />
+    <ClInclude Include="..\src\GridFunction.hpp" />
+    <ClInclude Include="..\src\IO.hpp" />
+    <ClInclude Include="..\src\Solver.hpp" />
+    <ClInclude Include="..\src\Stencil.hpp" />
+    <ClInclude Include="..\src\Structs.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\src\Domain.cpp" />
+    <ClCompile Include="..\src\GridFunction.cpp" />
+    <ClCompile Include="..\src\HeadersTest.cpp" />
+    <ClCompile Include="..\src\IO.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{43D3333A-6ACC-43DB-A937-5CD612680CD3}</ProjectGuid>
     <RootNamespace>cavitydriver</RootNamespace>
@@ -125,27 +141,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\src\Computation.cpp" />
-    <ClCompile Include="..\src\Domain.cpp" />
-    <ClCompile Include="..\src\GridFunction.cpp" />
-    <ClCompile Include="..\src\IO.cpp" />
-    <ClCompile Include="..\src\Solver.cpp" />
-    <ClCompile Include="..\src\Stencil.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\src\Computation.hpp" />
-    <ClInclude Include="..\src\Domain.hpp" />
-    <ClInclude Include="..\src\GridFunction.hpp" />
-    <ClInclude Include="..\src\IO.hpp" />
-    <ClInclude Include="..\src\Solver.hpp" />
-    <ClInclude Include="..\src\Stencil.hpp" />
-    <ClInclude Include="..\src\Stencil2.hpp" />
-    <ClInclude Include="..\src\Structs.hpp" />
-    <ClInclude Include="..\src\template.hpp" />
-    <ClInclude Include="..\src\typedef.hpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
