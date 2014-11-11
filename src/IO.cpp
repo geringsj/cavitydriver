@@ -260,6 +260,7 @@ Real
 				 u3 + (x - x1) * (y - y1) * u4);
 
   return uInterploated;
+  //return 0.0;
 }
 
 
@@ -311,6 +312,7 @@ Real
 						  y1) *
 				 v3 + (x - x1) * (y - y1) * v4);
   return vInterpolated;
+  //return 0.0;
 }
 
 #if defined(__linux)
@@ -324,8 +326,8 @@ IO::writeVTKFile (const Index & griddimension, GridFunction & u,
   Real deltaX = delta[0];
   Real deltaY = delta[1];
 
-  int iMax = griddimension[0] - 1;
-  int jMax = griddimension[1] - 1;
+  int iMax = griddimension[0];// -1;
+  int jMax = griddimension[1];// -1;
 
   //char numstr[21];
   //sprintf (numstr, "%d", step);
@@ -410,7 +412,7 @@ IO::writeVTKFile (const Index & griddimension, GridFunction & u,
       for (int j = 0; j <= jMax; ++j)
 	{
 	  os << std::scientific << p(i,j) << " ";
-
+		//os << std::scientific << 0.0 << " ";
 	}
       os << std::endl;
 

@@ -95,6 +95,33 @@ int main(int argc, char** argv)
 		[](Index i, GridFunction& gf, Dimension dim){return 0.0; }, 
 		[&io](Index i, GridFunction& gf, Dimension dim){return io.getPi(); });
 
+	/*std::cout << std::endl;
+	Dimension m_inner_begin = domain.getBeginInnerDomains();
+	Dimension m_inner_end = domain.getEndInnerDomain()[0];
+	for (int j = m_inner_end[1] + 1; j >= m_inner_begin[1] - 1; j--)
+	{
+		for (int i = m_inner_begin[0] - 1; i <= m_inner_end[0] + 1; i++)
+		{
+			//std::cout << "u(" << i << "," << j << ") = " << domain.u()(i, j) << " ";
+			std::cout << domain.u()(i, j) << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+
+	std::cout << std::endl;
+	m_inner_begin = domain.getBeginInnerDomains();
+	m_inner_end = domain.getEndInnerDomain()[3];
+	for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
+	{
+		for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
+		{
+			std::cout << domain.p()(i, j) << " ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;*/
+
 	/* main loop */
 	/* todo:
 	 * Calculate omega for grid dimension
@@ -104,7 +131,7 @@ int main(int argc, char** argv)
 	Real dt;
 	Real res;
 	int it = 0;
-	while (t < io.getTEnd())
+	while/*(it < 1)*/ (t < io.getTEnd())
 	{
 		dt = Computation::computeTimestep(domain, io.getTau(), io.getRe());
 		t += dt;
@@ -113,8 +140,49 @@ int main(int argc, char** argv)
 		domain.setVelocitiesBoundaries();
 		Computation::computeMomentumEquationsFGH(domain, dt, io.getRe());
 		domain.setPreliminaryVelocitiesBoundaries();
+
+		/*std::cout << std::endl;
+		m_inner_begin = domain.getBeginInnerDomains();
+		m_inner_end = domain.getEndInnerDomain()[3];
+		for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
+		{
+			for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
+			{
+				std::cout << domain.p()(i, j) << " ";
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;*/
+
 		domain.setPressureBoundaries();
-		Computation::computeRighthandSide(domain, dt);
+
+		/*std::cout << std::endl;
+		m_inner_begin = domain.getBeginInnerDomains();
+		m_inner_end = domain.getEndInnerDomain()[3];
+		for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
+		{
+			for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
+			{
+				std::cout << domain.p()(i, j) << " ";
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;*/
+
+		Computation::computeRighthandSide(domain, dt);    // <----- something happens here.... the values in domain.p() get screwd up?!!?!?
+
+		/*std::cout << std::endl;
+		m_inner_begin = domain.getBeginInnerDomains();
+		m_inner_end = domain.getEndInnerDomain()[3];
+		for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
+		{
+			for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
+			{
+				std::cout << domain.p()(i, j) << " ";
+			}
+			std::cout << std::endl;
+		}
+		std::cout << std::endl;*/
 
 		it = 0;
 		do

@@ -43,23 +43,25 @@ Domain::Domain(Dimension dimension, Point delta,
 	{
 		for(int i=m_inner_begin[0]; i<=m_inner_end[d][0]; i++)
 			for(int j=m_inner_begin[1]; j<=m_inner_end[d][1]; j++)
-				for(int k=m_inner_begin[2]; k<=m_inner_end[d][2]; k++)
+				//for(int k=m_inner_begin[2]; k<=m_inner_end[d][2]; k++)
 		{
-			Dimension current(i,j,k);
+			Dimension current(i, j);//,k);
 			if(d==0)
-				u()(i,j,k) = m_infunc_u(current);
+				u()(i,j)/*,k)*/ = m_infunc_u(current);
 			if(d==1)
-				v()(i,j,k) = m_infunc_v(current);
+				v()(i, j)/*,k)*/ = m_infunc_v(current);
 			if(d==3)
-				w()(i,j,k) = m_infunc_w(current);
+				w()(i, j)/*,k)*/ = m_infunc_w(current);
 		}
 	}
 	for (int i = m_inner_begin[0]; i <= m_inner_end[3][0]; i++)
 		for (int j = m_inner_begin[1]; j <= m_inner_end[3][1]; j++)
-			for (int k = m_inner_begin[2]; k <= m_inner_end[3][2]; k++)
+			//for (int k = m_inner_begin[2]; k <= m_inner_end[3][2]; k++)
 				p()(i,j) = in_p(Index(i, j), p(), Dimension(dimension.i + 2, dimension.j + 2, dimension.k + 2));
 	/* and boundaries */
 	this->setVelocitiesBoundaries();
+	this->setPreliminaryVelocitiesBoundaries();
+	this->setPressureBoundaries();
 }
 
 Domain::~Domain()

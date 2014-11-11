@@ -62,6 +62,7 @@ namespace Solver
 			for (int j = inner_begin.j; j <= inner_end.j; j++)
 			{
 				old_value = p(i,j);
+				//std::cout << "p(" << i << "," << j << ") = " << p(i, j) << std::endl;
 				dxx_numerator = p(i - 1,j) + p(i + 1,j);
 				dyy_numerator = p(i,j - 1) + p(i,j + 1);
 

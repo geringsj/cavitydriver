@@ -83,26 +83,71 @@ public:
 	Real gy(Point coord) { return m_infunc_gy(coord); }
 	Real gz(Point coord) { return m_infunc_gz(coord); }
 
+#define LEFT(start,end)	for(int i = m_inner_begin[0]-1, j = start; j <= end; j++)
+#define RIGHT(start,end,d) for(int i = m_inner_end[d][0] + 1, j = start; j <= end; j++)
+#define TOP(start,end,d) for(int j = m_inner_end[d][1] + 1, i = start; i <= end; i++)
+#define BOTTOM(start,end) for(int j = m_inner_begin[1]-1, i = start; i <= end; i++)
+#define VELOCITIESBOUNDARIES(i,j,current,d)			\
+	current = Dimension(i, j);						\
+	if (d == 0)										\
+		u()(i, j)/*,k)*/ = m_infunc_u(current);		\
+	if (d == 1)										\
+		v()(i, j)/*,k)*/ = m_infunc_v(current);		\
+	if (d == 3)										\
+		w()(i, j)/*,k)*/ = m_infunc_w(current);
+#define PRELIMINARYVELOCITIESBOUNDARIES(i,j,d)				\
+	if (d == 0)												\
+		F()(i, j) = u()(i, j);								\
+	if (d == 1)												\
+		G()(i, j) = v()(i, j);								\
+	if (d == 3)												\
+		H()(i, j) = w()(i, j);								
+#define PRESSUREBOUNDARIES(i,j)								\
+	if (i == 0) p()(i, j) = p()(i + 1, j);					\
+	if (i == m_dimension[0] + 1) p()(i, j) = p()(i - 1, j);	\
+	if (j == m_dimension[1] + 1) p()(i, j) = p()(i, j - 1);	\
+	if (j == 0) p()(i, j) = p()(i, j + 1);
+
+
 	void setVelocitiesBoundaries()
 	{
 		/*
 		* todo:
 		* Make me beautifull like a butterfly.
 		*/
+		Dimension current;
 		for(uint d=0; d<DIMENSIONS; d++)
 		{
-			for(int i=m_inner_begin[0]-1; i<=m_inner_end[d][0]+1; i+=(m_inner_end[d][0]+1-(m_inner_begin[0]-1)))
-				for(int j=m_inner_begin[1]-1; j<=m_inner_end[d][1]+1; j+=(m_inner_end[d][1]+1-(m_inner_begin[1]-1)))
-					for(int k=m_inner_begin[2]-1; k<=m_inner_end[d][2]+1; k+=(m_inner_end[d][2]+1-(m_inner_begin[2]-1)))
+			LEFT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1)
 			{
-				Dimension current(i,j,k);
-				if(d==0)
-					u()(i,j,k) = m_infunc_u(current);
-				if(d==1)
-					v()(i,j,k) = m_infunc_v(current);
-				if(d==3)
-					w()(i,j,k) = m_infunc_w(current);
+				VELOCITIESBOUNDARIES(i, j, current, d);
 			}
+			RIGHT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1, d) 
+			{
+				VELOCITIESBOUNDARIES(i, j, current, d);
+			}
+			TOP(m_inner_begin[0] - 1, m_inner_end[d][0] + 1, d)
+			{
+				VELOCITIESBOUNDARIES(i, j, current, d);
+			}
+			BOTTOM(m_inner_begin[0] - 1, m_inner_end[d][0] + 1)
+			{
+				VELOCITIESBOUNDARIES(i, j, current, d);
+			}
+
+			// OLD
+			//for(int i=m_inner_begin[0]-1; i<=m_inner_end[d][0]+1; i+=(m_inner_end[d][0]+1-(m_inner_begin[0]-1)))
+			//	for(int j=m_inner_begin[1]-1; j<=m_inner_end[d][1]+1; j+=(m_inner_end[d][1]+1-(m_inner_begin[1]-1)))
+			//		//for(int k=m_inner_begin[2]-1; k<=m_inner_end[d][2]+1; k+=(m_inner_end[d][2]+1-(m_inner_begin[2]-1)))
+			//{
+			//	Dimension current(i, j);/*,k)*/
+			//	if(d==0)
+			//		u()(i, j)/*,k)*/ = m_infunc_u(current);
+			//	if(d==1)
+			//		v()(i, j)/*,k)*/ = m_infunc_v(current);
+			//	if(d==3)
+			//		w()(i, j)/*,k)*/ = m_infunc_w(current);
+			//}
 		}
 	}
 
@@ -114,35 +159,71 @@ public:
 		*/
 		for (uint d = 0; d<DIMENSIONS; d++)
 		{
-			for (int i = m_inner_begin[0] - 1; i <= m_inner_end[d][0] + 1; i += (m_inner_end[d][0] + 1 - (m_inner_begin[0] - 1)))
-				for (int j = m_inner_begin[1] - 1; j <= m_inner_end[d][1] + 1; j += (m_inner_end[d][1] + 1 - (m_inner_begin[1] - 1)))
-					//for (int k = m_inner_begin[2] - 1; k <= m_inner_end[d][2] + 1; k += (m_inner_end[d][2] + 1 - (m_inner_begin[2] - 1)))
+			LEFT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1)
 			{
-				if (d == 0)
-					F()(i, j) = u()(i, j);
-				if (d == 1)
-					G()(i, j) = v()(i, j);
-				if (d == 3)
-					H()(i, j) = w()(i, j);
+				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
 			}
+			RIGHT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1, d)
+			{
+				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
+			}
+			TOP(m_inner_begin[0] - 1, m_inner_end[d][0] + 1, d)
+			{
+				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
+			}
+			BOTTOM(m_inner_begin[0] - 1, m_inner_end[d][0] + 1)
+			{
+				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
+			}
+
+			// OLD
+			//for (int i = m_inner_begin[0] - 1; i <= m_inner_end[d][0] + 1; i += (m_inner_end[d][0] + 1 - (m_inner_begin[0] - 1)))
+			//	for (int j = m_inner_begin[1] - 1; j <= m_inner_end[d][1] + 1; j += (m_inner_end[d][1] + 1 - (m_inner_begin[1] - 1)))
+			//		//for (int k = m_inner_begin[2] - 1; k <= m_inner_end[d][2] + 1; k += (m_inner_end[d][2] + 1 - (m_inner_begin[2] - 1)))
+			//{
+			//	if (d == 0)
+			//		F()(i, j) = u()(i, j);
+			//	if (d == 1)
+			//		G()(i, j) = v()(i, j);
+			//	if (d == 3)
+			//		H()(i, j) = w()(i, j);
+			//}
 		}
 	}
 
 	void setPressureBoundaries()
 	{
+		LEFT(m_inner_begin[1] - 1, m_dimension[1] + 1)
+		{
+			PRESSUREBOUNDARIES(i, j);
+		}
+		RIGHT(m_inner_begin[1] - 1, m_dimension[1] + 1, 3)
+		{
+			PRESSUREBOUNDARIES(i, j);
+		}
+		TOP(m_inner_begin[0] - 1, m_dimension[0] + 1, 3)
+		{
+			PRESSUREBOUNDARIES(i, j);
+		}
+		BOTTOM(m_inner_begin[0] - 1, m_dimension[0] + 1)
+		{
+			PRESSUREBOUNDARIES(i, j);
+		}
+
 		/*
 		 * todo:
 		 * Make me beautifull like a butterfly.
 		 */
-		for (int i = m_inner_begin[0] - 1; i <= m_dimension[0] + 1; i += (m_dimension[0] + 1 - (m_inner_begin[0] - 1)))
-			for (int j = m_inner_begin[1] - 1; j <= m_dimension[1] + 1; j += (m_dimension[1] + 1 - (m_inner_begin[1] - 1)))
-				//for (int k = m_inner_begin[2] - 1; k <= m_dimension[2] + 1; k += (m_dimension[2] + 1 - (m_inner_begin[2] - 1)))
-		{
-			if (i == 0) p()(i, j) = p()(i + 1, j);
-			if (i == m_dimension[0]+1) p()(i, j) = p()(i - 1, j);
-			if (j == m_dimension[1]+1) p()(i, j) = p()(i, j - 1);
-			if (j == 0) p()(i, j) = p()(i, j + 1);
-		}
+		// OLD
+		//for (int i = m_inner_begin[0] - 1; i <= m_dimension[0] + 1; i += (m_dimension[0] + 1 - (m_inner_begin[0] - 1)))
+		//	for (int j = m_inner_begin[1] - 1; j <= m_dimension[1] + 1; j += (m_dimension[1] + 1 - (m_inner_begin[1] - 1)))
+		//		//for (int k = m_inner_begin[2] - 1; k <= m_dimension[2] + 1; k += (m_dimension[2] + 1 - (m_inner_begin[2] - 1)))
+		//{
+		//	if (i == 0) p()(i, j) = p()(i + 1, j);
+		//	if (i == m_dimension[0]+1) p()(i, j) = p()(i - 1, j);
+		//	if (j == m_dimension[1]+1) p()(i, j) = p()(i, j - 1);
+		//	if (j == 0) p()(i, j) = p()(i, j + 1);
+		//}
 	}
 
 private:
