@@ -136,7 +136,7 @@ void computeNewVelocities(
 		auto Pdb = Derivatives::getDerivative(
 				domain.p(),
 				domain.getDelta(),
-				-(1+d));
+				-(int)(1+d));
 
 		for(int i=domain.getBeginInnerDomains()[0]; 
 				i<= domain.getEndInnerDomain()[d][0]; i++)

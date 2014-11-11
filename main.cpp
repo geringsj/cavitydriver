@@ -1,5 +1,7 @@
 #include "src/IO.hpp"
 #include "src/Domain.hpp"
+#include "src/Computation.hpp"
+#include "src/Solver.hpp"
 
 // default values for the output directory and the settings file
 const char *output = "out";
@@ -53,6 +55,26 @@ void parseArguments(int argc, char** argv)
 	}
 }
 
+Real u(Index index, GridFunction& gf, Dimension dim)
+{
+	Real value = 0.0;
+	if (index.i == 0) value = 0.0;
+	if (index.i == dim.i) value = 0.0;
+	if (index.j == 0) value = -gf(index.i, index.j + 1);
+	if (index.j == dim.j) value = 2.0 - gf(index.i, index.j - 1);
+	return value;
+}
+
+Real v(Index index, GridFunction& gf, Dimension dim)
+{
+	Real value = 0.0;
+	if (index.i == 0) value = -gf(index.i+1, index.j);
+	if (index.i == dim.i) value = -gf(index.i-1, index.j);
+	if (index.j == 0) value = 0.0;
+	if (index.j == dim.j) value = 0.0;
+	return value;
+}
+
 int main(int argc, char** argv)
 {
 	parseArguments(argc, argv);
@@ -61,9 +83,46 @@ int main(int argc, char** argv)
 	//IO io((char*)"inputvals", (char*)"out");
 	io.writeSimParamToSTDOUT();
 
-	//Dimension dim;
-	//Delta delta;
-	//Domain domain(dim,delta);
+	Dimension dim;
+	dim.i = io.getIMax();
+	dim.j = io.getJMax();
+	Delta delta;
+	delta.x = io.getXLength();
+	delta.y = io.getYLength();
+	Domain domain(dim, delta, u, v, [](Index i, GridFunction& gf, Dimension dim){return 0.0; });
+
+	/* main loop */
+	/* todo:
+	 * Calculate omega for grid dimension
+	 * 
+	 */
+	Real t = 0.0;
+	Real dt;
+	Real res;
+	int it = 0;
+	while (t < io.getTEnd())
+	{
+		dt = Computation::computeTimestep(domain, io.getTau(), io.getRe());
+		t += dt;
+		/* todo:
+		 * Create setDoundaries functions for F,G,H and p!!
+		 */
+		domain.setVelocitiesBoundaries();
+		Computation::computeMomentumEquationsFGH(domain, dt, io.getRe());
+		Computation::computeRighthandSide(domain, dt);
+
+		it = 0;
+		do
+		{
+			res = Solver::computeResidual(domain.p(), domain.rhs(), delta, domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
+			Solver::SORCycle(domain.p(), domain.rhs(), delta, domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), io.getOmg());
+			it++;
+		} while (it < io.getIterMax() && res > io.getEps());
+
+		Computation::computeNewVelocities(domain, dt);
+		domain.setVelocitiesBoundaries();
+		io.writeVTKFile(domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, t);
+	}
 
 	return 0;
 }

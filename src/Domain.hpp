@@ -84,6 +84,10 @@ public:
 
 	void setVelocitiesBoundaries()
 	{
+		/*
+		* todo:
+		* Make me beautifull like a butterfly.
+		*/
 		for(uint d=0; d<DIMENSIONS; d++)
 		{
 			for(int i=m_inner_begin[0]-1; i<=m_inner_end[d][0]+1; i+=(m_inner_end[d][0]+1-(m_inner_begin[0]-1)))
@@ -98,6 +102,28 @@ public:
 				if(d==3)
 					w()(i,j,k) = m_infunc_w(current);
 			}
+		}
+	}
+
+	void setPreliminaryVelocitiesBoundaries()
+	{
+
+	}
+
+	void setPressureBoundaries()
+	{
+		/*
+		 * todo:
+		 * Make me beautifull like a butterfly.
+		 */
+		for (int i = m_inner_begin[0] - 1; i <= m_dimension[0] + 1; i += (m_dimension[0] + 1 - (m_inner_begin[0] - 1)))
+			for (int j = m_inner_begin[1] - 1; j <= m_dimension[1] + 1; j += (m_dimension[1] + 1 - (m_inner_begin[1] - 1)))
+				//for (int k = m_inner_begin[2] - 1; k <= m_dimension[2] + 1; k += (m_dimension[2] + 1 - (m_inner_begin[2] - 1)))
+		{
+			if (i == 0) p()(i, j) = p()(i + 1, j);
+			if (i == m_dimension[0]+1) p()(i, j) = p()(i - 1, j);
+			if (j == m_dimension[1]+1) p()(i, j) = p()(i, j - 1);
+			if (j == 0) p()(i, j) = p()(i, j + 1);
 		}
 	}
 
