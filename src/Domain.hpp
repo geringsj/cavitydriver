@@ -1,11 +1,19 @@
-#ifndef Domain_h
-#define Domain_h
+//! This file implements the domain we will be working in 
+/*!
+ * @author becherml, friesfn, geringsj
+ * @date 2014
+ */
+
+#ifndef Domain_hpp
+#define Domain_hpp
 
 #include "Structs.hpp"
 #include "GridFunction.hpp"
 
 #include <functional>
 
+/* TODO: move INTO Domain class or mvoe to Structs.hpp ? 
+ * nobody uses 3D grids, except for the Domain */
 struct Grid3D
 {
 	Grid3D(Dimension dim) : 
@@ -25,16 +33,14 @@ struct Grid3D
 	{
 		switch (index)
 		{
-		case 1:
+		case 0:
 			return m_u;
-		case 2:
+		case 1:
 			return m_v;
-		case 3:
+		case 2:
 			return m_w;
 		default:
-			return m_u;
-			//return GridFunction(); 
-			//exit(-1); //not to sure about this
+			return m_u; /* yes, this is wrong. print warning? */
 		}
 	}
 };
@@ -47,17 +53,28 @@ class Domain
 {
 public:
 	Domain(Dimension dimension, Point delta,
+		/* the functions for setting boundary and initial grid values */
 		std::function<Real(Index,GridFunction&,Dimension)> in_u,
 		std::function<Real(Index,GridFunction&,Dimension)> in_v,
 		std::function<Real(Index,GridFunction&,Dimension)> in_w,
 		std::function<Real(Index, GridFunction&, Dimension)> in_p,
-		std::function<Real(Point)> in_gx = [](Point coord)->Real{ return coord.x*0.0; },
-		std::function<Real(Point)> in_gy = [](Point coord)->Real{ return coord.x*0.0; },
-		std::function<Real(Point)> in_gz = [](Point coord)->Real{ return coord.x*0.0; }
+		/* if no outer forces are given, we assume they are zero. 
+		 * TODO: can this be done in .cpp with the preset values still beeing used? 
+		 * or maybe split into two constructors ? 
+		 * => constructor delegation would be nice to use*/
+		std::function<Real(Point)> in_gx = 
+			[](Point coord)->Real{ return coord.x*0.0; }, 
+		std::function<Real(Point)> in_gy = 
+			[](Point coord)->Real{ return coord.x*0.0; },
+		std::function<Real(Point)> in_gz = 
+			[](Point coord)->Real{ return coord.x*0.0; }
 		);
 
 	~Domain();
 
+	/* TODO: document for doxygen and move implementation into .cpp ?
+	 * on the other hand: explaining multiple simple similiar functions is stupid, 
+	 * better have the user see what is done? */
 	Dimension getDimension() { return m_dimension; }
 	Dimension getBeginInnerDomains() {return m_inner_begin; }
 	Dimension* getEndInnerDomain() {return m_inner_end; }
@@ -79,42 +96,50 @@ public:
 	GridFunction& H() { return m_preliminary_velocities_FGH.m_w ; }
 	GridFunction& rhs() { return m_p_rhs; }
 
-	Real gx(Point coord) { return m_infunc_gx(coord); }
-	Real gy(Point coord) { return m_infunc_gy(coord); }
-	Real gz(Point coord) { return m_infunc_gz(coord); }
+	Real g(int dim, Point coord) 
+	{ 
+		if(dim == 0) return gx(coord);
+		if(dim == 1) return gy(coord);
+		return gz(coord);
+	}
 
+
+	Real gx(Point coord) { return m_forcefunc_gx(coord); }
+	Real gy(Point coord) { return m_forcefunc_gy(coord); }
+	Real gz(Point coord) { return m_forcefunc_gz(coord); }
+
+	/* TODO: definitely move THIS and boundary functions to .cpp */
 #define LEFT(start,end)	for(int i = m_inner_begin[0]-1, j = start; j <= end; j++)
 #define RIGHT(start,end,d) for(int i = m_inner_end[d][0] + 1, j = start; j <= end; j++)
 #define TOP(start,end,d) for(int j = m_inner_end[d][1] + 1, i = start; i <= end; i++)
 #define BOTTOM(start,end) for(int j = m_inner_begin[1]-1, i = start; i <= end; i++)
-#define VELOCITIESBOUNDARIES(i,j,current,d)			\
-	current = Dimension(i, j);						\
-	if (d == 0)										\
-		u()(i, j)/*,k)*/ = m_infunc_u(current);		\
-	if (d == 1)										\
-		v()(i, j)/*,k)*/ = m_infunc_v(current);		\
-	if (d == 3)										\
-		w()(i, j)/*,k)*/ = m_infunc_w(current);
-#define PRELIMINARYVELOCITIESBOUNDARIES(i,j,d)				\
-	if (d == 0)												\
-		F()(i, j) = u()(i, j);								\
-	if (d == 1)												\
-		G()(i, j) = v()(i, j);								\
-	if (d == 3)												\
-		H()(i, j) = w()(i, j);								
-#define PRESSUREBOUNDARIES(i,j)								\
-	if (i == 0) p()(i, j) = p()(i + 1, j);					\
-	if (i == m_dimension[0] + 1) p()(i, j) = p()(i - 1, j);	\
-	if (j == m_dimension[1] + 1) p()(i, j) = p()(i, j - 1);	\
+
+#define VELOCITIESBOUNDARIES(i,j,current,d) \
+	current = Dimension(i, j);\
+	if (d == 0)\
+		u()(i, j)/*,k)*/ = m_borderfunc_u(current);\
+	if (d == 1)\
+		v()(i, j)/*,k)*/ = m_borderfunc_v(current);\
+	if (d == 3)\
+		w()(i, j)/*,k)*/ = m_borderfunc_w(current);
+
+#define PRELIMINARYVELOCITIESBOUNDARIES(i,j,d) \
+	if (d == 0)\
+		F()(i, j) = u()(i, j);\
+	if (d == 1)\
+		G()(i, j) = v()(i, j);\
+	if (d == 3)\
+		H()(i, j) = w()(i, j);
+
+#define PRESSUREBOUNDARIES(i,j) \
+	if (i == 0) p()(i, j) = p()(i + 1, j);\
+	if (i == m_dimension[0] + 1) p()(i, j) = p()(i - 1, j);\
+	if (j == m_dimension[1] + 1) p()(i, j) = p()(i, j - 1);\
 	if (j == 0) p()(i, j) = p()(i, j + 1);
 
 
 	void setVelocitiesBoundaries()
 	{
-		/*
-		* todo:
-		* Make me beautifull like a butterfly.
-		*/
 		Dimension current;
 		for(uint d=0; d<DIMENSIONS; d++)
 		{
@@ -134,29 +159,11 @@ public:
 			{
 				VELOCITIESBOUNDARIES(i, j, current, d);
 			}
-
-			// OLD
-			//for(int i=m_inner_begin[0]-1; i<=m_inner_end[d][0]+1; i+=(m_inner_end[d][0]+1-(m_inner_begin[0]-1)))
-			//	for(int j=m_inner_begin[1]-1; j<=m_inner_end[d][1]+1; j+=(m_inner_end[d][1]+1-(m_inner_begin[1]-1)))
-			//		//for(int k=m_inner_begin[2]-1; k<=m_inner_end[d][2]+1; k+=(m_inner_end[d][2]+1-(m_inner_begin[2]-1)))
-			//{
-			//	Dimension current(i, j);/*,k)*/
-			//	if(d==0)
-			//		u()(i, j)/*,k)*/ = m_infunc_u(current);
-			//	if(d==1)
-			//		v()(i, j)/*,k)*/ = m_infunc_v(current);
-			//	if(d==3)
-			//		w()(i, j)/*,k)*/ = m_infunc_w(current);
-			//}
 		}
 	}
 
 	void setPreliminaryVelocitiesBoundaries()
 	{
-		/*
-		* todo:
-		* Make me beautifull like a butterfly.
-		*/
 		for (uint d = 0; d<DIMENSIONS; d++)
 		{
 			LEFT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1)
@@ -175,19 +182,6 @@ public:
 			{
 				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
 			}
-
-			// OLD
-			//for (int i = m_inner_begin[0] - 1; i <= m_inner_end[d][0] + 1; i += (m_inner_end[d][0] + 1 - (m_inner_begin[0] - 1)))
-			//	for (int j = m_inner_begin[1] - 1; j <= m_inner_end[d][1] + 1; j += (m_inner_end[d][1] + 1 - (m_inner_begin[1] - 1)))
-			//		//for (int k = m_inner_begin[2] - 1; k <= m_inner_end[d][2] + 1; k += (m_inner_end[d][2] + 1 - (m_inner_begin[2] - 1)))
-			//{
-			//	if (d == 0)
-			//		F()(i, j) = u()(i, j);
-			//	if (d == 1)
-			//		G()(i, j) = v()(i, j);
-			//	if (d == 3)
-			//		H()(i, j) = w()(i, j);
-			//}
 		}
 	}
 
@@ -209,24 +203,11 @@ public:
 		{
 			PRESSUREBOUNDARIES(i, j);
 		}
-
-		/*
-		 * todo:
-		 * Make me beautifull like a butterfly.
-		 */
-		// OLD
-		//for (int i = m_inner_begin[0] - 1; i <= m_dimension[0] + 1; i += (m_dimension[0] + 1 - (m_inner_begin[0] - 1)))
-		//	for (int j = m_inner_begin[1] - 1; j <= m_dimension[1] + 1; j += (m_dimension[1] + 1 - (m_inner_begin[1] - 1)))
-		//		//for (int k = m_inner_begin[2] - 1; k <= m_dimension[2] + 1; k += (m_dimension[2] + 1 - (m_inner_begin[2] - 1)))
-		//{
-		//	if (i == 0) p()(i, j) = p()(i + 1, j);
-		//	if (i == m_dimension[0]+1) p()(i, j) = p()(i - 1, j);
-		//	if (j == m_dimension[1]+1) p()(i, j) = p()(i, j - 1);
-		//	if (j == 0) p()(i, j) = p()(i, j + 1);
-		//}
 	}
 
 private:
+	/* TODO document in a non-stupid manner. 
+	 * also mention: we are prepared to do 3D, but don't do it yet */
 	/**
 	 * Size of the domain
 	 */
@@ -242,13 +223,13 @@ private:
 	Point m_delta;
 
 	/**
-	 * Pressure Grid
+	 * Pressure Grid and and its RHS that is needed for computation.
 	 */
 	GridFunction m_p;
 	GridFunction m_p_rhs;
 
 	/**
-	 * Velocities grid
+	 * Velocities grids
 	 */
 	Grid3D m_velocities;
 	Grid3D m_preliminary_velocities_FGH;
@@ -256,16 +237,16 @@ private:
 	/**
 	 * Input functions used to (re)set boundaries and starting conditions
 	 */
-	std::function<Real(Index)> m_infunc_u;
-	std::function<Real(Index)> m_infunc_v;
-	std::function<Real(Index)> m_infunc_w;
+	std::function<Real(Index)> m_borderfunc_u;
+	std::function<Real(Index)> m_borderfunc_v;
+	std::function<Real(Index)> m_borderfunc_w;
 
 	/**
 	 * External forces
 	 */
-	std::function<Real(Point)> m_infunc_gx;
-	std::function<Real(Point)> m_infunc_gy;
-	std::function<Real(Point)> m_infunc_gz;
+	std::function<Real(Point)> m_forcefunc_gx;
+	std::function<Real(Point)> m_forcefunc_gy;
+	std::function<Real(Point)> m_forcefunc_gz;
 };
 
 #endif

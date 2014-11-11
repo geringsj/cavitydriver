@@ -4,6 +4,7 @@
 #include "src/Solver.hpp"
 
 // default values for the output directory and the settings file
+// TODO: move to IO
 const char *output = "out";
 const char *settings = "inputvals";
 
@@ -15,6 +16,7 @@ void dieSynopsis() {
 	std::cerr << "Synopsis: IO "
 		<< "--out \"output directory\" --set \"path to the settings file\" ";
 	exit(-1);
+	// TODO: move to IO
 }
 
 /**
@@ -25,6 +27,12 @@ void dieSynopsis() {
  */
 void parseArguments(int argc, char** argv)
 {
+	/* TODO: this thing is buggy. 
+	 * example: start main with "-l" option
+	 * => infinite loop
+	 *
+	 * fix this and put it in a nice place in IO
+	 */
 	--argc; ++argv; // We don't care about program name;
 	while (argc > 0 && argv[0][0] == '-')
 	{
@@ -80,7 +88,6 @@ int main(int argc, char** argv)
 	parseArguments(argc, argv);
 	std::cout << settings << " " << output << std::endl;
 	IO io(settings, output);
-	//IO io((char*)"inputvals", (char*)"out");
 	io.writeSimParamToSTDOUT();
 
 	Dimension dim;
@@ -90,48 +97,22 @@ int main(int argc, char** argv)
 	delta.x = io.getXLength();
 	delta.y = io.getYLength();
 	Domain domain(dim, delta,
-		std::bind(u, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::ref(io)),
-		std::bind(v, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::ref(io)),
-		[](Index i, GridFunction& gf, Dimension dim){return 0.0; }, 
-		[&io](Index i, GridFunction& gf, Dimension dim){return io.getPi(); });
-
-	/*std::cout << std::endl;
-	Dimension m_inner_begin = domain.getBeginInnerDomains();
-	Dimension m_inner_end = domain.getEndInnerDomain()[0];
-	for (int j = m_inner_end[1] + 1; j >= m_inner_begin[1] - 1; j--)
-	{
-		for (int i = m_inner_begin[0] - 1; i <= m_inner_end[0] + 1; i++)
-		{
-			//std::cout << "u(" << i << "," << j << ") = " << domain.u()(i, j) << " ";
-			std::cout << domain.u()(i, j) << " ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-
-	std::cout << std::endl;
-	m_inner_begin = domain.getBeginInnerDomains();
-	m_inner_end = domain.getEndInnerDomain()[3];
-	for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
-	{
-		for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
-		{
-			std::cout << domain.p()(i, j) << " ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;*/
+		std::bind(u, std::placeholders::_1, std::placeholders::_2, 
+			std::placeholders::_3, std::ref(io)),
+		std::bind(v, std::placeholders::_1, std::placeholders::_2, 
+			std::placeholders::_3, std::ref(io)),
+		[](Index i, GridFunction& gf, Dimension dim)
+			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
+		[&io](Index i, GridFunction& gf, Dimension dim)
+			{return io.getPi() + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
 
 	/* main loop */
-	/* todo:
+	/* TODO:
 	 * Calculate omega for grid dimension
-	 * 
 	 */
-	Real t = 0.0;
-	Real dt;
-	Real res;
-	int it = 0;
-	while/*(it < 1)*/ (t < io.getTEnd())
+	Real t = 0.0, dt=io.getDeltaT() , res;
+	int it, step=0;
+	while(t < io.getTEnd())
 	{
 		dt = Computation::computeTimestep(domain, io.getTau(), io.getRe());
 		t += dt;
@@ -139,62 +120,30 @@ int main(int argc, char** argv)
 
 		domain.setVelocitiesBoundaries();
 		Computation::computeMomentumEquationsFGH(domain, dt, io.getRe());
+
 		domain.setPreliminaryVelocitiesBoundaries();
-
-		/*std::cout << std::endl;
-		m_inner_begin = domain.getBeginInnerDomains();
-		m_inner_end = domain.getEndInnerDomain()[3];
-		for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
-		{
-			for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
-			{
-				std::cout << domain.p()(i, j) << " ";
-			}
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;*/
-
 		domain.setPressureBoundaries();
 
-		/*std::cout << std::endl;
-		m_inner_begin = domain.getBeginInnerDomains();
-		m_inner_end = domain.getEndInnerDomain()[3];
-		for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
-		{
-			for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
-			{
-				std::cout << domain.p()(i, j) << " ";
-			}
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;*/
-
-		Computation::computeRighthandSide(domain, dt);    // <----- something happens here.... the values in domain.p() get screwd up?!!?!?
-
-		/*std::cout << std::endl;
-		m_inner_begin = domain.getBeginInnerDomains();
-		m_inner_end = domain.getEndInnerDomain()[3];
-		for (int j = m_inner_end[1]; j >= m_inner_begin[1]; j--)
-		{
-			for (int i = m_inner_begin[0]; i <= m_inner_end[0]; i++)
-			{
-				std::cout << domain.p()(i, j) << " ";
-			}
-			std::cout << std::endl;
-		}
-		std::cout << std::endl;*/
+		Computation::computeRighthandSide(domain, dt);
 
 		it = 0;
 		do
 		{
-			res = Solver::computeResidual(domain.p(), domain.rhs(), delta, domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
-			Solver::SORCycle(domain.p(), domain.rhs(), delta, domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), io.getOmg());
+			res = Solver::computeResidual(
+					domain.p(), domain.rhs(), delta, 
+					domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
+			Solver::SORCycle(
+					domain.p(), domain.rhs(), delta, 
+					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), io.getOmg());
 			it++;
 		} while (it < io.getIterMax() && res > io.getEps());
 
 		Computation::computeNewVelocities(domain, dt);
 		domain.setVelocitiesBoundaries();
-		io.writeVTKFile(domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, t);
+		io.writeVTKFile(
+				domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
+
+		step++;
 	}
 
 	return 0;

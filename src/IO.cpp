@@ -201,11 +201,13 @@ IO::writeSimParamToSTDOUT()
 		"vi=" <<
 		simparam.vi << std::endl <<
 		"pi=" <<
-		simparam.pi << std::endl <<
-		"xProcs=" <<
-		simparam.xProcs << std::endl <<
-		"yProcs=" <<
-		simparam.yProcs << std::endl;
+		simparam.pi << std::endl ;
+		/* TODO remove comment when implementing MPI stuff */
+		// <<
+		// "xProcs=" <<
+		// simparam.xProcs << std::endl <<
+		// "yProcs=" <<
+		// simparam.yProcs << std::endl;
 }
 
 

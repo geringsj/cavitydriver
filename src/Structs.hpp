@@ -1,36 +1,11 @@
-//! Used sane typedefs 
+//! Here we define our sane, well-designed and useful types and structs!
 /*!
  * @author becherml, friesfn, geringsj
  * @date 2014
  */
 
-#ifndef Structs_h
-#define Structs_h
-
-// struct Dimension3D
-// {
-// 	Dimension3D() : m_x(0), m_y(0), m_z(0) {}
-// 	Dimension3D(DimensionType x, DimensionType y, DimensionType z = 1)
-// 		: m_x(x), m_y(y), m_z(z) {} 
-// 
-// 	DimensionType m_x,m_y,m_z;
-// 
-// 	DimensionType operator[](uint index)
-// 	{
-// 		switch (index)
-// 		{
-// 		case 0:
-// 			return m_x;
-// 		case 1:
-// 			return m_y;
-// 		case 2:
-// 			return m_z;
-// 		default:
-// 			return 0;
-// 		}
-// 	}
-// };
-
+#ifndef Structs_hpp
+#define Structs_hpp
 
 #define NULL nullptr
 

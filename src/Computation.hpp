@@ -4,8 +4,8 @@
  * @date 2014
  */
 
-#ifndef Computation_HPP_
-#define Computation_HPP_
+#ifndef Computation_hpp
+#define Computation_hpp
 
 #include "Domain.hpp"
 #include "Stencil.hpp"
@@ -16,14 +16,13 @@ namespace Computation
 {
 Real computeTimestep(
 		Domain& domain,
-		//const Real uMax, const Real vMax, const Point h, 
 		const Real tau, const Real Re)
 {
 	Real result;
 	Real uMax, vMax;
 
-	uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();
-	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();
+	uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
+	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
 
 	result = std::fmin(
 			domain.getDelta().x*domain.getDelta().x *
@@ -39,13 +38,8 @@ Real computeTimestep(
 	return tau * result; /* tau is some safety factor in (0,1] */
 }
 
-//void Computation::setBoundaryX(GridFunction& x){}
-
 void computeMomentumEquationsFGH(
 		Domain& domain,
-		//GridFunction& f, GridFunction& g,
-		//GridFunction& u, GridFunction& v, 
-		//GridFunction& gx, GridFunction& gy, const Point delta, 
 		const Real deltaT, const Real Re)
 {
 	for(uint d=0; d<DIMENSIONS; d++)
@@ -60,6 +54,10 @@ void computeMomentumEquationsFGH(
 					domain.getVeolcity()[d],
 					domain.getDelta(),
 					Derivatives::Direction::yy);
+		/* TODO:
+		 * are those derivatives right? 
+		 * might explain the weird output 
+		 * dimension is tricky here */
 		auto FF_df = 
 			Derivatives::getDerivative(
 					domain.getVeolcity()[d],
@@ -72,15 +70,11 @@ void computeMomentumEquationsFGH(
 		auto FG_dg = 
 			Derivatives::getDerivative(
 					domain.getVeolcity()[d],
-					domain.getVeolcity()[d],
+					domain.getVeolcity()[Gdim],
 					domain.getDelta(),
 					1+d,
 					1+Gdim,
 					1+6+Gdim);
-
-		/* reset inner (boundary not needed here) */
-		domain.getPreliminaryVeolcity()[d].setGridFunction
-			(domain.getBeginInnerDomains(),domain.getEndInnerDomain()[d],0.0);
 
 		/* the formula: */
 		for(int i=domain.getBeginInnerDomains()[0]; 
@@ -88,46 +82,44 @@ void computeMomentumEquationsFGH(
 			for(int j=domain.getBeginInnerDomains()[1]; 
 					j<= domain.getEndInnerDomain()[d][1]; j++)
 		{
+			Point gpoint = Point(
+					/* here we are off by 1 or 2 because of the boundary */
+						Real(i)/domain.getEndInnerDomain()[d][0], 
+						Real(j)/domain.getEndInnerDomain()[d][1]);
+
 			domain.getPreliminaryVeolcity()[d](i, j) =
 				domain.getVeolcity()[d](i, j) + 
 				(deltaT/Re)*( Fxx(i,j) + Fyy(i,j) )
 				- FF_df(i,j) - FG_dg(i,j)
-				+ domain.gx(
-						Point(
-						Real(i)/domain.getEndInnerDomain()[d][0]+2, 
-						Real(j)/domain.getEndInnerDomain()[d][1]+2));
+				+ domain.g(d,gpoint);
 		}
 	}
 }
 
 void computeRighthandSide(
 		Domain& domain,
-		//GridFunction& rhs, GridFunction& f, GridFunction& g, const Point delta, 
 		const Real deltaT)
 {
-	auto Fxf = Derivatives::getDerivative(
+	auto Fxb = Derivatives::getDerivative(
 			domain.F(),
 			domain.getDelta(),
-			Derivatives::Direction::xf);
-	auto Gyf = Derivatives::getDerivative(
+			Derivatives::Direction::xb);
+	auto Gyb = Derivatives::getDerivative(
 			domain.G(),
 			domain.getDelta(),
-			Derivatives::Direction::yf);
+			Derivatives::Direction::yb);
 
 	for(int i=domain.getBeginInnerDomains()[0]; 
 			i<= domain.getEndInnerDomain()[3][0]; i++)
 		for(int j=domain.getBeginInnerDomains()[1]; 
 				j<= domain.getEndInnerDomain()[3][1]; j++)
 	{
-		domain.p()(i,j) = ( Fxf(i,j) + Gyf(i,j) )/deltaT;
+		domain.p()(i,j) = ( Fxb(i,j) + Gyb(i,j) )/deltaT;
 	}
 }
 
 void computeNewVelocities(
 		Domain& domain,
-		//GridFunction& u, GridFunction& v,
-		//GridFunction& f, GridFunction& g,
-		//GridFunction& p, const Point delta, 
 		const Real deltaT)
 {
 

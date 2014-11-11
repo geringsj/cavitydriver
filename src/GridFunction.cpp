@@ -14,10 +14,6 @@ GridFunction::GridFunction(const uint dimX, const uint dimY, const uint dimZ)
 	this->init(dimX, dimY, dimZ);
 }
 
-GridFunction::GridFunction()
-{
-}
-
 GridFunction::GridFunction(Index griddimension) 
 {
 	this->init(griddimension[0], griddimension[1], griddimension[2]);
@@ -125,7 +121,7 @@ Real GridFunction::getMaxValueGridFunction(
 	const Index begin, 
 	const Index end)
 {
-	Real max = this->operator()(0,0);
+	Real max = this->operator()(begin.i, begin.j);
 
 	forall(i,j,begin,end)
 	{

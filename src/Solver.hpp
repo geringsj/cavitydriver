@@ -1,10 +1,16 @@
+//! We compute the residual and SOR Cycle here
+/*!
+ * @author becherml, friesfn, geringsj
+ * @date 2014
+ */
+
 #ifndef Solver_hpp
 #define Solver_hpp
 
 #include "GridFunction.hpp"
 #include "Structs.hpp"
 
-#include <math.h>
+#include <cmath>
 
 namespace Solver
 {
@@ -62,7 +68,6 @@ namespace Solver
 			for (int j = inner_begin.j; j <= inner_end.j; j++)
 			{
 				old_value = p(i,j);
-				//std::cout << "p(" << i << "," << j << ") = " << p(i, j) << std::endl;
 				dxx_numerator = p(i - 1,j) + p(i + 1,j);
 				dyy_numerator = p(i,j - 1) + p(i,j + 1);
 

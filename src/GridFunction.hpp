@@ -1,8 +1,25 @@
+//! The GridFunction ("Grid") is our bitch of choice in handling raw-memory access
+/*!
+ * @author becherml, friesfn, geringsj
+ * @date 2014
+ */
 
 #ifndef GridFunction_hpp
 #define GridFunction_hpp
 
 #include "Structs.hpp"
+
+
+/* the gridfunction just does what it is told to do: maintain a grid 
+ * of size X * Y * Z - for now we set Z==1
+ * basically all this class needs to do is allocate the memory
+ * and give us indexed access to it in 2 or 3 dimensions
+ * be it using operator()(int i, int j, int k) or some sort of
+ * operator[](Index index) */
+/* TODO: when i think of it, almost all of the following {set,get}GridFunction()
+ * methods are pretty useless, we really just care for indexed memory access,
+ * getting the MAX value of the grid and maybe the dimensions
+ */
 
 class GridFunction
 {
@@ -13,7 +30,6 @@ private:
 	void init(const uint dimX, const uint dimY, const uint dimZ);
 
 public:
-	GridFunction();
 	GridFunction(const uint dimX, const uint dimY, const uint dimZ = 1);
 	GridFunction(const Index griddimension);
 	virtual ~GridFunction();

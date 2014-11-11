@@ -1,7 +1,9 @@
 # ignore binaries
 ./bin/*
 *.o
-*/out
+*.hpp.gch
+#out/*
+out*/
 
 # linux workspace specific files
 .vimtags
