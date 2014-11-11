@@ -9,6 +9,7 @@
 #define IO_HPP_
 
 #include "Structs.hpp"
+#include "Debug.hpp"
 
 #include "GridFunction.hpp"
 
@@ -28,6 +29,8 @@ public:
    * @param outout Path to the directory for the vtk files.
    */
   IO (const char *input, const char *output);
+
+  IO(int argc, char** argv);
 
   //! Destructor
    ~IO ();
@@ -73,42 +76,31 @@ public:
   int getXProcs() const { return simparam.xProcs; };
   int getYProcs() const { return simparam.yProcs; };
 
+  /*!
+  * Methods reads the simulation parameters from the specified input file.
+  */
+  Simparam readInputfile();
+
 private:
+  Simparam simparam;
 
-//! Struct that holds the simulation parameters.
-	struct {
-		Real xLength;
-		Real yLength;
-		int iMax;
-		int jMax;
-		Real tEnd;
-		Real deltaT;
-		Real tau;
-		Real deltaVec;
-		int iterMax;
-		Real eps;
-		Real omg;
-		Real alpha;
-		Real re;
-		Real gx;
-		Real gy;
-		Real ui;
-		Real vi;
-		Real pi;
-		int xProcs;
-		int yProcs;
-	} simparam;
+  // default values for the output directory and the settings file
+  const char *output = "out";
+  const char *settings = "inputvals";
 
-//! Path where to write the vtk files.
-  char *output;
-
-/*!
-   * Methods reads the simulation parameters from the specified input file.
-   * 
-   * @param filename The name of the file with the simulations paremters
+  /**
+   * Print the help text in order to show what
+   * arguments can be processed.
    */
-  void readInputfile (const char *filename);
+  void dieSynopsis();
 
+  /**
+	* Parse the input arguments. If there are no arguments
+	* the default values are used.
+	* @param the length of the input
+	* @param the arguments
+	*/
+  void parseArguments(int argc, char** argv);
 
   //! Method interpolates the velocity for u in the staggered grid.
   /*!

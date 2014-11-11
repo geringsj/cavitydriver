@@ -15,8 +15,15 @@
 IO::IO (const char *input, const char *output)
 {
   //Read the file with the simulations parameters
-  readInputfile(input);
+  settings = input;
+  readInputfile();
   this->output = (char*)output;
+}
+
+IO::IO(int argc, char** argv)
+{
+	parseArguments(argc, argv);
+	std::cout << "out dir: " << output << " settings file: " << settings << std::endl;
 }
 
 IO::~IO ()
@@ -24,14 +31,55 @@ IO::~IO ()
 
 }
 
-void
-IO::readInputfile (const char *filename)
+void IO::dieSynopsis() {
+	std::cerr << "Synopsis: IO "
+		<< "--out \"output directory\" --set \"path to the settings file\" ";
+	exit(-1);
+}
+
+void IO::parseArguments(int argc, char** argv)
+{
+	--argc; ++argv; // We don't care about program name;
+	while (argc > 0 && argv[0][0] == '-')
+	{
+		if (argv[0] == (std::string) "--help" || argv[0] == (std::string) "-h")
+		{
+			dieSynopsis();
+		}
+		else if (argv[0] == (std::string)"--out")
+		{
+			if (argv[1] != NULL && argv[1] != (std::string)"--set")
+			{
+				output = argv[1];
+				--argc; ++argv;
+				--argc; ++argv;
+			}
+			else --argc; ++argv;
+		}
+		else if (argv[0] == (std::string)"--set")
+		{
+			if (argv[1] != NULL)
+			{
+				settings = argv[1];
+				--argc; ++argv;
+				--argc; ++argv;
+			}
+			else --argc; ++argv;
+		}
+		else
+		{
+			--argc; ++argv;
+		}
+	}
+}
+
+Simparam IO::readInputfile()
 {
   //Store the input parameters.
-	std::ifstream file (filename, std::ios::in);// | std::ios::binary);
+	std::ifstream file (settings, std::ios::in);// | std::ios::binary);
 
 	if(! file.is_open() ) 
-		std::cerr << "ERROR: could not open file \"" << filename << "\"" << "\"" << std::endl;
+		std::cerr << "ERROR: could not open file \"" << settings << "\"" << "\"" << std::endl;
 
 	std::stringstream buffer;
 	buffer << file.rdbuf();
@@ -45,121 +93,123 @@ IO::readInputfile (const char *filename)
 	if(foundat != std::string::npos)
 		simparam.xLength = ::strtod(&buffer.str()[foundat+8], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'xLength' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'xLength' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("yLength=");
 	if(foundat != std::string::npos)
 		simparam.yLength = ::strtod(&buffer.str()[foundat+8], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'yLength' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'yLength' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("iMax=");
 	if(foundat != std::string::npos)
 		simparam.iMax = ::strtol(&buffer.str()[foundat+5], 0, 10);
 	else
-		std::cerr << "ERROR: could not find parameter 'iMax' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'iMax' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("jMax=");
 	if(foundat != std::string::npos)
 		simparam.jMax = ::strtol(&buffer.str()[foundat+5], 0, 10);
 	else
-		std::cerr << "ERROR: could not find parameter 'jMax' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'jMax' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("tEnd=");
 	if(foundat != std::string::npos)
 		simparam.tEnd = ::strtod(&buffer.str()[foundat+5], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'tEnd' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'tEnd' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("deltaT=");
 	if(foundat != std::string::npos)
 		simparam.deltaT = ::strtod(&buffer.str()[foundat+7], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'deltaT' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'deltaT' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("tau=");
 	if(foundat != std::string::npos)
 		simparam.tau = ::strtod(&buffer.str()[foundat+4], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'tau' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'tau' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("deltaVec=");
 	if(foundat != std::string::npos)
 		simparam.deltaVec = ::strtod(&buffer.str()[foundat+9], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'deltaVec' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'deltaVec' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("iterMax=");
 	if(foundat != std::string::npos)
 		simparam.iterMax = ::strtol(&buffer.str()[foundat+8], 0, 10);
 	else
-		std::cerr << "ERROR: could not find parameter 'iterMax' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'iterMax' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("eps=");
 	if(foundat != std::string::npos)
 		simparam.eps = ::strtod(&buffer.str()[foundat+4], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'tau' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'tau' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("omg=");
 	if(foundat != std::string::npos)
 		simparam.omg = ::strtod(&buffer.str()[foundat+4], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'omg' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'omg' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("alpha=");
 	if(foundat != std::string::npos)
 		simparam.alpha = ::strtod(&buffer.str()[foundat+6], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'alpha' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'alpha' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("re=");
 	if(foundat != std::string::npos)
 		simparam.re = ::strtod(&buffer.str()[foundat+3], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 're' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 're' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("gx=");
 	if(foundat != std::string::npos)
 		simparam.gx = ::strtod(&buffer.str()[foundat+3], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'gx' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'gx' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("gy=");
 	if(foundat != std::string::npos)
 		simparam.gy = ::strtod(&buffer.str()[foundat+3], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'gy' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'gy' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("ui=");
 	if(foundat != std::string::npos)
 		simparam.ui = ::strtod(&buffer.str()[foundat+3], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'ui' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'ui' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("vi=");
 	if(foundat != std::string::npos)
 		simparam.vi = ::strtod(&buffer.str()[foundat+3], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'vi' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'vi' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("pi=");
 	if(foundat != std::string::npos)
 		simparam.pi = ::strtod(&buffer.str()[foundat+3], 0);
 	else
-		std::cerr << "ERROR: could not find parameter 'pi' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'pi' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("xProcs=");
 	if (foundat != std::string::npos)
 		simparam.xProcs = ::strtol(&buffer.str()[foundat + 7], 0, 10);
 	else
-		std::cerr << "ERROR: could not find parameter 'xProcs' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'xProcs' in file \"" << settings << "\"" << std::endl;
 
 	foundat = buffer.str().find("yProcs=");
 	if (foundat != std::string::npos)
 		simparam.yProcs = ::strtol(&buffer.str()[foundat + 7], 0, 10);
 	else
-		std::cerr << "ERROR: could not find parameter 'yProcs' in file \"" << filename << "\"" << std::endl;
+		std::cerr << "ERROR: could not find parameter 'yProcs' in file \"" << settings << "\"" << std::endl;
+	
+	return simparam;
 }
 
 void 

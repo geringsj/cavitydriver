@@ -93,5 +93,29 @@ struct Point
 };
 typedef Point Delta;
 
+//! Struct that holds the simulation parameters.
+struct Simparam 
+{
+	Real xLength;
+	Real yLength;
+	int iMax;
+	int jMax;
+	Real tEnd;
+	Real deltaT;
+	Real tau;
+	Real deltaVec;
+	int iterMax;
+	Real eps;
+	Real omg;
+	Real alpha;
+	Real re;
+	Real gx;
+	Real gy;
+	Real ui;
+	Real vi;
+	Real pi;
+	int xProcs;
+	int yProcs;
+};
 
 #endif

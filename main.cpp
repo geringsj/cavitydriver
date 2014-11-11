@@ -2,66 +2,7 @@
 #include "src/Domain.hpp"
 #include "src/Computation.hpp"
 #include "src/Solver.hpp"
-
-// default values for the output directory and the settings file
-// TODO: move to IO
-const char *output = "out";
-const char *settings = "inputvals";
-
-/**
- * Print the help text in order to show what
- * arguments can be processed.
- */
-void dieSynopsis() {
-	std::cerr << "Synopsis: IO "
-		<< "--out \"output directory\" --set \"path to the settings file\" ";
-	exit(-1);
-	// TODO: move to IO
-}
-
-/**
- * Parse the input arguments. If there are no arguments
- * the default values are used.
- * @param the length of the input
- * @param the arguments
- */
-void parseArguments(int argc, char** argv)
-{
-	/* TODO: this thing is buggy. 
-	 * example: start main with "-l" option
-	 * => infinite loop
-	 *
-	 * fix this and put it in a nice place in IO
-	 */
-	--argc; ++argv; // We don't care about program name;
-	while (argc > 0 && argv[0][0] == '-')
-	{
-		if (argv[0] == (std::string) "--help" || argv[0] == (std::string) "-h")
-		{
-			dieSynopsis();
-		}
-		else if (argv[0] == (std::string)"--out")
-		{
-			if (argv[1] != NULL && argv[1] != (std::string)"--set")
-			{
-				output = argv[1];
-				--argc; ++argv;
-				--argc; ++argv;
-			}
-			else --argc; ++argv;
-		}
-		else if (argv[0] == (std::string)"--set")
-		{
-			if (argv[1] != NULL)
-			{
-				settings = argv[1];
-				--argc; ++argv;
-				--argc; ++argv;
-			}
-			else --argc; ++argv;
-		}
-	}
-}
+#include "src/Debug.hpp"
 
 Real u(Index index, GridFunction& gf, Dimension dim, IO& io)
 {
@@ -85,17 +26,16 @@ Real v(Index index, GridFunction& gf, Dimension dim, IO& io)
 
 int main(int argc, char** argv)
 {
-	parseArguments(argc, argv);
-	std::cout << settings << " " << output << std::endl;
-	IO io(settings, output);
+	IO io(argc, argv);
+	Simparam simparam = io.readInputfile();
 	io.writeSimParamToSTDOUT();
 
 	Dimension dim;
-	dim.i = io.getIMax();
-	dim.j = io.getJMax();
+	dim.i = simparam.iMax;
+	dim.j = simparam.jMax;
 	Delta delta;
-	delta.x = io.getXLength();
-	delta.y = io.getYLength();
+	delta.x = simparam.xLength;
+	delta.y = simparam.yLength;
 	Domain domain(dim, delta,
 		std::bind(u, std::placeholders::_1, std::placeholders::_2, 
 			std::placeholders::_3, std::ref(io)),
@@ -103,23 +43,23 @@ int main(int argc, char** argv)
 			std::placeholders::_3, std::ref(io)),
 		[](Index i, GridFunction& gf, Dimension dim)
 			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
-		[&io](Index i, GridFunction& gf, Dimension dim)
-			{return io.getPi() + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
+		[&simparam](Index i, GridFunction& gf, Dimension dim)
+			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
 
 	/* main loop */
 	/* TODO:
 	 * Calculate omega for grid dimension
 	 */
-	Real t = 0.0, dt=io.getDeltaT() , res;
+	Real t = 0.0, dt = simparam.deltaT, res;
 	int it, step=0;
-	while(t < io.getTEnd())
+	while (t < simparam.tEnd)
 	{
-		dt = Computation::computeTimestep(domain, io.getTau(), io.getRe());
+		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		t += dt;
-		std::cout << "dt: " << dt << " , t/tmax: " << t / io.getTEnd() << std::endl;
+		std::cout << "dt: " << dt << " , t/tmax: " << t / simparam.tEnd << std::endl;
 
 		domain.setVelocitiesBoundaries();
-		Computation::computeMomentumEquationsFGH(domain, dt, io.getRe());
+		Computation::computeMomentumEquationsFGH(domain, dt, simparam.re);
 
 		domain.setPreliminaryVelocitiesBoundaries();
 		domain.setPressureBoundaries();
@@ -134,9 +74,9 @@ int main(int argc, char** argv)
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
 			Solver::SORCycle(
 					domain.p(), domain.rhs(), delta, 
-					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), io.getOmg());
+					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
 			it++;
-		} while (it < io.getIterMax() && res > io.getEps());
+		} while (it < simparam.iterMax && res > simparam.eps);
 
 		Computation::computeNewVelocities(domain, dt);
 		domain.setVelocitiesBoundaries();

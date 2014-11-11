@@ -9,6 +9,8 @@
 
 #include "Structs.hpp"
 #include "GridFunction.hpp"
+#include "Debug.hpp"
+
 #include <functional>
 
 namespace Derivatives

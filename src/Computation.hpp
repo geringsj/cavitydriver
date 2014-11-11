@@ -9,6 +9,7 @@
 
 #include "Domain.hpp"
 #include "Stencil.hpp"
+#include "Debug.hpp"
 
 #include <cmath>
 

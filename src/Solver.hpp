@@ -9,6 +9,7 @@
 
 #include "GridFunction.hpp"
 #include "Structs.hpp"
+#include "Debug.hpp"
 
 #include <cmath>
 

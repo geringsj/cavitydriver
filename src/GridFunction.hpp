@@ -8,6 +8,7 @@
 #define GridFunction_hpp
 
 #include "Structs.hpp"
+#include "Debug.hpp"
 
 
 /* the gridfunction just does what it is told to do: maintain a grid 
