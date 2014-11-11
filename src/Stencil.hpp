@@ -9,17 +9,27 @@
 namespace Derivatives
 {
 	enum class Function {
-		U,
-		V,
-		W,
-		P
+		U = 1,
+		V = 2,
+		W = 3,
+		P = 4
 	};
 	enum class Direction {
-		xf, xb,
-		yf, yb,
-		zf, zb,
-		xx, yy, zz,
-		_x, _y, _z
+		xb=-1,
+		yb=-2,
+		zb=-3,
+
+		xf=1, 
+		yf=2, 
+		zf=3, 
+
+		xx=4, 
+		yy=5, 
+		zz=6,
+
+		_x=7, 
+		_y=8, 
+		_z=9
 	};
 
 	/* attention: we don't handle weird Function-Direction cases here, 
@@ -30,7 +40,7 @@ namespace Derivatives
 			GridFunction& gf, Delta d,
 			Direction df)
 	{
-		Real delta;
+		Real delta = 0.0;
 		int dimX=0, dimY=0, dimZ=0;
 		int add1=0, add2=0;
 		switch(df) /* set right dimension */
@@ -242,39 +252,7 @@ namespace Derivatives
 			Delta d, 
 			int df)
 	{
-		Direction dff = Direction::xf;
-		switch(df)
-		{
-			case -3:
-				dff = Direction::zb;
-				break;
-			case -2:
-				dff = Direction::yb;
-				break;
-			case -1:
-				dff = Direction::xb;
-				break;
-			case 3:
-				dff = Direction::zf;
-				break;
-			case 2:
-				dff = Direction::yf;
-				break;
-			case 1:
-				dff = Direction::xf;
-				break;
-			case 6:
-				dff = Direction::zz;
-				break;
-			case 5:
-				dff = Direction::yy;
-				break;
-			case 4:
-				dff = Direction::xx;
-				break;
-			default:
-				break;
-		};
+		Direction dff = static_cast<Derivatives::Direction>(df);
 		return Derivatives::getDerivative(gf, d, dff);
 	}
 
@@ -300,46 +278,9 @@ namespace Derivatives
 			Delta d, 
 			int f1, int f2, int df)
 	{
-		Function ff1 = Derivatives::Function::U;
-		Function ff2 = Derivatives::Function::U;
-		Direction dff = Derivatives::Direction::_x;
-
-		switch(f1)
-		{
-			case 1:
-				ff1 = Function::U;
-				break;
-			case 2:
-				ff1 = Function::V;
-				break;
-			case 3:
-				ff1 = Function::W;
-				break;
-		}
-		switch(f2)
-		{
-			case 1:
-				ff2 = Function::U;
-				break;
-			case 2:
-				ff2 = Function::V;
-				break;
-			case 3:
-				ff2 = Function::W;
-				break;
-		}
-		switch(df)
-		{
-			case 1:
-				dff = Direction::_x;
-				break;
-			case 2:
-				dff = Direction::_y;
-				break;
-			case 3:
-				dff = Direction::_z;
-				break;
-		}
+		Function ff1 = static_cast<Derivatives::Function>(f1);
+		Function ff2 = static_cast<Derivatives::Function>(f2);
+		Direction dff = static_cast<Derivatives::Direction>(df);
 		return getDerivative(gf1, gf2, d, ff1, ff2, dff);
 	}
 

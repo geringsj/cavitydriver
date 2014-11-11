@@ -1,6 +1,6 @@
 
-#CXX=g++
-CXX=clang++
+CXX=g++
+#CXX=clang++
 CPPFLAGS=-Wall -g -Wextra -Isrc -std=c++11 
 #-Iexternal/include/
 LDFLAGS=
@@ -22,7 +22,7 @@ tests: build $(OBJECTS) $(TESTS_OBJ)
 run: all
 	$(MAIN_BIN)
 
-opt: CFLAGS += -O3 
+opt: CPPFLAGS += -O3 
 #-DNDEBUG
 opt: all
 

@@ -54,7 +54,7 @@ Domain::Domain(Dimension dimension, Point delta,
 		}
 	}
 	/* and boundaries */
-	this->setBoundaries();
+	this->setVelocitiesBoundaries();
 }
 
 Domain::~Domain()

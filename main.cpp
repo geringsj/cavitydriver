@@ -1,4 +1,5 @@
 #include "src/IO.hpp"
+#include "src/Domain.hpp"
 
 // default values for the output directory and the settings file
 const char *output = "out";
@@ -59,6 +60,10 @@ int main(int argc, char** argv)
 	IO io(settings, output);
 	//IO io((char*)"inputvals", (char*)"out");
 	io.writeSimParamToSTDOUT();
+
+	//Dimension dim;
+	//Delta delta;
+	//Domain domain(dim,delta);
 
 	return 0;
 }

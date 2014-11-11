@@ -82,7 +82,7 @@ public:
 	Real gy(Point coord) { return m_infunc_gy(coord); }
 	Real gz(Point coord) { return m_infunc_gz(coord); }
 
-	void setBoundaries()
+	void setVelocitiesBoundaries()
 	{
 		for(uint d=0; d<DIMENSIONS; d++)
 		{
