@@ -16,7 +16,6 @@ IO::IO (const char *input, const char *output)
 {
   //Read the file with the simulations parameters
   settings = input;
-  readInputfile();
   this->output = (char*)output;
 }
 
@@ -84,6 +83,9 @@ Simparam IO::readInputfile()
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	std::size_t foundat;
+
+
+	Simparam simparam;
 
 	/* pretty much look for every option we support, one by one.
 	 * this way we also ignore substring that have nothing to do with 
@@ -210,54 +212,6 @@ Simparam IO::readInputfile()
 		std::cerr << "ERROR: could not find parameter 'yProcs' in file \"" << settings << "\"" << std::endl;
 	
 	return simparam;
-}
-
-void 
-IO::writeSimParamToSTDOUT()
-{
-	std::cout << "SimParam: " << std::endl <<
-		"xLength=" <<
-		simparam.xLength << std::endl <<
-		"yLength=" <<
-		simparam.yLength << std::endl <<
-		"iMax=" <<
-		simparam.iMax << std::endl <<
-		"jMax=" <<
-		simparam.jMax << std::endl <<
-		"tEnd=" <<
-		simparam.tEnd << std::endl <<
-		"deltaT=" <<
-		simparam.deltaT << std::endl <<
-		"tau=" <<
-		simparam.tau << std::endl <<
-		"deltaVec=" <<
-		simparam.deltaVec << std::endl <<
-		"iterMax=" <<
-		simparam.iterMax << std::endl <<
-		"eps=" <<
-		simparam.eps << std::endl <<
-		"omg=" <<
-		simparam.omg << std::endl <<
-		"alpha=" <<
-		simparam.alpha << std::endl <<
-		"re=" <<
-		simparam.re << std::endl <<
-		"gx=" <<
-		simparam.gx << std::endl <<
-		"gy=" <<
-		simparam.gy << std::endl <<
-		"ui=" <<
-		simparam.ui << std::endl <<
-		"vi=" <<
-		simparam.vi << std::endl <<
-		"pi=" <<
-		simparam.pi << std::endl ;
-		/* TODO remove comment when implementing MPI stuff */
-		// <<
-		// "xProcs=" <<
-		// simparam.xProcs << std::endl <<
-		// "yProcs=" <<
-		// simparam.yProcs << std::endl;
 }
 
 

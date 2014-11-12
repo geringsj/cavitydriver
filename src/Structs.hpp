@@ -94,6 +94,7 @@ struct Point
 typedef Point Delta;
 
 //! Struct that holds the simulation parameters.
+#include <iostream>
 struct Simparam 
 {
 	Real xLength;
@@ -116,6 +117,55 @@ struct Simparam
 	Real pi;
 	int xProcs;
 	int yProcs;
+	/**
+	* @brief Write the current state of the simulation parameters to stdout.
+	*/
+	void writeSimParamToSTDOUT()
+	{
+		std::cout << "SimParam: " << std::endl <<
+			"xLength=" <<
+			xLength << std::endl <<
+			"yLength=" <<
+			yLength << std::endl <<
+			"iMax=" <<
+			iMax << std::endl <<
+			"jMax=" <<
+			jMax << std::endl <<
+			"tEnd=" <<
+			tEnd << std::endl <<
+			"deltaT=" <<
+			deltaT << std::endl <<
+			"tau=" <<
+			tau << std::endl <<
+			"deltaVec=" <<
+			deltaVec << std::endl <<
+			"iterMax=" <<
+			iterMax << std::endl <<
+			"eps=" <<
+			eps << std::endl <<
+			"omg=" <<
+			omg << std::endl <<
+			"alpha=" <<
+			alpha << std::endl <<
+			"re=" <<
+			re << std::endl <<
+			"gx=" <<
+			gx << std::endl <<
+			"gy=" <<
+			gy << std::endl <<
+			"ui=" <<
+			ui << std::endl <<
+			"vi=" <<
+			vi << std::endl <<
+			"pi=" <<
+			pi << std::endl;
+		/* TODO remove comment when implementing MPI stuff */
+		// <<
+		// "xProcs=" <<
+		// xProcs << std::endl <<
+		// "yProcs=" <<
+		// yProcs << std::endl;
+	}
 };
 
 #endif

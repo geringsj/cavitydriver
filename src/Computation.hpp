@@ -24,7 +24,6 @@ Real computeTimestep(
 
 	uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
 	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
-
 	result = std::fmin(
 			domain.getDelta().x*domain.getDelta().x *
 			domain.getDelta().y*domain.getDelta().y *Re

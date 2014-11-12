@@ -49,40 +49,12 @@ public:
 		     GridFunction & u, GridFunction & v,
 		     GridFunction & p, const Point & delta, int step);
 
-
-  /**
-	* @brief Write the current state of the simulation parameters to stdout.
-	*/
-  void writeSimParamToSTDOUT();
-
-  Real getXLength() const { return simparam.xLength; };
-  Real getYLength() const { return simparam.yLength; };
-  int getIMax() const { return simparam.iMax; };
-  int getJMax() const { return simparam.jMax; };
-  Real getTEnd() const { return simparam.tEnd; };
-  Real getDeltaT() const { return simparam.deltaT; };
-  Real getTau() const { return simparam.tau; };
-  Real getDeltaVec() const { return simparam.deltaVec; };
-  int getIterMax() const { return simparam.iterMax; };
-  Real getEps() const { return simparam.eps; };
-  Real getOmg() const { return simparam.omg; };
-  Real getAlpha() const { return simparam.alpha; };
-  Real getRe() const { return simparam.re; };
-  Real getGx() const { return simparam.gx; };
-  Real getGy() const { return simparam.gy; };
-  Real getUi() const { return simparam.ui; };
-  Real getVi() const { return simparam.vi; };
-  Real getPi() const { return simparam.pi; };
-  int getXProcs() const { return simparam.xProcs; };
-  int getYProcs() const { return simparam.yProcs; };
-
   /*!
   * Methods reads the simulation parameters from the specified input file.
   */
   Simparam readInputfile();
 
 private:
-  Simparam simparam;
 
   // default values for the output directory and the settings file
   const char *output = "out";

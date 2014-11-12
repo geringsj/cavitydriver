@@ -4,9 +4,9 @@
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
 
-Real u(Index index, GridFunction& gf, Dimension dim, IO& io)
+Real u(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
 {
-	Real value = io.getUi();
+	Real value = simparam.ui;
 	if (index.i == 0) value = 0.0;
 	if (index.i == dim.i) value = 0.0;
 	if (index.j == 0) value = -gf(index.i, index.j + 1);
@@ -14,9 +14,9 @@ Real u(Index index, GridFunction& gf, Dimension dim, IO& io)
 	return value;
 }
 
-Real v(Index index, GridFunction& gf, Dimension dim, IO& io)
+Real v(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
 {
-	Real value = io.getVi();
+	Real value = simparam.vi;
 	if (index.i == 0) value = -gf(index.i+1, index.j);
 	if (index.i == dim.i) value = -gf(index.i-1, index.j);
 	if (index.j == 0) value = 0.0;
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 {
 	IO io(argc, argv);
 	Simparam simparam = io.readInputfile();
-	io.writeSimParamToSTDOUT();
+	simparam.writeSimParamToSTDOUT();
 
 	Dimension dim;
 	dim.i = simparam.iMax;
@@ -38,9 +38,9 @@ int main(int argc, char** argv)
 	delta.y = simparam.yLength;
 	Domain domain(dim, delta,
 		std::bind(u, std::placeholders::_1, std::placeholders::_2, 
-			std::placeholders::_3, std::ref(io)),
+			std::placeholders::_3, std::ref(simparam)),
 		std::bind(v, std::placeholders::_1, std::placeholders::_2, 
-			std::placeholders::_3, std::ref(io)),
+			std::placeholders::_3, std::ref(simparam)),
 		[](Index i, GridFunction& gf, Dimension dim)
 			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
 		[&simparam](Index i, GridFunction& gf, Dimension dim)
@@ -54,10 +54,6 @@ int main(int argc, char** argv)
 	int it, step=0;
 	while (t < simparam.tEnd)
 	{
-		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
-		t += dt;
-		std::cout << "dt: " << dt << " , t/tmax: " << t / simparam.tEnd << std::endl;
-
 		domain.setVelocitiesBoundaries();
 		Computation::computeMomentumEquationsFGH(domain, dt, simparam.re);
 
@@ -84,6 +80,9 @@ int main(int argc, char** argv)
 				domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 
 		step++;
+		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
+		t += dt;
+		std::cout << "dt: " << dt << " , t/tmax: " << t / simparam.tEnd << std::endl;
 	}
 
 	return 0;
