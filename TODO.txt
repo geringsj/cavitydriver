@@ -28,9 +28,8 @@ what needs to be done in each file:
 	* (??) move ParametersStruct from IO to Structs and return such a struct when
 	  reading 'inputvals' [check]
 	* compute omega for SOR cycle by hand
-	  If we use the 2/sin(pi * h) formula we can get a omega with value 2.
-          If h = 1. this will eventually srew up everything!
-	  To avoid this we multiply the outcome with 0.9, not an ideal solution.
+	  Used the Method described in the paper (see comment), but the solver became
+	  unstable with the calculated omage. So reverted to the given one.
 	* rethink boundary reset: when do we need to do this?
 
 -	Computation.hpp
@@ -58,8 +57,9 @@ what needs to be done in each file:
 	  get{Dimension,MaxValue} ? we don't use the other functions, they are
 	  old-fashioned anyway 
 	  (except maybe "setGridFunctionToConstantValue(Real value)" )
+	  [check]
 	* have a look at the 3D operator()(int i, int j, int k) whether the memory
-	  access calculation is right
+	  access calculation is right [check]
 	** considering weird WEIRD BUG Computation.hpp (see above): remove one of the
 	two getMaxValue functions when we know what to do with the timestep
 	computation. (i would suggest taking Index begin and Index end from outside,

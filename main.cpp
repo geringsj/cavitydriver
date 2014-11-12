@@ -50,13 +50,11 @@ int main(int argc, char** argv)
 			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
 
 	/* main loop */
-	/* TODO:
-	 * Calculate omega for grid dimension
-	 */
-	Real t = 0.0, dt = simparam.deltaT, res, h;
-	h = std::fmin(simparam.xLength, simparam.yLength);
-	if (simparam.xLength == simparam.yLength) simparam.omg = 2.0 /(1.0 + sin(0.9*M_PI/(h)));
-	debug("omega: %f", simparam.omg);
+	Real t = 0.0, dt = simparam.deltaT, res;
+	//http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
+	//Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
+	//if (simparam.xLength == simparam.yLength) simparam.omg = 2.0 /(1.0 + sin(M_PI*(h)));
+	//debug("omega: %f", simparam.omg);
 	int it, step=0;
 	while (t < simparam.tEnd)
 	{

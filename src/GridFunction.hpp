@@ -17,10 +17,8 @@
  * and give us indexed access to it in 2 or 3 dimensions
  * be it using operator()(int i, int j, int k) or some sort of
  * operator[](Index index) */
-/* TODO: when i think of it, almost all of the following {set,get}GridFunction()
- * methods are pretty useless, we really just care for indexed memory access,
- * getting the MAX value of the grid and maybe the dimensions
- */
+
+#define forall(F,S,B,E) for(int F=B[0];F<=E[0];F++)for(int S=B[1];S<=E[1];S++)
 
 class GridFunction
 {
@@ -67,34 +65,6 @@ public:
 	}
 
 	Index getGridDimension() const;
-	void setGridFunction(
-		const Index begin, const Index end, 
-		const Real value);
-	void scaleGridFunction(
-		const Index begin, const Index end, 
-		const Real scale);
-	void divideGridFunction(
-		const Index begin, const Index end, 
-		const Real factor);
-	void setGridFunction(
-		const Index begin, const Index end, 
-		const Real factor, 
-		const GridFunction sourcegridfunction);
-	void setGridFunction(
-		const Index begin, const Index end, 
-		const Real factor, 
-		const GridFunction sourcegridfunction, 
-		const Index offset);
-	void setGridFunction(
-		const Index begin, const Index end, 
-		const Real factor, 
-		const GridFunction sourcegridfunction, 
-		const Index offset, 
-		const Real constant);
-	void addToGridFunction (
-		const Index begin, const Index end, 
-		const Real factor, 
-		const GridFunction sourcegridfunction);
 	Real getMaxValueGridFunction(
 		const Index begin, const Index end);
 	Real getMaxValueGridFunction();
