@@ -115,6 +115,8 @@ namespace Derivatives
 				return [](int i, int j) { return i*j*0.0; };
 				break;
 		}
+		//debug(" -- returning derivative operator: (gf( i+%i , j+%i) - gf( i+%i, j+%i)) / %f",add1*dimX , add1*dimY,add2*dimX, add2*dimY,delta);
+
 		return [&gf, delta, add1, add2, dimX, dimY, dimZ](int i, int j)
 			{
 				return (gf( i+ add1*dimX , j + add1*dimY) - gf( i + add2*dimX, j + add2*dimY)) / delta;
@@ -151,6 +153,7 @@ namespace Derivatives
 			default:
 				break;
 		}
+		//debug(" -- returning derivative operator: (gf( i+%i , j+%i) - 2.0*gf( i+%i, j+%i) + gf( i+%i, j+%i)) / %f", add1*dimX , add1*dimY, add2*dimX, add2*dimY, add3*dimX, add3*dimY , (delta*delta) );
 		return [&gf, delta, add1, add2, add3, dimX, dimY, dimZ](int i, int j)
 			{
 				return 
@@ -267,6 +270,7 @@ namespace Derivatives
 				return genFdd(gf, d, df);
 				break;
 			default:
+				log_err("returning ZERO derivative operator");
 				return [](int i, int j){ return i*j*0.0; };
 				break;
 		};

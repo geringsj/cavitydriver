@@ -22,8 +22,8 @@ Real computeTimestep(
 	Real result;
 	Real uMax, vMax;
 
-	uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
-	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
+	uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();
+	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();
 
 	result = std::fmin(
 			domain.getDelta().x*domain.getDelta().x *
@@ -115,7 +115,7 @@ void computeRighthandSide(
 		for(int j=domain.getBeginInnerDomains()[1]; 
 				j<= domain.getEndInnerDomain()[3][1]; j++)
 	{
-		domain.p()(i,j) = ( Fxb(i,j) + Gyb(i,j) )/deltaT;
+		domain.rhs()(i,j) = ( Fxb(i,j) + Gyb(i,j) )/deltaT;
 	}
 }
 

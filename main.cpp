@@ -4,6 +4,20 @@
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
 
+#define FORALL(I,J,SI,EI) 
+void printGrid(GridFunction& gf, Index SI, Index EI)
+{
+	for(int I=EI[1]+1; I>=SI[1]-1; I--)
+	{
+		for(int J=SI[0]-1; J<=EI[0]+1; J++)
+		{
+			std::cout << gf(J,I) << "  ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
+
 Real u(Index index, GridFunction& gf, Dimension dim, IO& io)
 {
 	Real value = io.getUi();
@@ -52,16 +66,40 @@ int main(int argc, char** argv)
 	 */
 	Real t = 0.0, dt = simparam.deltaT, res;
 	int it, step=0;
+	io.writeVTKFile(
+			domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
+	step++;
 	while (t < simparam.tEnd)
 	{
+		log_info("Round %i, here are the Grids (with borders): ", step);
+		log_info("U:");
+		printGrid(domain.u(),
+				domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
+		log_info("V:");
+		printGrid(domain.v(),
+				domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
+		log_info("P:");
+		printGrid(domain.p(),
+				domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
+		log_info("F:");
+		printGrid(domain.F(),
+				domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
+		log_info("G:");
+		printGrid(domain.G(),
+				domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
+		log_info("RHS:");
+		printGrid(domain.rhs(),
+				domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
+		std::cin.get();
+
 		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		t += dt;
 		std::cout << "dt: " << dt << " , t/tmax: " << t / simparam.tEnd << std::endl;
 
 		domain.setVelocitiesBoundaries();
 		Computation::computeMomentumEquationsFGH(domain, dt, simparam.re);
-
 		domain.setPreliminaryVelocitiesBoundaries();
+
 		domain.setPressureBoundaries();
 
 		Computation::computeRighthandSide(domain, dt);
@@ -80,6 +118,7 @@ int main(int argc, char** argv)
 
 		Computation::computeNewVelocities(domain, dt);
 		domain.setVelocitiesBoundaries();
+		domain.setPressureBoundaries();
 		io.writeVTKFile(
 				domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 

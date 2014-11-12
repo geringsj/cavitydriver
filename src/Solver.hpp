@@ -42,7 +42,8 @@ namespace Solver
 				numerator = numerator + 
 					pow(
 						(dxx_numerator / dxx_denominator + 
-						 dyy_numerator / dyy_denominator - rhs(i,j)
+						 dyy_numerator / dyy_denominator 
+						 - rhs(i,j)
 						 )
 					,2.0);
 			}
@@ -72,8 +73,10 @@ namespace Solver
 				dxx_numerator = p(i - 1,j) + p(i + 1,j);
 				dyy_numerator = p(i,j - 1) + p(i,j + 1);
 
-				new_value = (1. - omega) * old_value + 
-					omega * ((dxx * dyy)/(2.0 * (dxx + dyy))) * 
+				new_value = 
+					//(1. - omega) * old_value + 
+					//omega * 
+						((dxx * dyy)/(2.0 * (dxx + dyy))) * 
 						( (dxx_numerator/dxx) + (dyy_numerator/dyy) - rhs(i,j) );
 
 				p(i,j) = new_value;
