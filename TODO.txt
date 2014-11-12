@@ -4,7 +4,8 @@ hokay, so heres the thing:
 -	evaluate simulation output in paraview (looks weird atm)
 
 -	logging / debug messages system for nice, consistent output 
-	("std::cout << "is NOT nice)
+	("std::cout << "is NOT nice) [check]
+	http://c.learncodethehardway.org/book/ex20.html
 
 some general ideas:
 -	write doxygen compatible documentation:
@@ -22,11 +23,14 @@ some general ideas:
 
 what needs to be done in each file:
 -	main.cpp:
-	* fix command line parameters parser
-	* move command line parameters parser in IO
+	* fix command line parameters parser [check]
+	* move command line parameters parser in IO [check]
 	* (??) move ParametersStruct from IO to Structs and return such a struct when
-	  reading 'inputvals'
+	  reading 'inputvals' [check]
 	* compute omega for SOR cycle by hand
+	  If we use the 2/sin(pi * h) formula we can get a omega with value 2.
+          If h = 1. this will eventually srew up everything!
+	  To avoid this we multiply the outcome with 0.9, not an ideal solution.
 	* rethink boundary reset: when do we need to do this?
 
 -	Computation.hpp

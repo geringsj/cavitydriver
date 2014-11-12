@@ -4,6 +4,9 @@
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 Real u(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
 {
 	Real value = simparam.ui;
@@ -50,10 +53,16 @@ int main(int argc, char** argv)
 	/* TODO:
 	 * Calculate omega for grid dimension
 	 */
-	Real t = 0.0, dt = simparam.deltaT, res;
+	Real t = 0.0, dt = simparam.deltaT, res, h;
+	h = std::fmin(simparam.xLength, simparam.yLength);
+	if (simparam.xLength == simparam.yLength) simparam.omg = 2.0 /(1.0 + sin(0.9*M_PI/(h)));
+	debug("omega: %f", simparam.omg);
 	int it, step=0;
 	while (t < simparam.tEnd)
 	{
+		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
+		t += dt;
+		debug("dt: %f t/tmx: %f", dt, t / simparam.tEnd);
 		domain.setVelocitiesBoundaries();
 		Computation::computeMomentumEquationsFGH(domain, dt, simparam.re);
 
@@ -80,9 +89,6 @@ int main(int argc, char** argv)
 				domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 
 		step++;
-		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
-		t += dt;
-		std::cout << "dt: " << dt << " , t/tmax: " << t / simparam.tEnd << std::endl;
 	}
 
 	return 0;

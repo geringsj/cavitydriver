@@ -20,7 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\Computation.hpp" />
+    <ClInclude Include="..\src\Debug.hpp" />
     <ClInclude Include="..\src\Domain.hpp" />
+    <ClInclude Include="..\src\GridFunction.hpp" />
     <ClInclude Include="..\src\IO.hpp" />
     <ClInclude Include="..\src\Solver.hpp" />
     <ClInclude Include="..\src\Stencil.hpp" />
