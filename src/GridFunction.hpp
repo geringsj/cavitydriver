@@ -33,10 +33,10 @@ public:
 	GridFunction(const Index griddimension);
 	virtual ~GridFunction();
 
-	inline Real& operator[](Dimension d){
+	inline Real& operator[](Index d){
 		return this->operator()(d.i, d.j, d.k);
 	}
-	inline Real operator[](Dimension d) const {
+	inline Real operator[](Index d) const {
 		return this->operator()(d.i, d.j, d.k);
 	}
 	inline Real& operator[](int i){

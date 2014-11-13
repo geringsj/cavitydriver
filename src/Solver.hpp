@@ -8,7 +8,7 @@
 #define Solver_hpp
 
 #include "GridFunction.hpp"
-#include "Structs.hpp"
+// #include "Structs.hpp"
 #include "Debug.hpp"
 
 #include <cmath>
@@ -29,15 +29,13 @@ namespace Solver
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
 
-		for (int i = inner_begin.i; i <= inner_end.i; i++)
+		forall(i,j,inner_begin,inner_end)
 		{
-			for (int j = inner_begin.j; j <= inner_end.j; j++)
-			{
-				Real pxx = (p(i+1,j) - 2.0*p(i,j) + p(i-1,j)) / dxx;
-				Real pyy = (p(i,j+1) - 2.0*p(i,j) + p(i,j-1)) / dyy;
-				numerator = numerator + pow(pxx + pyy - rhs(i,j) ,2.0);
-			}
+			Real pxx = (p(i+1,j) - 2.0*p(i,j) + p(i-1,j)) / dxx;
+			Real pyy = (p(i,j+1) - 2.0*p(i,j) + p(i,j-1)) / dyy;
+			numerator = numerator + pow(pxx + pyy - rhs(i,j) ,2.0);
 		}
+
 		Real res = sqrt(numerator / denominator);
 		return res;
 	}
@@ -51,21 +49,18 @@ namespace Solver
 	{
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
-		for (int i = inner_begin.i; i <= inner_end.i; i++)
+		forall(i,j,inner_begin,inner_end)
 		{
-			for (int j = inner_begin.j; j <= inner_end.j; j++)
-			{
-				Real old_value = p(i,j);
-				Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
-				Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
+			Real old_value = p(i,j);
+			Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
+			Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
 
-				Real new_value = 
-					(1. - omega) * old_value 
-					+ 
-					omega * ((dxx*dyy)/(2.0*(dxx+dyy))) * ( pxx + pyy - rhs(i,j) );
+			Real new_value = 
+				(1. - omega) * old_value 
+				+ 
+				omega * ((dxx*dyy)/(2.0*(dxx+dyy))) * ( pxx + pyy - rhs(i,j) );
 
-				p(i,j) = new_value;
-			}
+			p(i,j) = new_value;
 		}
 	}
 	

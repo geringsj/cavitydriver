@@ -48,9 +48,10 @@ Domain::Domain(Dimension dimension, Point delta,
 	 * evaluated on the border. somebody should document this demand. */
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
-		for(int i=m_inner_begin[0]; i<=m_inner_end[d][0]; i++)
-			for(int j=m_inner_begin[1]; j<=m_inner_end[d][1]; j++)
+		//for(int i=m_inner_begin[0]; i<=m_inner_end[d][0]; i++)
+		//	for(int j=m_inner_begin[1]; j<=m_inner_end[d][1]; j++)
 				//for(int k=m_inner_begin[2]; k<=m_inner_end[d][2]; k++)
+		forall(i,j,m_inner_begin,m_inner_end[d])
 		{
 			Dimension current(i, j);//,k);
 			if(d==0)
@@ -64,12 +65,14 @@ Domain::Domain(Dimension dimension, Point delta,
 	/* init pressure and rhs 
 	 * we don't use the pressure init function in_p after this,
 	 * maybe kick it and just init with zero? would the script be against us? */
-	for (int i = m_inner_begin[0]; i <= m_inner_end[3][0]; i++)
-		for (int j = m_inner_begin[1]; j <= m_inner_end[3][1]; j++)
-			//for (int k = m_inner_begin[2]; k <= m_inner_end[3][2]; k++)
+	//for (int i = m_inner_begin[0]; i <= m_inner_end[3][0]; i++)
+	//	for (int j = m_inner_begin[1]; j <= m_inner_end[3][1]; j++)
+	//		//for (int k = m_inner_begin[2]; k <= m_inner_end[3][2]; k++)
+	forall(i,j,m_inner_begin,m_inner_end[3])
 	{
-				p()(i,j) = in_p(Index(i, j), p(), Dimension(dimension.i + 2, dimension.j + 2, dimension.k + 2));
-				rhs()(i,j) = 0.0;
+		p()(i,j) = in_p(Index(i,j), p(), 
+				Dimension(dimension.i+2, dimension.j+2, dimension.k+2));
+		rhs()(i,j) = 0.0;
 	}
 	/* and don't forget the boundaries */
 	this->setVelocitiesBoundaries();

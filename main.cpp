@@ -75,48 +75,38 @@ int main(int argc, char** argv)
 			domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 	step++;
 
-	int debugHard = 1;
+	int debugHard = 0;
 
 	while (t < simparam.tEnd)
 	{
-		if(debugHard)
-		{
+		if(debugHard){
 			log_info("Round %i, here are the Grids (with borders): ", step);
-			log_info("U:");
-			printGrid(domain.u(),
+			log_info("U:"); printGrid(domain.u(),
 					domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
-			log_info("V:");
-			printGrid(domain.v(),
+			log_info("V:"); printGrid(domain.v(),
 					domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
-			log_info("P:");
-			printGrid(domain.p(),
+			log_info("P:"); printGrid(domain.p(),
 					domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
-			log_info("F:");
-			printGrid(domain.F(),
+			log_info("F:"); printGrid(domain.F(),
 					domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
-			log_info("G:");
-			printGrid(domain.G(),
+			log_info("G:"); printGrid(domain.G(),
 					domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
-			log_info("RHS:");
-			printGrid(domain.rhs(),
+			log_info("RHS:"); printGrid(domain.rhs(),
 					domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
 			std::cin.get();
 		}
 
-		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
+		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
 		t += dt;
 		debug("dt: %f t/tmx: %f", dt, t / simparam.tEnd);
-		domain.setVelocitiesBoundaries();
+
 		Computation::computeMomentumEquationsFGH(domain, dt, simparam.re);
 		domain.setPreliminaryVelocitiesBoundaries();
 
-		domain.setPressureBoundaries();
-
-		Computation::computeRighthandSide(domain, dt);
-
-		it = 0;
+		Computation::computeRighthandSide(domain, dt); it = 0;
 		do
 		{
+			domain.setPressureBoundaries();
 			res = Solver::computeResidual(
 					domain.p(), domain.rhs(), delta, 
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
@@ -131,9 +121,7 @@ int main(int argc, char** argv)
 		domain.setPressureBoundaries();
 		io.writeVTKFile(
 				domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
-
 		step++;
 	}
-
 	return 0;
 }

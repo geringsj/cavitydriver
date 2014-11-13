@@ -85,8 +85,8 @@ public:
 	Dimension getEndInnerDomainP() {return m_inner_end[3]; }
 	Point getDelta() { return m_delta; }
 
-	Grid3D& getVeolcity() { return m_velocities; }
-	Grid3D& getPreliminaryVeolcity() { return m_preliminary_velocities_FGH; }
+	Grid3D& getVelocity() { return m_velocities; }
+	Grid3D& getPreliminaryVelocity() { return m_preliminary_velocities_FGH; }
 
 	GridFunction& p() { return m_p; }
 	GridFunction& u() { return m_velocities.m_u; }
@@ -104,39 +104,41 @@ public:
 		return gz(coord);
 	}
 
-
 	Real gx(Point coord) { return m_forcefunc_gx(coord); }
 	Real gy(Point coord) { return m_forcefunc_gy(coord); }
 	Real gz(Point coord) { return m_forcefunc_gz(coord); }
 
 	/* TODO: definitely move THIS and boundary functions to .cpp */
-#define LEFT(start,end)	for(int i = m_inner_begin[0]-1, j = start; j <= end; j++)
-#define RIGHT(start,end,d) for(int i = m_inner_end[d][0] + 1, j = start; j <= end; j++)
-#define TOP(start,end,d) for(int j = m_inner_end[d][1] + 1, i = start; i <= end; i++)
-#define BOTTOM(start,end) for(int j = m_inner_begin[1]-1, i = start; i <= end; i++)
+#define LEFT(start,end)	for(int i = start[0]-1, j = start[1]; j <= end[1]; j++)
+#define RIGHT(start,end) for(int i = end[0] + 1, j = start[1]; j <= end[1]; j++)
+#define TOP(start,end) for(int j = end[1] + 1, i = start[0]; i <= end[0]; i++)
+#define BOTTOM(start,end) for(int j = start[1]-1, i = start[0]; i <= end[0]; i++)
 
-#define VELOCITIESBOUNDARIES(i,j,current,d) \
-	current = Dimension(i, j);\
-	if (d == 0)\
-		u()(i, j)/*,k)*/ = m_borderfunc_u(current);\
-	if (d == 1)\
-		v()(i, j)/*,k)*/ = m_borderfunc_v(current);\
-	if (d == 2)\
-		w()(i, j)/*,k)*/ = m_borderfunc_w(current);
+#define VELOCITIESBOUNDARIES(i,j,d) do{\
+	;\
+	if(d == 0)\
+		u()(i, j)/*,k)*/ = m_borderfunc_u(Dimension(i,j));\
+	if(d == 1)\
+		v()(i, j)/*,k)*/ = m_borderfunc_v(Dimension(i,j));\
+	if(d == 2)\
+		w()(i, j)/*,k)*/ = m_borderfunc_w(Dimension(i,j));\
+}while(0)
 
-#define PRELIMINARYVELOCITIESBOUNDARIES(i,j,d) \
+#define PRELIMINARYVELOCITIESBOUNDARIES(i,j,d) do{\
 	if (d == 0)\
 		F()(i, j) = u()(i, j);\
 	if (d == 1)\
 		G()(i, j) = v()(i, j);\
 	if (d == 2)\
-		H()(i, j) = w()(i, j);
+		H()(i, j) = w()(i, j);\
+}while(0)
 
-#define PRESSUREBOUNDARIES(i,j) \
+#define PRESSUREBOUNDARIES(i,j) do{\
 	if (i == 0) p()(i, j) = p()(i + 1, j);\
 	if (i == m_dimension[0] + 1) p()(i, j) = p()(i - 1, j);\
 	if (j == m_dimension[1] + 1) p()(i, j) = p()(i, j - 1);\
-	if (j == 0) p()(i, j) = p()(i, j + 1);
+	if (j == 0) p()(i, j) = p()(i, j + 1);\
+}while(0)
 
 
 	void setVelocitiesBoundaries()
@@ -144,21 +146,21 @@ public:
 		Dimension current;
 		for(uint d=0; d<DIMENSIONS; d++)
 		{
-			LEFT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1)
+			LEFT(m_inner_begin, m_inner_end[d])
 			{
-				VELOCITIESBOUNDARIES(i, j, current, d);
+				VELOCITIESBOUNDARIES(i, j, d);
 			}
-			RIGHT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1, d) 
+			RIGHT(m_inner_begin, m_inner_end[d]) 
 			{
-				VELOCITIESBOUNDARIES(i, j, current, d);
+				VELOCITIESBOUNDARIES(i, j, d);
 			}
-			TOP(m_inner_begin[0] - 1, m_inner_end[d][0] + 1, d)
+			TOP(m_inner_begin, m_inner_end[d])
 			{
-				VELOCITIESBOUNDARIES(i, j, current, d);
+				VELOCITIESBOUNDARIES(i, j, d);
 			}
-			BOTTOM(m_inner_begin[0] - 1, m_inner_end[d][0] + 1)
+			BOTTOM(m_inner_begin, m_inner_end[d])
 			{
-				VELOCITIESBOUNDARIES(i, j, current, d);
+				VELOCITIESBOUNDARIES(i, j, d);
 			}
 		}
 	}
@@ -167,19 +169,19 @@ public:
 	{
 		for (uint d = 0; d<DIMENSIONS; d++)
 		{
-			LEFT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1)
+			LEFT(m_inner_begin, m_inner_end[d])
 			{
 				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
 			}
-			RIGHT(m_inner_begin[1] - 1, m_inner_end[d][1] + 1, d)
+			RIGHT(m_inner_begin, m_inner_end[d])
 			{
 				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
 			}
-			TOP(m_inner_begin[0] - 1, m_inner_end[d][0] + 1, d)
+			TOP(m_inner_begin, m_inner_end[d])
 			{
 				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
 			}
-			BOTTOM(m_inner_begin[0] - 1, m_inner_end[d][0] + 1)
+			BOTTOM(m_inner_begin, m_inner_end[d])
 			{
 				PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
 			}
@@ -188,19 +190,19 @@ public:
 
 	void setPressureBoundaries()
 	{
-		LEFT(m_inner_begin[1] - 1, m_dimension[1] + 1)
+		LEFT(m_inner_begin, m_dimension)
 		{
 			PRESSUREBOUNDARIES(i, j);
 		}
-		RIGHT(m_inner_begin[1] - 1, m_dimension[1] + 1, 3)
+		RIGHT(m_inner_begin, m_dimension)
 		{
 			PRESSUREBOUNDARIES(i, j);
 		}
-		TOP(m_inner_begin[0] - 1, m_dimension[0] + 1, 3)
+		TOP(m_inner_begin, m_dimension)
 		{
 			PRESSUREBOUNDARIES(i, j);
 		}
-		BOTTOM(m_inner_begin[0] - 1, m_dimension[0] + 1)
+		BOTTOM(m_inner_begin, m_dimension)
 		{
 			PRESSUREBOUNDARIES(i, j);
 		}

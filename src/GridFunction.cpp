@@ -46,8 +46,9 @@ Real GridFunction::getMaxValueGridFunction(
 
 Real GridFunction::getMaxValueGridFunction()
 {
-	Index begin; begin[0]=1; begin[1]=1;
-	Index end; 
+	/* ignore the boundaries */
+	Index begin, end; 
+	begin[0]=1; begin[1]=1;
 	end[0]=this->dimension[0]-1; end[1]=this->dimension[1]-1;
 	return getMaxValueGridFunction(begin,end);
 }
