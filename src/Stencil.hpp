@@ -91,6 +91,7 @@ namespace Derivatives
 				dimZ = 1;
 				break;
 			default:
+				log_err("dimension could not be assigned");
 				break;
 		}
 		switch(df) /* set right derivative */
@@ -112,6 +113,7 @@ namespace Derivatives
 				add2 = -1; /* index the right */
 				break;
 			default:
+				log_err("returning ZERO derivative operator");
 				return [](int i, int j) { return i*j*0.0; };
 				break;
 		}
@@ -151,6 +153,7 @@ namespace Derivatives
 				dimZ = 1;
 				break;
 			default:
+				log_err("dimension could not be assigned");
 				break;
 		}
 		//debug(" -- returning derivative operator: (gf( i+%i , j+%i) - 2.0*gf( i+%i, j+%i) + gf( i+%i, j+%i)) / %f", add1*dimX , add1*dimY, add2*dimX, add2*dimY, add3*dimX, add3*dimY , (delta*delta) );
@@ -184,6 +187,7 @@ namespace Derivatives
 				delta = d.z;
 				break;
 			default:
+				log_err("dimension could not be assigned");
 				break;
 		}
 		switch(f1)
@@ -204,6 +208,7 @@ namespace Derivatives
 				f1dimZ = 1;
 				break;
 			default:
+				log_err("function dimension could not be assigned");
 				break;
 		}
 		switch(f2)
@@ -224,6 +229,7 @@ namespace Derivatives
 				f2dimZ = 1;
 				break;
 			default:
+				log_err("function dimension could not be assigned");
 				break;
 		}
 		int add=+1, sub=-1;
@@ -297,6 +303,7 @@ namespace Derivatives
 				return genFG_d(gf1, gf2, d, f1, f2, df);
 				break;
 			default:
+				log_err("returning ZERO derivative operator");
 				return [](int i, int j){ return i*j*0.0; };
 				break;
 		}

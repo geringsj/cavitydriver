@@ -24,7 +24,7 @@ Real u(Index index, GridFunction& gf, Dimension dim, IO& io)
 	if (index.i == 0) value = 0.0;
 	if (index.i == dim.i) value = 0.0;
 	if (index.j == 0) value = -gf(index.i, index.j + 1);
-	if (index.j == dim.j) value = 2.0 - gf(index.i, index.j - 1);
+	if (index.j == dim.j) value = 2.0;// - gf(index.i, index.j - 1);
 	return value;
 }
 
@@ -69,28 +69,34 @@ int main(int argc, char** argv)
 	io.writeVTKFile(
 			domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 	step++;
+
+	int debugHard = 1;
+
 	while (t < simparam.tEnd)
 	{
-		log_info("Round %i, here are the Grids (with borders): ", step);
-		log_info("U:");
-		printGrid(domain.u(),
-				domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
-		log_info("V:");
-		printGrid(domain.v(),
-				domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
-		log_info("P:");
-		printGrid(domain.p(),
-				domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
-		log_info("F:");
-		printGrid(domain.F(),
-				domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
-		log_info("G:");
-		printGrid(domain.G(),
-				domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
-		log_info("RHS:");
-		printGrid(domain.rhs(),
-				domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
-		std::cin.get();
+		if(debugHard)
+		{
+			log_info("Round %i, here are the Grids (with borders): ", step);
+			log_info("U:");
+			printGrid(domain.u(),
+					domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
+			log_info("V:");
+			printGrid(domain.v(),
+					domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
+			log_info("P:");
+			printGrid(domain.p(),
+					domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
+			log_info("F:");
+			printGrid(domain.F(),
+					domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
+			log_info("G:");
+			printGrid(domain.G(),
+					domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
+			log_info("RHS:");
+			printGrid(domain.rhs(),
+					domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
+			std::cin.get();
+		}
 
 		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		t += dt;

@@ -19,22 +19,16 @@ Real computeTimestep(
 		Domain& domain,
 		const Real tau, const Real Re)
 {
-	Real result;
-	Real uMax, vMax;
+	Real uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();
+	Real vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();
 
-	uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();
-	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();
+	Real dxx = pow(domain.getDelta().x, 2.0);
+	Real dyy = pow(domain.getDelta().y, 2.0);
 
-	result = std::fmin(
-			domain.getDelta().x*domain.getDelta().x *
-			domain.getDelta().y*domain.getDelta().y *Re
-			/
-			(2.0*(domain.getDelta().x*domain.getDelta().x+domain.getDelta().y*domain.getDelta().y)),
-
-			std::fmin(
-				domain.getDelta().x/std::abs(uMax),
-				domain.getDelta().y/std::abs(vMax)
-				));
+	Real result = std::fmin(
+			(dxx * dyy * Re) / (2.0*(dxx+dyy)), std::fmin(
+			domain.getDelta().x / std::abs(uMax),
+			domain.getDelta().y / std::abs(vMax) ));
 
 	return tau * result; /* tau is some safety factor in (0,1] */
 }
@@ -89,8 +83,8 @@ void computeMomentumEquationsFGH(
 						Real(j)/domain.getEndInnerDomain()[d][1]);
 
 			domain.getPreliminaryVeolcity()[d](i, j) =
-				domain.getVeolcity()[d](i, j) + 
-				(deltaT/Re)*( Fxx(i,j) + Fyy(i,j) )
+				domain.getVeolcity()[d](i, j) 
+				+ (deltaT/Re)*( Fxx(i,j) + Fyy(i,j) )
 				- FF_df(i,j) - FG_dg(i,j)
 				+ domain.g(d,gpoint);
 		}
@@ -123,7 +117,6 @@ void computeNewVelocities(
 		Domain& domain,
 		const Real deltaT)
 {
-
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		auto Pdb = Derivatives::getDerivative(
