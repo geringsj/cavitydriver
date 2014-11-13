@@ -17,8 +17,8 @@ typedef double Real;
 
 struct Index
 {
-	Index() : i(0), j(0), k(1) {}
-	Index(int i, int j, int k = 1)
+	Index() : i(0), j(0), k(0) {}
+	Index(int i, int j, int k = 0)
 		: i(i), j(j), k(k) {} 
 
 	int i,j,k;
@@ -29,12 +29,16 @@ struct Index
 		{
 		case 0:
 			return i;
+			break;
 		case 1:
 			return j;
+			break;
 		case 2:
 			return k;
+			break;
 		default:
 			return i;
+			break;
 		}
 	}
 	int operator[](const uint index) const
@@ -43,12 +47,16 @@ struct Index
 		{
 		case 0:
 			return i;
+			break;
 		case 1:
 			return j;
+			break;
 		case 2:
 			return k;
+			break;
 		default:
 			return i;
+			break;
 		}
 	}
 };
@@ -68,12 +76,16 @@ struct Point
 		{
 		case 0:
 			return x;
+			break;
 		case 1:
 			return y;
+			break;
 		case 2:
 			return z;
+			break;
 		default:
 			return x;
+			break;
 		}
 	}
 	Real operator[](const uint index) const
@@ -82,16 +94,22 @@ struct Point
 		{
 		case 0:
 			return x;
+			break;
 		case 1:
 			return y;
+			break;
 		case 2:
 			return z;
+			break;
 		default:
 			return x;
+			break;
 		}
 	}
 };
 typedef Point Delta;
+
+
 
 //! Struct that holds the simulation parameters.
 #include <iostream>

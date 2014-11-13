@@ -26,7 +26,7 @@ Real u(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
 	if (index.i == 0) value = 0.0;
 	if (index.i == dim.i) value = 0.0;
 	if (index.j == 0) value = -gf(index.i, index.j + 1);
-	if (index.j == dim.j) value = 2.0;// - gf(index.i, index.j - 1);
+	if (index.j == dim.j) value = 2.0 - gf(index.i, index.j - 1);
 	return value;
 }
 
@@ -79,6 +79,7 @@ int main(int argc, char** argv)
 
 	while (t < simparam.tEnd)
 	{
+		log_info("-- Round %i", step);
 		if(debugHard){
 			log_info("Round %i, here are the Grids (with borders): ", step);
 			log_info("U:"); printGrid(domain.u(),

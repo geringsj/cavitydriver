@@ -380,9 +380,9 @@ IO::writeVTKFile (const Index & griddimension, GridFunction & u,
     <<
     "<DataArray type=\"Float64\" format=\"ascii\" NumberOfComponents=\"3\"> "
     << std::endl;
-  for (int i = 0; i < iMax; ++i)
+  for (int i = 1; i <= iMax; ++i)
   {
-	  for (int j = 0; j < jMax; ++j)
+	  for (int j = 1; j <= jMax; ++j)
 	  {
 		  os << std::scientific << i * deltaX << " " << j *
 			  deltaY << " " << 0.0 << std::endl;
