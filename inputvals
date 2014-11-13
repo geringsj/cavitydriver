@@ -1,8 +1,13 @@
 -- werte aus dem letzten jahr -- 
 xLength=1.0
 yLength=1.0
+
 iMax=32
 jMax=32
+
+iMax=3
+jMax=3
+
 tEnd=16.5
 deltaT=0.2
 tau=0.5

@@ -1,4 +1,5 @@
 #include "Computation.hpp"
+#include "Debug.hpp"
 
 #include <cmath>
 
@@ -20,6 +21,8 @@ Real computeTimestep(
 			(dxx * dyy * Re) / (2.0*(dxx+dyy)), std::fmin(
 			domain.getDelta().x / std::fabs(uMax),
 			domain.getDelta().y / std::fabs(vMax) ));
+
+	debug("min( %f | %f | %f )=%f * tau(=%f) = %f",(dxx * dyy * Re) / (2.0*(dxx+dyy)),domain.getDelta().x / std::fabs(uMax),domain.getDelta().y / std::fabs(vMax), result, tau, result*tau);
 
 	return tau * result; /* tau is some safety factor in (0,1] */
 }
@@ -105,7 +108,7 @@ void computeMomentumEquationsFGH(
 			{
 				/* V*U / x */
 				fph = domain.u()(i,j) + domain.u()(i+1,j) ;
-				gph = domain.v()(i+1,j-1) + domain.v()(i+1,j) ;
+				gph = domain.v()(i+1,j) + domain.v()(i+1,j-1) ;
 				fmh = domain.u()(i,j) + domain.u()(i-1,j) ;
 				gmh = domain.v()(i,j) + domain.v()(i,j-1) ;
 				dd = domain.getDelta().x;
@@ -123,9 +126,9 @@ void computeMomentumEquationsFGH(
 			domain.getPreliminaryVelocity()[d](i, j) =
 				domain.getVelocity()[d](i, j) 
 				+ deltaT*
-				( ((Fxx/*(i,j)*/ + Fyy/*(i,j)*/ )/Re)
-					- FF_df/*(i,j)*/ - FG_dg/*(i,j)*/
-					+ domain.g(d,gpoint)
+				( 
+				 ((Fxx/*(i,j)*/ + Fyy/*(i,j)*/ )/Re) 
+				 - FF_df/*(i,j)*/ - FG_dg/*(i,j)*/ + domain.g(d,gpoint)
 				);
 		}
 	}

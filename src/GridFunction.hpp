@@ -37,9 +37,8 @@ public:
 	Real operator()(int i, int j) const;
 
 	Index getGridDimension() const;
-	Real getMaxValueGridFunction(
-		const Index begin, const Index end);
 	Real getMaxValueGridFunction();
+	void printSTDOUT();
 };
 
 #endif

@@ -24,7 +24,7 @@
 
 #define log_warn(M, ...) fprintf(stdout/*stderr*/, "[WARN] " M " (%s:%d:errno:%s)\n", ##__VA_ARGS__, __FILE__, __LINE__, clean_errno())
 
-#define log_info(M, ...) fprintf(stdout, "[INFO] " M " (%s:%d)\n", ##__VA_ARGS__, __FILE__, __LINE__)
+#define log_info(M, ...) fprintf(stdout, "[INFO] " M "\n", ##__VA_ARGS__)
 
 #define check(A, M, ...) if(!(A)) { log_err(M, ##__VA_ARGS__); errno=0; goto error; }
 

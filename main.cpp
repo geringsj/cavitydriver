@@ -7,19 +7,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-void printGrid(GridFunction& gf, Index SI, Index EI)
-{
-	for(int I=EI[1]+1; I>=SI[1]-1; I--)
-	{
-		for(int J=SI[0]-1; J<=EI[0]+1; J++)
-		{
-			std::cout << gf(J,I) << "  ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-}
-
 Real u(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
 {
 	Real value = simparam.ui;
@@ -53,13 +40,13 @@ int main(int argc, char** argv)
 	delta.x = simparam.xLength;
 	delta.y = simparam.yLength;
 	Domain domain(dim, delta,
-		std::bind(u, std::placeholders::_1, std::placeholders::_2, 
+		/* U */std::bind(u, std::placeholders::_1, std::placeholders::_2, 
 			std::placeholders::_3, std::ref(simparam)),
-		std::bind(v, std::placeholders::_1, std::placeholders::_2, 
+		/* V */std::bind(v, std::placeholders::_1, std::placeholders::_2, 
 			std::placeholders::_3, std::ref(simparam)),
-		[](Index i, GridFunction& gf, Dimension dim)
+		/* W==0 */[](Index i, GridFunction& gf, Dimension dim)
 			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
-		[&simparam](Index i, GridFunction& gf, Dimension dim)
+		/* P==0 */[&simparam](Index i, GridFunction& gf, Dimension dim)
 			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
 
 	/* main loop */
@@ -70,36 +57,30 @@ int main(int argc, char** argv)
 	//debug("omega: %f", simparam.omg);
 
 	int it, step=0;
-
-	io.writeVTKFile(
-			domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
+	io.writeVTKFile(domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 	step++;
 
-	int debugHard = 0;
+	int debugHard = 1;
 
 	while (t < simparam.tEnd)
 	{
-		log_info("-- Round %i", step);
+		log_info("- Round %i", step);
 		if(debugHard){
-			log_info("Round %i, here are the Grids (with borders): ", step);
-			log_info("U:"); printGrid(domain.u(),
-					domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
-			log_info("V:"); printGrid(domain.v(),
-					domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
-			log_info("P:"); printGrid(domain.p(),
-					domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
-			log_info("F:"); printGrid(domain.F(),
-					domain.getBeginInnerDomains(),domain.getEndInnerDomainU());
-			log_info("G:"); printGrid(domain.G(),
-					domain.getBeginInnerDomains(),domain.getEndInnerDomainV());
-			log_info("RHS:"); printGrid(domain.rhs(),
-					domain.getBeginInnerDomains(),domain.getEndInnerDomainP());
+			log_info("= = = = = = = = = = = = = = =");
+			log_info("Grids with borders: ");
+			log_info("U:"); domain.u().printSTDOUT();
+			log_info("F:"); domain.F().printSTDOUT();
+			log_info("V:"); domain.v().printSTDOUT();
+			log_info("G:"); domain.G().printSTDOUT();
+			log_info("P:"); domain.p().printSTDOUT();
+			log_info("RHS:"); domain.rhs().printSTDOUT();
+			log_info("= = = = = = = = = = = = = = =");
 			std::cin.get();
 		}
 
 		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
 		t += dt;
-		debug("dt: %f t/tmx: %f", dt, t / simparam.tEnd);
+		log_info("-- dt=%f | t/tmx=%f", dt, t/simparam.tEnd);
 
 		Computation::computeMomentumEquationsFGH(domain, dt, simparam.re);
 		domain.setPreliminaryVelocitiesBoundaries();
@@ -116,6 +97,8 @@ int main(int argc, char** argv)
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
 			it++;
 		} while (it < simparam.iterMax && res > simparam.eps);
+		log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)", 
+				it, simparam.iterMax, res, simparam.eps);
 
 		Computation::computeNewVelocities(domain, dt);
 		domain.setVelocitiesBoundaries();
