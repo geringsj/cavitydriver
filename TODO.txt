@@ -1,6 +1,11 @@
 
 hokay, so heres the thing: 
 
+-	move "writeToVTKFile" into a subclass which caches data in RAM and only
+	writes to disk when RAM is full / a limit/condition is reached
+
+-	live visualization window instead of ParaView
+
 -	evaluate simulation output in paraview (looks weird atm)
 
 -	logging / debug messages system for nice, consistent output 

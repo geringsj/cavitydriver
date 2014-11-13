@@ -1,11 +1,11 @@
 xLength=1.0
 yLength=1.0
-iMax=128
-jMax=128
+iMax=8
+jMax=8
 re=1000
 omg=1.7
 tau=0.5
-tEnd=36.5
+tEnd=26.5
 eps=0.001
 alpha=0.9
 iterMax=100

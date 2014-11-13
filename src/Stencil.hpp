@@ -91,6 +91,7 @@ namespace Derivatives
 				dimZ = 1;
 				break;
 			default:
+				log_err("dimension could not be assigned");
 				break;
 		}
 		switch(df) /* set right derivative */
@@ -112,9 +113,12 @@ namespace Derivatives
 				add2 = -1; /* index the right */
 				break;
 			default:
+				log_err("returning ZERO derivative operator");
 				return [](int i, int j) { return i*j*0.0; };
 				break;
 		}
+		//debug(" -- returning derivative operator: (gf( i+%i , j+%i) - gf( i+%i, j+%i)) / %f",add1*dimX , add1*dimY,add2*dimX, add2*dimY,delta);
+
 		return [&gf, delta, add1, add2, dimX, dimY, dimZ](int i, int j)
 			{
 				return (gf( i+ add1*dimX , j + add1*dimY) - gf( i + add2*dimX, j + add2*dimY)) / delta;
@@ -149,8 +153,10 @@ namespace Derivatives
 				dimZ = 1;
 				break;
 			default:
+				log_err("dimension could not be assigned");
 				break;
 		}
+		//debug(" -- returning derivative operator: (gf( i+%i , j+%i) - 2.0*gf( i+%i, j+%i) + gf( i+%i, j+%i)) / %f", add1*dimX , add1*dimY, add2*dimX, add2*dimY, add3*dimX, add3*dimY , (delta*delta) );
 		return [&gf, delta, add1, add2, add3, dimX, dimY, dimZ](int i, int j)
 			{
 				return 
@@ -181,6 +187,7 @@ namespace Derivatives
 				delta = d.z;
 				break;
 			default:
+				log_err("dimension could not be assigned");
 				break;
 		}
 		switch(f1)
@@ -201,6 +208,7 @@ namespace Derivatives
 				f1dimZ = 1;
 				break;
 			default:
+				log_err("function dimension could not be assigned");
 				break;
 		}
 		switch(f2)
@@ -221,6 +229,7 @@ namespace Derivatives
 				f2dimZ = 1;
 				break;
 			default:
+				log_err("function dimension could not be assigned");
 				break;
 		}
 		int add=+1, sub=-1;
@@ -267,6 +276,7 @@ namespace Derivatives
 				return genFdd(gf, d, df);
 				break;
 			default:
+				log_err("returning ZERO derivative operator");
 				return [](int i, int j){ return i*j*0.0; };
 				break;
 		};
@@ -293,6 +303,7 @@ namespace Derivatives
 				return genFG_d(gf1, gf2, d, f1, f2, df);
 				break;
 			default:
+				log_err("returning ZERO derivative operator");
 				return [](int i, int j){ return i*j*0.0; };
 				break;
 		}

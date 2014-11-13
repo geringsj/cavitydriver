@@ -121,7 +121,7 @@ public:
 		u()(i, j)/*,k)*/ = m_borderfunc_u(current);\
 	if (d == 1)\
 		v()(i, j)/*,k)*/ = m_borderfunc_v(current);\
-	if (d == 3)\
+	if (d == 2)\
 		w()(i, j)/*,k)*/ = m_borderfunc_w(current);
 
 #define PRELIMINARYVELOCITIESBOUNDARIES(i,j,d) \
@@ -129,7 +129,7 @@ public:
 		F()(i, j) = u()(i, j);\
 	if (d == 1)\
 		G()(i, j) = v()(i, j);\
-	if (d == 3)\
+	if (d == 2)\
 		H()(i, j) = w()(i, j);
 
 #define PRESSUREBOUNDARIES(i,j) \
