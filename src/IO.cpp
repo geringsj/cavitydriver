@@ -65,6 +65,26 @@ void IO::parseArguments(int argc, char** argv)
 			}
 			else --argc; ++argv;
 		}
+		else if (argv[0] == (std::string)"--d")
+		{
+			m_debug = true;
+			--argc; ++argv;
+		}
+		else if (argv[0] == (std::string)"--li")
+		{
+			m_log_info = true;
+			--argc; ++argv;
+		}
+		else if (argv[0] == (std::string)"--le")
+		{
+			m_log_err = true;
+			--argc; ++argv;
+		}
+		else if (argv[0] == (std::string)"--lw")
+		{
+			m_log_warn = true;
+			--argc; ++argv;
+		}
 		else
 		{
 			--argc; ++argv;

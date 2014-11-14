@@ -60,27 +60,22 @@ int main(int argc, char** argv)
 	io.writeVTKFile(domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 	step++;
 
-	int debugHard = 0;
-
 	while (t < simparam.tEnd)
 	{
-		log_info("- Round %i", step);
-		if(debugHard){
-			log_info("= = = = = = = = = = = = = = =");
-			log_info("Grids with borders: ");
-			log_info("U:"); domain.u().printSTDOUT();
-			//log_info("F:"); domain.F().printSTDOUT();
-			//log_info("V:"); domain.v().printSTDOUT();
-			//log_info("G:"); domain.G().printSTDOUT();
-			//log_info("P:"); domain.p().printSTDOUT();
-			//log_info("RHS:"); domain.rhs().printSTDOUT();
-			log_info("= = = = = = = = = = = = = = =");
-			std::cin.get();
-		}
+		if (m_log_info) log_info("- Round %i", step);
+		if (m_log_info) log_info("= = = = = = = = = = = = = = =");
+		if (m_log_info) log_info("Grids with borders: ");
+		if (m_log_info) { log_info("U:"); domain.u().printSTDOUT(); }
+		if (m_log_info) { log_info("F:"); domain.F().printSTDOUT(); }
+		if (m_log_info) { log_info("V:"); domain.v().printSTDOUT();	}
+		if (m_log_info) { log_info("G:"); domain.G().printSTDOUT();	}
+		if (m_log_info) { log_info("P:"); domain.p().printSTDOUT();	}
+		if (m_log_info) { log_info("RHS:"); domain.rhs().printSTDOUT(); }
+		if (m_log_info) log_info("= = = = = = = = = = = = = = =");
 
 		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
 		t += dt;
-		log_info("-- dt=%f | t/tmx=%f", dt, t/simparam.tEnd);
+		if (m_log_info) log_info("-- dt=%f | t/tmx=%f", dt, t / simparam.tEnd);
 
 		domain.setVelocitiesBoundaries();
 		domain.setPreliminaryVelocitiesBoundaries();
@@ -105,8 +100,9 @@ int main(int argc, char** argv)
 
 			it++;
 		} while (it < simparam.iterMax && res > simparam.eps);
-		log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)", 
-				it, simparam.iterMax, res, simparam.eps);
+		if (m_log_info) 
+			log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
+					it, simparam.iterMax, res, simparam.eps);
 
 		Computation::computeNewVelocities(domain, dt);
 		//domain.setVelocitiesBoundaries();
