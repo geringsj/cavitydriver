@@ -1,7 +1,7 @@
 #include "Domain.hpp"
 
 
-Domain::Domain(Dimension dimension, Point delta,
+Domain::Domain(Dimension dimension, Delta delta,
 
 	std::function<Real(Index,GridFunction&,Dimension)> in_u,
 	std::function<Real(Index,GridFunction&,Dimension)> in_v,

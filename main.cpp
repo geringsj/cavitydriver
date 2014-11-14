@@ -37,8 +37,8 @@ int main(int argc, char** argv)
 	dim.i = simparam.iMax;
 	dim.j = simparam.jMax;
 	Delta delta;
-	delta.x = simparam.xLength;
-	delta.y = simparam.yLength;
+	delta.x = simparam.xLength / dim.i;
+	delta.y = simparam.yLength / dim.j;
 	Domain domain(dim, delta,
 		/* U */std::bind(u, std::placeholders::_1, std::placeholders::_2, 
 			std::placeholders::_3, std::ref(simparam)),
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 	io.writeVTKFile(domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 	step++;
 
-	int debugHard = 1;
+	int debugHard = 0;
 
 	while (t < simparam.tEnd)
 	{
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 		t += dt;
 		log_info("-- dt=%f | t/tmx=%f", dt, t/simparam.tEnd);
 
-		Computation::computeMomentumEquationsFGH(domain, dt, simparam.re);
+		Computation::computePreliminaryVelocities(domain, dt, simparam.re);
 		domain.setPreliminaryVelocitiesBoundaries();
 
 		Computation::computeRighthandSide(domain, dt); it = 0;

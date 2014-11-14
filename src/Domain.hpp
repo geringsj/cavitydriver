@@ -53,7 +53,7 @@ private:
 	};
 
 public:
-	Domain(Dimension dimension, Point delta,
+	Domain(Dimension dimension, Delta delta,
 
 		/* the functions for setting boundary and initial grid values */
 		std::function<Real(Index,GridFunction&,Dimension)> in_u,

@@ -17,7 +17,7 @@ namespace Computation
 			Domain& domain,
 			const Real tau, const Real Re);
 	
-	void computeMomentumEquationsFGH(
+	void computePreliminaryVelocities(
 			Domain& domain,
 			const Real deltaT, const Real Re);
 	

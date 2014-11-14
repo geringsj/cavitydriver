@@ -22,13 +22,11 @@ Real computeTimestep(
 			domain.getDelta().x / std::fabs(uMax),
 			domain.getDelta().y / std::fabs(vMax) ));
 
-	debug("min( %f | %f | %f )=%f * tau(=%f) = %f",(dxx * dyy * Re) / (2.0*(dxx+dyy)),domain.getDelta().x / std::fabs(uMax),domain.getDelta().y / std::fabs(vMax), result, tau, result*tau);
-
 	return tau * result; /* tau is some safety factor in (0,1] */
 }
 
 
-void computeMomentumEquationsFGH(
+void computePreliminaryVelocities(
 		Domain& domain,
 		const Real deltaT, const Real Re)
 {
