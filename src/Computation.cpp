@@ -104,24 +104,53 @@ void computeMomentumEquationsFGH(
 			}
 			Real FF_df = (fph*gph - fmh*gmh) / (4.0 * dd);
 
-			if(d==0)
+			//if(d==0)
+			//{
+			//	/* V*U / x */
+			//	fph = domain.u()(i,j) + domain.u()(i+1,j) ;
+			//	gph = domain.v()(i+1,j) + domain.v()(i+1,j-1) ;
+			//	fmh = domain.u()(i,j) + domain.u()(i-1,j) ;
+			//	gmh = domain.v()(i,j) + domain.v()(i,j-1) ;
+			//	dd = domain.getDelta().x;
+			//}
+			//else{
+			//	/* V*U / y */
+			//	fph = domain.u()(i,j) + domain.u()(i,j+1) ;
+			//	gph = domain.v()(i,j) + domain.v()(i+1,j) ;
+			//	fmh = domain.u()(i,j) + domain.u()(i,j-1) ;
+			//	gmh = domain.v()(i,j-1) + domain.v()(i+1,j-1) ;
+			//	dd = domain.getDelta().y;
+			//}
+			//Real FG_dg = (fph*gph - fmh*gmh) / (4.0 * dd);
+			
+			Real FG_dg;
+			Real u_c =domain.u()(i,j);
+			Real u_n =domain.u()(i,j + 1);
+			Real u_s =domain.u()(i,j - 1);
+			Real u_w = domain.u()(i - 1,j);
+			Real u_nw = domain.u()(i - 1,j + 1);
+			Real v_c = domain.v()(i,j);
+			Real v_e = domain.v()(i + 1,+ j);
+			Real v_s = domain.v()(i,j - 1);
+			Real v_w = domain.v()(i - 1,j);
+			Real v_se = domain.v()(i + 1,j - 1);
+			Point h = domain.getDelta();
+			Real alpha = 0.9; //TODO Pass alpha as parameter!
+			if(d==1)
 			{
 				/* V*U / x */
-				fph = domain.u()(i,j) + domain.u()(i+1,j) ;
-				gph = domain.v()(i+1,j) + domain.v()(i+1,j-1) ;
-				fmh = domain.u()(i,j) + domain.u()(i-1,j) ;
-				gmh = domain.v()(i,j) + domain.v()(i,j-1) ;
-				dd = domain.getDelta().x;
+
+				FG_dg =
+					(1.0 / h[0]) * ((((u_c + u_n)*(v_c + v_e)) / 4.0) - (((u_w + u_nw)*(v_w + v_c)) / 4.0)) +
+					(alpha / h[0]) *(((std::abs(u_c + u_n)*(v_c - v_e)) / 4.0) - ((std::abs(u_w + u_nw)*(v_w - v_c)) / 4.0));
 			}
 			else{
 				/* V*U / y */
-				fph = domain.u()(i,j) + domain.u()(i,j+1) ;
-				gph = domain.v()(i,j) + domain.v()(i+1,j) ;
-				fmh = domain.u()(i,j) + domain.u()(i,j-1) ;
-				gmh = domain.v()(i,j-1) + domain.v()(i+1,j-1) ;
-				dd = domain.getDelta().y;
+
+				FG_dg =
+					(1.0 / h[1]) * ((((v_c + v_e)*(u_c + u_n)) / 4.0) - (((v_s + v_se)*(u_s + u_c)) / 4.0)) +
+					(alpha / h[1]) *(((std::abs(v_c + v_e)*(u_c - u_n)) / 4.0) - ((std::abs(v_s + v_se)*(u_s - u_c)) / 4.0));
 			}
-			Real FG_dg = (fph*gph - fmh*gmh) / (4.0 * dd);
 
 			domain.getPreliminaryVelocity()[d](i, j) =
 				domain.getVelocity()[d](i, j) 

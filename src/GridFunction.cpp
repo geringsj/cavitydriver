@@ -63,7 +63,7 @@ void GridFunction::printSTDOUT()
 	{
 		for(int J=SI[0]; J<=EI[0]; J++)
 		{
-			std::cout << this->operator()(J,I) << "  ";
+			std::cout <<std::setprecision(5)<<std::fixed << this->operator()(J,I) << "  ";
 		}
 		std::cout << std::endl;
 	}

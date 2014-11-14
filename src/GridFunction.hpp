@@ -8,6 +8,7 @@
 #define GridFunction_hpp
 
 #include "Structs.hpp"
+#include <iomanip>
 
 /* the gridfunction just does what it is told to do: maintain a grid 
  * of size X * Y  ( * Z - for now we set Z==1 )
