@@ -1,5 +1,6 @@
 #include "Computation.hpp"
 #include "Debug.hpp"
+#include "Stencil.hpp"
 
 #include <cmath>
 
@@ -22,51 +23,44 @@ Real computeTimestep(
 			domain.getDelta().x / std::fabs(uMax),
 			domain.getDelta().y / std::fabs(vMax) ));
 
-	if (m_debug)
-		debug("min( %f | %f | %f )=%f * tau(=%f) = %f",(dxx * dyy * Re) / (2.0*(dxx+dyy)),domain.getDelta().x / std::fabs(uMax),domain.getDelta().y / std::fabs(vMax), result, tau, result*tau);
-
 	return tau * result; /* tau is some safety factor in (0,1] */
 }
 
 
-void computeMomentumEquationsFGH(
+void computePreliminaryVelocities(
 		Domain& domain,
-		const Real deltaT, const Real Re)
+		const Real deltaT, const Real Re, const Real alpha)
 {
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
-		// auto Fxx = 
-		// 	Derivatives::getDerivative(
-		// 			domain.getVeolcity()[d],
-		// 			domain.getDelta(),
-		// 			Derivatives::Direction::xx);
-		// auto Fyy = 
-		// 	Derivatives::getDerivative(
-		// 			domain.getVeolcity()[d],
-		// 			domain.getDelta(),
-		// 			Derivatives::Direction::yy);
+		auto Fxx = 
+			Derivatives::getDerivative(domain.getVelocity()[d], domain.getDelta(),
+					Derivatives::Direction::xx);
+		auto Fyy = 
+			Derivatives::getDerivative(domain.getVelocity()[d], domain.getDelta(),
+					Derivatives::Direction::yy);
 		
-		/* TODO:
-		 * are those derivatives right? 
-		 * might explain the weird output 
-		 * dimension is tricky here */
-		// auto FF_df = 
-		// 	Derivatives::getDerivative(
-		// 			domain.getVeolcity()[d],
-		// 			domain.getVeolcity()[d],
-		// 			domain.getDelta(),
-		// 			1+d, 
-		// 			1+d,
-		// 			1+6+d); /* 7==Derivatives::Direction::_x */
-		// int Gdim = (d+1)%DIMENSIONS;
-		// auto FG_dg = 
-		// 	Derivatives::getDerivative(
-		// 			domain.getVeolcity()[d],
-		// 			domain.getVeolcity()[Gdim],
-		// 			domain.getDelta(),
-		// 			1+d,
-		// 			1+Gdim,
-		// 			1+6+Gdim);
+		/* 
+		 * TODO: 
+		 * 	drink a fine smoky whisky when putting the following code into service
+		 *
+		 * auto FFf = Derivatives::getProductFirstDerivative(
+		 * 	domain.getVeolcity()[d],domain.getVeolcity()[d],domain.getDelta(),
+		 * 	1+d,1+d);
+		 *
+		 * auto FFfdc = Derivatives::getProductFirstDerivativeDCS(
+		 * 	domain.getVeolcity()[d],domain.getVeolcity()[d],domain.getDelta(),
+		 * 	1+d,1+d);
+		 *
+		 * int Gdim = (d+1)%DIMENSIONS;
+		 * auto FGg = Derivatives::getProductFirstDerivative(
+		 * 	domain.getVeolcity()[d],domain.getVeolcity()[Gdim],domain.getDelta(),
+		 * 	1+d,1+Gdim);
+		 *
+		 * auto FGgdc = Derivatives::getProductFirstDerivativeDCS(
+		 * 	domain.getVeolcity()[d],domain.getVeolcity()[Gdim],domain.getDelta(),
+		 * 	1+d,1+Gdim);
+		 */
 
 		/* the formula: */
 		forall(i,j,domain.getBeginInnerDomains(), domain.getEndInnerDomain()[d])
@@ -76,20 +70,10 @@ void computeMomentumEquationsFGH(
 						Real(i)/domain.getEndInnerDomain()[d][0], 
 						Real(j)/domain.getEndInnerDomain()[d][1]);
 
+
+			/* TODO: later, delete from here: */
+/* ===========================================================================*/
 			Real fph, fmh, gph, gmh, dd;
-			Real Fxx, Fyy;
-
-			if(d==0)
-			{
-				Fxx = (domain.u()(i+1,j) - 2.0*domain.u()(i,j) + domain.u()(i-1,j)) / (pow(domain.getDelta().x,2.0));
-				Fyy = (domain.u()(i,j+1) - 2.0*domain.u()(i,j) + domain.u()(i,j-1)) / (pow(domain.getDelta().y,2.0));
-			}
-			else
-			{
-				Fxx = (domain.v()(i+1,j) - 2.0*domain.v()(i,j) + domain.v()(i-1,j)) / (pow(domain.getDelta().x,2.0));
-				Fyy = (domain.v()(i,j+1) - 2.0*domain.v()(i,j) + domain.v()(i,j-1)) / (pow(domain.getDelta().y,2.0));
-			}
-
 			if(d==0)
 			{
 				/* U*U / x */
@@ -136,7 +120,6 @@ void computeMomentumEquationsFGH(
 			Real v_w = domain.v()(i - 1,j);
 			Real v_se = domain.v()(i + 1,j - 1);
 			Point h = domain.getDelta();
-			Real alpha = 0.9; //TODO Pass alpha as parameter!
 			if(d==1)
 			{
 				/* V*U / x */
@@ -152,13 +135,26 @@ void computeMomentumEquationsFGH(
 					(1.0 / h[1]) * ((((v_c + v_e)*(u_c + u_n)) / 4.0) - (((v_s + v_se)*(u_s + u_c)) / 4.0)) +
 					(alpha / h[1]) *(((std::abs(v_c + v_e)*(u_c - u_n)) / 4.0) - ((std::abs(v_s + v_se)*(u_s - u_c)) / 4.0));
 			}
+/* ===========================================================================*/
+			/* TODO: later, delete until here */
 
-			domain.getPreliminaryVelocity()[d](i, j) =
-				domain.getVelocity()[d](i, j) 
+			domain.getPreliminaryVelocity()[d]( i,j ) =
+				domain.getVelocity()[d]( i,j ) 
 				+ deltaT*
 				( 
-				 ((Fxx/*(i,j)*/ + Fyy/*(i,j)*/ )/Re) 
-				 - FF_df/*(i,j)*/ - FG_dg/*(i,j)*/ + domain.g(d,gpoint)
+				 ( Fxx(i,j) + Fyy(i,j) )/Re
+
+				 - FF_df - FG_dg 
+				 /* TODO: replace the line above by:
+				  *
+				  * 	- ( FFf(i,j) + alpha*FFfdc(i,j) ) - ( FGg(i,j) + alpha*FGgdc(i,j) )
+				  *
+				  * and comment in the function calls for the operators at the 
+				  * start of this function 
+				  *
+				  * (don't forget the whisky) */
+
+				 + domain.g(d,gpoint)
 				);
 		}
 	}
@@ -170,21 +166,15 @@ void computeRighthandSide(
 		Domain& domain,
 		const Real deltaT)
 {
-	//auto Fxb = Derivatives::getDerivative(
-	//		domain.F(),
-	//		domain.getDelta(),
-	//		Derivatives::Direction::xb);
-	//auto Gyb = Derivatives::getDerivative(
-	//		domain.G(),
-	//		domain.getDelta(),
-	//		Derivatives::Direction::yb);
+	auto Fxb = Derivatives::getDerivative(domain.F(),domain.getDelta(),
+			Derivatives::Direction::xb);
+
+	auto Gyb = Derivatives::getDerivative(domain.G(),domain.getDelta(),
+			Derivatives::Direction::yb);
 	
 	forall(i,j,domain.getBeginInnerDomains(), domain.getEndInnerDomain()[3])
 	{
-		Real Fxb = (domain.F()(i,j) - domain.F()(i-1,j)) / (domain.getDelta().x);
-		Real Gyb = (domain.G()(i,j) - domain.G()(i,j-1)) / (domain.getDelta().y);
-
-		domain.rhs()(i,j) = ( Fxb/*(i,j)*/ + Gyb/*(i,j)*/ )/deltaT;
+		domain.rhs()(i,j) = ( Fxb(i,j) + Gyb(i,j) )/deltaT;
 	}
 }
 
@@ -195,22 +185,13 @@ void computeNewVelocities(
 {
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
-		//auto Pdb = Derivatives::getDerivative(
-		//		domain.p(),
-		//		domain.getDelta(),
-		//		(int)(1+d));
+		auto Pdf = Derivatives::getDerivative(domain.p(),domain.getDelta(),
+				(1+d)); /* d+1 ~ first forward derivative in (d+1) direction (1 => x) */
 
 		forall(i,j,domain.getBeginInnerDomains(), domain.getEndInnerDomain()[d])
 		{
-			Real Pdf;
-			
-			if(d==0)
-				Pdf = (domain.p()(i+1,j) - domain.p()(i,j))/(domain.getDelta().x);
-			else
-				Pdf = (domain.p()(i,j+1) - domain.p()(i,j))/(domain.getDelta().y);
-
 			domain.getVelocity()[d]( i,j ) =
-				domain.getPreliminaryVelocity()[d]( i,j ) - deltaT*Pdf/*(i,j)*/;
+				domain.getPreliminaryVelocity()[d]( i,j ) - deltaT*Pdf(i,j);
 		}
 	}
 }

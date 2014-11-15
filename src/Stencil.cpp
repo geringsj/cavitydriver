@@ -1,6 +1,7 @@
 #include "Stencil.hpp"
 
 #include "Debug.hpp"
+#include <cmath>
 
 namespace Derivatives
 {
@@ -10,63 +11,62 @@ namespace Derivatives
 				Direction df)
 		{
 			Real delta = 0.0;
-			int dimX=0, dimY=0, dimZ=0;
-			int add1=0, add2=0;
+			int isX=0, isY=0, isZ=0;
 			switch(df) /* set right dimension */
 			{
 				case Direction::xf:
 				case Direction::xb:
 					delta = d.x;
-					dimX = 1;
-					dimY = 0;
-					dimZ = 0;
+					isX = 1;
+					isY = 0;
+					isZ = 0;
 					break;
 				case Direction::yf:
 				case Direction::yb:
 					delta = d.y;
-					dimX = 0;
-					dimY = 1;
-					dimZ = 0;
+					isX = 0;
+					isY = 1;
+					isZ = 0;
 					break;
 				case Direction::zf:
 				case Direction::zb:
 					delta = d.z;
-					dimX = 0;
-					dimY = 0;
-					dimZ = 1;
+					isX = 0;
+					isY = 0;
+					isZ = 1;
 					break;
 				default:
 					log_err("dimension could not be assigned");
 					break;
 			}
+			int f = 0, b = 0;
 			switch(df) /* set right derivative */
 			{
 				case Direction::xf:
 				case Direction::yf:
 				case Direction::zf:
-					/* forward */
-					add1 = +1; /* index on the left */
-						/* minus */
-					add2 = 0; /* index on the right */
+					f = +1;
+					b = 0;
 					break;
 				case Direction::xb:
 				case Direction::yb:
 				case Direction::zb:
-					/* backward */
-					add1 = 0; /* index on the left */
-						/* minus */
-					add2 = -1; /* index the right */
+					f = 0;
+					b = -1;
 					break;
 				default:
 					log_err("returning ZERO derivative operator");
 					return [](int i, int j) { return i*j*0.0; };
 					break;
 			}
-			//debug(" -- returning derivative operator: (gf( i+%i , j+%i) - gf( i+%i, j+%i)) / %f",add1*dimX , add1*dimY,add2*dimX, add2*dimY,delta);
-
-			return [&gf, delta, add1, add2, dimX, dimY, dimZ](int i, int j)
+			return [&gf, delta, f, b, isX, isY, isZ](int i, int j)
 				{
-					return (gf( i+ add1*dimX , j + add1*dimY) - gf( i + add2*dimX, j + add2*dimY)) / delta;
+					return 
+						( 
+						 gf( i+ f*isX , j + f*isY) 
+							- 
+						 gf( i + b*isX, j + b*isY) 
+						) / delta;
 				};
 		}
 
@@ -75,135 +75,231 @@ namespace Derivatives
 				Direction df)
 		{
 			Real delta = 0.0;
-			int dimX=0, dimY=0, dimZ=0;
-			int add1=+1, add2=0, add3=-1;
+			int isX=0, isY=0, isZ=0;
 			switch(df) /* set right dimension */
 			{
 				case Direction::xx:
 					delta = d.x;
-					dimX = 1;
-					dimY = 0;
-					dimZ = 0;
+					isX = 1;
+					isY = 0;
+					isZ = 0;
 					break;
 				case Direction::yy:
 					delta = d.y;
-					dimX = 0;
-					dimY = 1;
-					dimZ = 0;
+					isX = 0;
+					isY = 1;
+					isZ = 0;
 					break;
 				case Direction::zz:
 					delta = d.z;
-					dimX = 0;
-					dimY = 0;
-					dimZ = 1;
+					isX = 0;
+					isY = 0;
+					isZ = 1;
 					break;
 				default:
 					log_err("dimension could not be assigned");
 					break;
 			}
-			//debug(" -- returning derivative operator: (gf( i+%i , j+%i) - 2.0*gf( i+%i, j+%i) + gf( i+%i, j+%i)) / %f", add1*dimX , add1*dimY, add2*dimX, add2*dimY, add3*dimX, add3*dimY , (delta*delta) );
-			return [&gf, delta, add1, add2, add3, dimX, dimY, dimZ](int i, int j)
+			return [&gf, delta, isX, isY, isZ](int i, int j)
 				{
 					return 
-						(gf( i+ add1*dimX , j + add1*dimY) 
-						 - 2.0*gf( i + add2*dimX, j + add2*dimY) 
-						 + gf( i + add3*dimX, j + add3*dimY)) 
+						(
+						 gf( i + isX , j + isY) 
+							+ 
+						 gf( i - isX, j - isY)
+							- 
+						 2.0*gf( i , j ) 
+						)
 						/ (delta*delta);
 				};
 		}
 
-		std::function<Real(int, int)> genFG_d(
-				GridFunction& gf1, GridFunction& gf2, 
-				Delta d, 
-				Function f1, Function f2, Direction df)
+		std::function<Real(int, int)> genFG_g(
+				GridFunction& gf, GridFunction& gg, Delta d, 
+				Function f, Function g)
 		{
 			Real delta = 0.0;
-			int f1dimX=0, f1dimY=0, f1dimZ=0;
-			int f2dimX=0, f2dimY=0, f2dimZ=0;
-			switch(df) /* set right dimension */
+			int FinX=0, FinY=0, FinZ=0;
+			int GinX=0, GinY=0, GinZ=0;
+			switch(f)
 			{
-				case Direction::_x:
+				case Function::U:
+					FinX = 1;
+					FinY = 0;
+					FinZ = 0;
+					break;
+				case Function::V:
+					FinX = 0;
+					FinY = 1;
+					FinZ = 0;
+					break;
+				case Function::W:
+					FinX = 0;
+					FinY = 0;
+					FinZ = 1;
+					break;
+				default:
+					log_err("function dimension could not be assigned");
+					break;
+			}
+			switch(g)
+			{ /* g determines the direction of the derivative */
+				case Function::U:
 					delta = d.x;
+					GinX = 1;
+					GinY = 0;
+					GinZ = 0;
 					break;
-				case Direction::_y:
+				case Function::V:
 					delta = d.y;
+					GinX = 0;
+					GinY = 1;
+					GinZ = 0;
 					break;
-				case Direction::_z:
+				case Function::W:
 					delta = d.z;
-					break;
-				default:
-					log_err("dimension could not be assigned");
-					break;
-			}
-			switch(f1)
-			{
-				case Function::U:
-					f1dimX = 1;
-					f1dimY = 0;
-					f1dimZ = 0;
-					break;
-				case Function::V:
-					f1dimX = 0;
-					f1dimY = 1;
-					f1dimZ = 0;
-					break;
-				case Function::W:
-					f1dimX = 0;
-					f1dimY = 0;
-					f1dimZ = 1;
+					GinX = 0;
+					GinY = 0;
+					GinZ = 1;
 					break;
 				default:
 					log_err("function dimension could not be assigned");
 					break;
 			}
-			switch(f2)
-			{
-				case Function::U:
-					f2dimX = 1;
-					f2dimY = 0;
-					f2dimZ = 0;
-					break;
-				case Function::V:
-					f2dimX = 0;
-					f2dimY = 1;
-					f2dimZ = 0;
-					break;
-				case Function::W:
-					f2dimX = 0;
-					f2dimY = 0;
-					f2dimZ = 1;
-					break;
-				default:
-					log_err("function dimension could not be assigned");
-					break;
-			}
-			int add=+1, sub=-1;
-			return [&gf1, &gf2, delta, add, sub, 
-					 f1dimX, f1dimY, f1dimZ,
-					 f2dimX, f2dimY, f2dimZ
+			return [&gf, &gg, delta, 
+					 FinX, FinY, FinZ,
+					 GinX, GinY, GinZ
 				](int i, int j)
 				{
-					Real fgp = 
-						(gf1( i , j ) + gf1( i + f2dimX*add , j + f2dimY*add)) 
-						* 
-						(gf2( i , j ) + gf2( i + f1dimX*add, j + f1dimY*add));
-					Real fgm = 
-						(gf1( i + f2dimX*sub, j + f2dimY*sub) + gf1( i , j )) 
-						* 
-						(gf2( i + f2dimX*sub, j + f2dimY*sub) 
+					/* just ask me to explain it to you. 
+					 * right now i'm too tired to write a clear explanation. */
+
+					Real fgp = /* this part goes in plus gg-direction */
+						(
+						 gf( i , j ) 
+							+ 
+						 gf( i + GinX , j  + GinY ) 
+						)
+						*
+						(
+						 gg( i , j ) 
+							+ 
+						 gg( i + FinX , j + FinY )
+						);
+					Real fgm = /* this part goes in minus gg-direction */
+						(
+						 gf( i , j ) 
+							+ 
+						 gf( i - GinX , j - GinY ) 
+						)
+						*
+						(
+						 gg( i - GinX , j - GinY ) 
 						 + 
-						 gf2( i + f2dimX*sub + f1dimX*add, j + f2dimY*sub + f1dimY*add));
+						 gg( i + FinX - GinX , j + FinY - GinY )
+						);
+
+					return (fgp - fgm) / (4.0*delta);
+				};
+		}
+
+		/* DONOR CELL SCHEME */
+		std::function<Real(int, int)> genFG_gdc(
+				GridFunction& gf, GridFunction& gg, Delta d, 
+				Function f, Function g)
+		{
+			Real delta = 0.0;
+			int FinX=0, FinY=0, FinZ=0;
+			int GinX=0, GinY=0, GinZ=0;
+			switch(f)
+			{
+				case Function::U:
+					FinX = 1;
+					FinY = 0;
+					FinZ = 0;
+					break;
+				case Function::V:
+					FinX = 0;
+					FinY = 1;
+					FinZ = 0;
+					break;
+				case Function::W:
+					FinX = 0;
+					FinY = 0;
+					FinZ = 1;
+					break;
+				default:
+					log_err("function dimension could not be assigned");
+					break;
+			}
+			switch(g)
+			{ /* g determines the direction of the derivative */
+				case Function::U:
+					delta = d.x;
+					GinX = 1;
+					GinY = 0;
+					GinZ = 0;
+					break;
+				case Function::V:
+					delta = d.y;
+					GinX = 0;
+					GinY = 1;
+					GinZ = 0;
+					break;
+				case Function::W:
+					delta = d.z;
+					GinX = 0;
+					GinY = 0;
+					GinZ = 1;
+					break;
+				default:
+					log_err("function dimension could not be assigned");
+					break;
+			}
+			return [&gf, &gg, delta, 
+					 FinX, FinY, FinZ,
+					 GinX, GinY, GinZ
+				](int i, int j)
+				{
+					/* just ask me to explain it to you. 
+					 * right now i'm too tired to write a clear explanation. */
+
+					Real fgp = /* this part goes in plus gg-direction */
+						(
+						 gf( i , j ) 
+							+ 
+						 gf( i + GinX , j  + GinY ) 
+						)
+						*
+					std::fabs(
+						 gg( i , j ) 
+							+ 
+						 gg( i + FinX , j + FinY )
+						);
+					Real fgm = /* this part goes in minus gg-direction */
+						(
+						 gf( i , j ) 
+							+ 
+						 gf( i - GinX , j - GinY ) 
+						)
+						*
+					std::fabs(
+						 gg( i - GinX , j - GinY ) 
+							+ 
+						 gg( i + FinX - GinX , j + FinY - GinY )
+						);
+
 					return (fgp - fgm) / (4.0*delta);
 				};
 		}
 	}
 
-
 	/* call those from outside */
 
+
+	/* the following two functions only take a direction enum */
 	std::function<Real(int, int)> getDerivative(
-			GridFunction& gf, 
-			Delta d, 
+			GridFunction& gf, Delta d, 
 			Direction df)
 	{
 		switch(df)
@@ -228,41 +324,42 @@ namespace Derivatives
 		};
 	}
 	std::function<Real(int, int)> getDerivative(
-			GridFunction& gf, 
-			Delta d, 
+			GridFunction& gf, Delta d, 
 			int df)
 	{
 		Direction dff = static_cast<Derivatives::Direction>(df);
 		return Derivatives::getDerivative(gf, d, dff);
 	}
 
-	std::function<Real(int, int)> getDerivative(
-			GridFunction& gf1, GridFunction& gf2, 
-			Delta d, 
-			Function f1, Function f2, Direction df)
+	std::function<Real(int, int)> getProductFirstDerivative(
+			GridFunction& gf1, GridFunction& gf2, Delta d, 
+			Function f1, Function f2)
 	{
-		switch(df)
-		{
-			case Direction::_x:
-			case Direction::_y:
-			case Direction::_z:
-				return genFG_d(gf1, gf2, d, f1, f2, df);
-				break;
-			default:
-				log_err("returning ZERO derivative operator");
-				return [](int i, int j){ return i*j*0.0; };
-				break;
-		}
+		return genFG_g(gf1, gf2, d, f1, f2);
 	}
-	std::function<Real(int, int)> getDerivative(
-			GridFunction& gf1, GridFunction& gf2, 
-			Delta d, 
-			int f1, int f2, int df)
+	std::function<Real(int, int)> getProductFirstDerivative(
+			GridFunction& gf1, GridFunction& gf2, Delta d, 
+			int f1, int f2)
 	{
 		Function ff1 = static_cast<Derivatives::Function>(f1);
 		Function ff2 = static_cast<Derivatives::Function>(f2);
-		Direction dff = static_cast<Derivatives::Direction>(df);
-		return getDerivative(gf1, gf2, d, ff1, ff2, dff);
+		return getProductFirstDerivative(gf1, gf2, d, ff1, ff2);
+	}
+
+	std::function<Real(int, int)> getProductFirstDerivativeDCS(
+			GridFunction& gf1, GridFunction& gf2, Delta d, 
+			Function f1, Function f2)
+	{
+		return [](int i, int j){ return i*j*0.0; };
+		return genFG_gdc(gf1, gf2, d, f1, f2);
+	}
+	std::function<Real(int, int)> getProductFirstDerivativeDCS(
+			GridFunction& gf1, GridFunction& gf2, Delta d, 
+			int f1, int f2)
+	{
+		Function ff1 = static_cast<Derivatives::Function>(f1);
+		Function ff2 = static_cast<Derivatives::Function>(f2);
+		return getProductFirstDerivative(gf1, gf2, d, ff1, ff2);
 	}
 
 };

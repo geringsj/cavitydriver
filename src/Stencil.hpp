@@ -20,21 +20,8 @@ namespace Derivatives
 		W = 3,
 		P = 4
 	};
-	/* here we have a wide variety of directions we 
-	 * can take the derivative with respect to 
-	 * think of it like in the formula: 
-	 * (d F) / (d r) 
-	 * where F is a function from Derivatives::Function
-	 * and r is a direction from Derivatives::Direction
-	 *
-	 * rf / rb are the (first) forward / backward derivative, respectively 
-	 * rr is the central second derivative 
-	 * _r is the first derivative of a product of functions F and G: d(F * G)/dr
-	 *
-	 * the getDerivative() functions return the demanded derivatives as functions 
-	 * that evaluate the given GridFunction using the given gridspacing delta 
-	 * in an artbitrary gridpoint (i,j) and return the value of the 
-	 * derivative in that point*/
+	typedef Function F;
+
 	enum class Direction {
 		xb=-1,
 		yb=-2,
@@ -47,24 +34,33 @@ namespace Derivatives
 		xx=4, 
 		yy=5, 
 		zz=6,
-
-		_x=7, 
-		_y=8, 
-		_z=9
 	};
+	typedef Direction d;
 
-	/* TODO: document our supported derivative formats, if they are not 
-	 * easy to derive from the definitions of the enums */
-
+	/* functions to get first derivatives (_f_orward and _b_ackward) 
+	 * and second derivatives */
 	std::function<Real(int, int)> getDerivative(GridFunction& gf, Delta d, Direction df);
 	std::function<Real(int, int)> getDerivative(GridFunction& gf, Delta d, int df);
 
-	std::function<Real(int, int)> getDerivative(
+	/* first derivative of functions product 
+	 * first function f1 says where to evaluate: exactly at grid point on f1(i,j)
+	 * second function, f2, determines direction of derivative
+	 * example: f2==V  => derive in y direction */
+	std::function<Real(int, int)> getProductFirstDerivative(
 			GridFunction& gf1, GridFunction& gf2, Delta d, 
-			Function f1, Function f2, Direction df);
-	std::function<Real(int, int)> getDerivative(
+			Function f1, Function f2);
+	std::function<Real(int, int)> getProductFirstDerivative(
 			GridFunction& gf1, GridFunction& gf2, Delta d, 
-			int f1, int f2, int df);
+			int f1, int f2);
+
+	/* donor cell scheme functions */
+	/* TODO: understand DCS and implement functions */
+	std::function<Real(int, int)> getProductFirstDerivativeDCS(
+			GridFunction& gf1, GridFunction& gf2, Delta d, 
+			Function f1, Function f2);
+	std::function<Real(int, int)> getProductFirstDerivativeDCS(
+			GridFunction& gf1, GridFunction& gf2, Delta d, 
+			int f1, int f2);
 };
 
 

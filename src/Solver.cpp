@@ -1,4 +1,5 @@
 #include "Solver.hpp"
+#include "Debug.hpp"
 
 #include <cmath>
 
@@ -23,7 +24,10 @@ namespace Solver
 		{
 			Real pxx = (p(i+1,j) - 2.0*p(i,j) + p(i-1,j)) / dxx;
 			Real pyy = (p(i,j+1) - 2.0*p(i,j) + p(i,j-1)) / dyy;
-			numerator = numerator + pow(pxx + pyy - rhs(i,j) ,2.0);
+
+			Real help = pxx + pyy - rhs(i,j);
+
+			numerator += pow(help,2.0);
 		}
 
 		Real res = sqrt(numerator / denominator);
@@ -40,6 +44,7 @@ namespace Solver
 	{
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
+
 		forall(i,j,inner_begin,inner_end)
 		{
 			Real old_value = p(i,j);
@@ -49,7 +54,9 @@ namespace Solver
 			Real new_value = 
 				(1. - omega) * old_value 
 				+ 
-				omega * ((dxx*dyy)/(2.0*(dxx+dyy))) * ( pxx + pyy - rhs(i,j) );
+				omega 
+				* ((dxx*dyy)/(2.0*(dxx+dyy))) 
+				* ( pxx + pyy - rhs(i,j) );
 
 			p(i,j) = new_value;
 		}
