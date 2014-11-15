@@ -92,7 +92,7 @@ void IO::parseArguments(int argc, char** argv)
 	}
 }
 
-Simparam IO::readInputfile()
+SimParams IO::readInputfile()
 {
   //Store the input parameters.
 	std::ifstream file (settings, std::ios::in);// | std::ios::binary);
@@ -105,7 +105,7 @@ Simparam IO::readInputfile()
 	std::size_t foundat;
 
 
-	Simparam simparam;
+	SimParams simparam;
 
 	/* pretty much look for every option we support, one by one.
 	 * this way we also ignore substring that have nothing to do with 

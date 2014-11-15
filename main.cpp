@@ -7,7 +7,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-Real u(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
+Real u_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 {
 	Real value = simparam.ui;
 	if (index.i == 0) value = 0.0;
@@ -17,7 +17,7 @@ Real u(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
 	return value;
 }
 
-Real v(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
+Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 {
 	Real value = simparam.vi;
 	if (index.i == 0) value = -gf(index.i+1, index.j);
@@ -30,8 +30,8 @@ Real v(Index index, GridFunction& gf, Dimension dim, Simparam& simparam)
 int main(int argc, char** argv)
 {
 	IO io(argc, argv);
-	Simparam simparam = io.readInputfile();
-	simparam.writeSimParamToSTDOUT();
+	SimParams simparam = io.readInputfile();
+	simparam.writeSimParamsToSTDOUT();
 
 	Dimension dim;
 	dim.i = simparam.iMax;
@@ -41,9 +41,9 @@ int main(int argc, char** argv)
 	delta.y = simparam.yLength / simparam.jMax;
 
 	Domain domain(dim, delta,
-		/* U */std::bind(u, std::placeholders::_1, std::placeholders::_2, 
+		/* U */std::bind(u_bounds, std::placeholders::_1, std::placeholders::_2, 
 			std::placeholders::_3, std::ref(simparam)),
-		/* V */std::bind(v, std::placeholders::_1, std::placeholders::_2, 
+		/* V */std::bind(v_bounds, std::placeholders::_1, std::placeholders::_2, 
 			std::placeholders::_3, std::ref(simparam)),
 		/* W==0 */[](Index i, GridFunction& gf, Dimension dim)
 			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 

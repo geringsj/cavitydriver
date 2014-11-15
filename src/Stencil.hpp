@@ -1,8 +1,3 @@
-//! This is still kind of a "Stencil", but now it is on steroids
-/*!
- * @author becherml, friesfn, geringsj
- * @date 2014
- */
 
 #ifndef Derivatives_hpp
 #define Derivatives_hpp 
@@ -10,6 +5,25 @@
 #include "GridFunction.hpp"
 #include <functional>
 
+/*!
+ */
+
+/**
+ * This is (still) (kind of) a "Stencil", but (now) it is on steroids.
+ * 
+ * @author becherml, friesfn, geringsj
+ * @date 2014
+ *
+ * TODO: detailed description
+ * * provides simple derivatives:
+ * 	* first, backward
+ * 	* first, forward
+ * 	* second, central
+ * * provides extendex derivatives:
+ * 	* first derivative of product of functions (F*G), 
+ * 	derived in direction of G and evaluated at F(i,j)
+ * 	(yes, the order of functions matters: (F*G) =/= (G*F) )
+ */
 namespace Derivatives
 {
 	/* those enums are expected when demanding a derivative operator, 
@@ -17,8 +31,7 @@ namespace Derivatives
 	enum class Function {
 		U = 1,
 		V = 2,
-		W = 3,
-		P = 4
+		W = 3
 	};
 	typedef Function F;
 
@@ -33,7 +46,7 @@ namespace Derivatives
 
 		xx=4, 
 		yy=5, 
-		zz=6,
+		zz=6
 	};
 	typedef Direction d;
 
