@@ -1,15 +1,17 @@
-//! We compute the residual and SOR Cycle here
-/*!
+
+/** 
+ * We compute the residual and SOR cycle here.
+ * 
  * @author becherml, friesfn, geringsj
- * @date 2014
+ * @date 11/2014
+ *
  */
+
 
 #ifndef Solver_hpp
 #define Solver_hpp
 
 #include "GridFunction.hpp"
-
-/* TODO: document !! */
 
 namespace Solver
 {

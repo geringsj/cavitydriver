@@ -1,8 +1,3 @@
-//! This file implements the domain we will be working in 
-/*!
- * @author becherml, friesfn, geringsj
- * @date 2014
- */
 
 #ifndef Domain_hpp
 #define Domain_hpp
@@ -12,15 +7,22 @@
 
 #include <functional>
 
-/**
- * The class represents the complete simulation domain.
+
+/** 
+ * Implements the Domain we will be working on, managing dimensions, grids and properties.
+ * 
+ * @author becherml, friesfn, geringsj
+ * @date 11/2014
+ *
+ * The Domain class represents the domain the simulation is computed on.
  * Therefore it stores and manages all grids and their properties.
  */
 class Domain
 {
 private: 
 	/** 
-	 * we need this struct for things to be easier */
+	 * We need this struct for things to be easier.
+	 */
 	struct Grid3D
 	{
 		Grid3D(Dimension dim) : 
@@ -113,16 +115,16 @@ private:
 	/* TODO document in a non-stupid manner. 
 	 * also mention: we are prepared to do 3D, but don't do it yet */
 	/**
-	 * Size of the domain
+	 * Size of the domain.
 	 */
 	Dimension m_dimension;
 	/**
-	 * Marks the inner of the domain 
+	 * Marks the inner of the domain.
 	 */
 	Dimension m_inner_begin, m_inner_end[4];
 
 	/**
-	 * Grid spacing
+	 * Grid spacing.
 	 */
 	Point m_delta;
 
@@ -133,7 +135,7 @@ private:
 	GridFunction m_p_rhs;
 
 	/**
-	 * Velocities grids
+	 * Velocities grids.
 	 */
 	Grid3D m_velocities;
 	Grid3D m_preliminary_velocities_FGH;

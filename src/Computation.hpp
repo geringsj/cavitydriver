@@ -29,7 +29,7 @@ namespace Computation
 	/** 
 	 * Compute the timestep deltaT that is to be used in further computations.
 	 *
-	 * @return computed timestep deltaT
+	 * @return Computed timestep deltaT.
 	 *
 	 * Implements chapter "3.2.5 Time Step - Stability Conditions" formulas from 
 	 * the script (page 25). 
