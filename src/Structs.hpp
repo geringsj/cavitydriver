@@ -48,7 +48,7 @@ typedef unsigned int uint;
 typedef double Real;
 
 
-/** The Index struct allows easy handling and access of 2D (and 3D) unsigned integral indices.
+/** The Index struct allows easy handling and access of 2D (and 3D) signed integral indices.
  * Indices can be accessed via .i , .j ( .k ) or via [0], [1] ([2]), respectively.
  * Note: no array templates are used here.
  */

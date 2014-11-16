@@ -12,7 +12,7 @@
  * This is (still) (kind of) a "Stencil", but (now) it is on steroids.
  * 
  * @author becherml, friesfn, geringsj
- * @date 2014
+ * @date 11/2014
  *
  * The Derivatives namespace generates derivative operators that are demanded 
  * by the user, and returns those operators as functions D(i,j) to the user.
