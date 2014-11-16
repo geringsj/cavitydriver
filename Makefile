@@ -36,6 +36,11 @@ $(MAIN_BIN): $(MAIN) $(OBJECTS)
 $(TESTS_OBJ): $(TESTS_SRC) $(OBJECTS)
 	$(CXX) $(CPPFLAGS) -o $@ $(patsubst bin/%,tests/%.cpp,$@) $(filter src%,$^) $(LDFLAGS)
 
+doxy:
+	doxygen ./doxygenconfig.txt
+	make -C ./documentation/latex/
+	zathura ./documentation/latex/refman.pdf
+
 .PHONY: clean
 clean:
 	rm -rf bin $(OBJECTS) src/*.hpp.gch

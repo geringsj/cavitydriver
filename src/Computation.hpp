@@ -14,7 +14,7 @@
  * for private members, it is a namespace.
  *
  * All functions expect a Domain to operate on and some values 
- * from the simulation parameters. 
+ * from the simulation parameters SimParams. 
  *
  * The needed Grids to operate/compute on are retrieved from the domain 
  * dimension-wise using an easy interface, which allows the implementation 
@@ -28,6 +28,8 @@ namespace Computation
 
 	/** 
 	 * Compute the timestep deltaT that is to be used in further computations.
+	 *
+	 * @return computed timestep deltaT
 	 *
 	 * Implements chapter "3.2.5 Time Step - Stability Conditions" formulas from 
 	 * the script (page 25). 
