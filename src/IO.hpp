@@ -52,7 +52,7 @@ public:
   /*!
   * Methods reads the simulation parameters from the specified input file.
   */
-  Simparam readInputfile();
+  SimParams readInputfile();
 
 private:
 

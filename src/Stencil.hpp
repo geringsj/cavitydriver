@@ -1,313 +1,162 @@
-//! This is still kind of a "Stencil", but now it is on steroids
-/*!
- * @author becherml, friesfn, geringsj
- * @date 2014
- */
 
 #ifndef Derivatives_hpp
 #define Derivatives_hpp 
 
-#include "Structs.hpp"
 #include "GridFunction.hpp"
-#include "Debug.hpp"
-
 #include <functional>
 
+/*!
+ */
+
+/**
+ * This is (still) (kind of) a "Stencil", but (now) it is on steroids.
+ * 
+ * @author becherml, friesfn, geringsj
+ * @date 11/2014
+ *
+ * The Derivatives namespace generates derivative operators that are demanded 
+ * by the user, and returns those operators as functions D(i,j) to the user.
+ * This makes things easier for the implementation and usage of derivatives.
+ *
+ * The following derivative types are supported (see Derivatives::Direction):
+ * - first derivative, backward, in x, y (and z) direction
+ * - first derivative, forward, in x, y (and z) direction
+ * - secons derivative, central, in x, y (and z) direction
+ * 
+ * For the Momentum Equations we provide first derivatives of a product of functions F and G:
+ * - ( F * G ) evaluated at the grid position of F(i,j) and derived in 
+ *   the direction that is associated with G.
+ * So the order of functions matters: (F*G) =/= (G*F).
+ * F and G can be different, or the same function. 
+ */
 namespace Derivatives
 {
-	/* those enums are expected when demanding a derivative operator, 
-	 * so the functions know what to do (to get the dimensions right and stuff) */
-	enum class Function {
-		U = 1,
-		V = 2,
-		W = 3,
-		P = 4
-	};
-	/* here we have a wide variety of directions we 
-	 * can take the derivative with respect to 
-	 * think of it like in the formula: 
-	 * (d F) / (d r) 
-	 * where F is a function from Derivatives::Function
-	 * and r is a direction from Derivatives::Direction
-	 *
-	 * rf / rb are the (first) forward / backward derivative, respectively 
-	 * rr is the central second derivative 
-	 * _r is the first derivative of a product of functions F and G: d(F * G)/dr
-	 *
-	 * the getDerivative() functions return the demanded derivatives as functions 
-	 * that evaluate the given GridFunction using the given gridspacing delta 
-	 * in an artbitrary gridpoint (i,j) and return the value of the 
-	 * derivative in that point*/
+	/** Supported directions for first and second derivatives of a function F. */
 	enum class Direction {
-		xb=-1,
+		xb=-1, 
+		/**< First backward derivative in x direction. */
 		yb=-2,
+		/**< First backward derivative in y direction. */
 		zb=-3,
+		/**< First backward derivative in z direction. */
 
 		xf=1, 
+		/**< First forward derivative in x direction. */
 		yf=2, 
+		/**< First forward derivative in y direction. */
 		zf=3, 
+		/**< First forward derivative in z direction. */
 
 		xx=4, 
+		/**< Second central derivative in x direction. */
 		yy=5, 
-		zz=6,
-
-		_x=7, 
-		_y=8, 
-		_z=9
+		/**< Second central derivative in y direction. */
+		zz=6
+		/**< Second central derivative in z direction. */
 	};
+	typedef Direction d;
 
-	/* attention: we don't handle weird Function-Direction cases here, 
-	 * only the ones we will use later
+	/** Supported functions for derivatives of products (F*G). */
+	enum class Function {
+		U = 1, 
+		/**< Corresponds to direction x. */
+		V = 2,
+		/**< Corresponds to direction y. */
+		W = 3
+		/**< Corresponds to direction z. */
+	};
+	typedef Function F;
+
+	/** Function to get first or second derivatives.
+	 * @return Returns a function 'Real D(int i, int j)' that evaluates as 
+	 * the demanded derivative at (i,j).
 	 */
-
-	std::function<Real(int,int)> genFd(
-			GridFunction& gf, Delta d,
-			Direction df)
-	{
-		Real delta = 0.0;
-		int dimX=0, dimY=0, dimZ=0;
-		int add1=0, add2=0;
-		switch(df) /* set right dimension */
-		{
-			case Direction::xf:
-			case Direction::xb:
-				delta = d.x;
-				dimX = 1;
-				dimY = 0;
-				dimZ = 0;
-				break;
-			case Direction::yf:
-			case Direction::yb:
-				delta = d.y;
-				dimX = 0;
-				dimY = 1;
-				dimZ = 0;
-				break;
-			case Direction::zf:
-			case Direction::zb:
-				delta = d.z;
-				dimX = 0;
-				dimY = 0;
-				dimZ = 1;
-				break;
-			default:
-				break;
-		}
-		switch(df) /* set right derivative */
-		{
-			case Direction::xf:
-			case Direction::yf:
-			case Direction::zf:
-				/* forward */
-				add1 = +1; /* index on the left */
-					/* minus */
-				add2 = 0; /* index on the right */
-				break;
-			case Direction::xb:
-			case Direction::yb:
-			case Direction::zb:
-				/* backward */
-				add1 = 0; /* index on the left */
-					/* minus */
-				add2 = -1; /* index the right */
-				break;
-			default:
-				return [](int i, int j) { return i*j*0.0; };
-				break;
-		}
-		return [&gf, delta, add1, add2, dimX, dimY, dimZ](int i, int j)
-			{
-				return (gf( i+ add1*dimX , j + add1*dimY) - gf( i + add2*dimX, j + add2*dimY)) / delta;
-			};
-	}
-
-	std::function<Real(int,int)> genFdd(
-			GridFunction& gf, Delta d,
-			Direction df)
-	{
-		Real delta = 0.0;
-		int dimX=0, dimY=0, dimZ=0;
-		int add1=+1, add2=0, add3=-1;
-		switch(df) /* set right dimension */
-		{
-			case Direction::xx:
-				delta = d.x;
-				dimX = 1;
-				dimY = 0;
-				dimZ = 0;
-				break;
-			case Direction::yy:
-				delta = d.y;
-				dimX = 0;
-				dimY = 1;
-				dimZ = 0;
-				break;
-			case Direction::zz:
-				delta = d.z;
-				dimX = 0;
-				dimY = 0;
-				dimZ = 1;
-				break;
-			default:
-				break;
-		}
-		return [&gf, delta, add1, add2, add3, dimX, dimY, dimZ](int i, int j)
-			{
-				return 
-					(gf( i+ add1*dimX , j + add1*dimY) 
-					 - 2.0*gf( i + add2*dimX, j + add2*dimY) 
-					 + gf( i + add3*dimX, j + add3*dimY)) 
-					/ (delta*delta);
-			};
-	}
-
-	std::function<Real(int, int)> genFG_d(
-			GridFunction& gf1, GridFunction& gf2, 
-			Delta d, 
-			Function f1, Function f2, Direction df)
-	{
-		Real delta = 0.0;
-		int f1dimX=0, f1dimY=0, f1dimZ=0;
-		int f2dimX=0, f2dimY=0, f2dimZ=0;
-		switch(df) /* set right dimension */
-		{
-			case Direction::_x:
-				delta = d.x;
-				break;
-			case Direction::_y:
-				delta = d.y;
-				break;
-			case Direction::_z:
-				delta = d.z;
-				break;
-			default:
-				break;
-		}
-		switch(f1)
-		{
-			case Function::U:
-				f1dimX = 1;
-				f1dimY = 0;
-				f1dimZ = 0;
-				break;
-			case Function::V:
-				f1dimX = 0;
-				f1dimY = 1;
-				f1dimZ = 0;
-				break;
-			case Function::W:
-				f1dimX = 0;
-				f1dimY = 0;
-				f1dimZ = 1;
-				break;
-			default:
-				break;
-		}
-		switch(f2)
-		{
-			case Function::U:
-				f2dimX = 1;
-				f2dimY = 0;
-				f2dimZ = 0;
-				break;
-			case Function::V:
-				f2dimX = 0;
-				f2dimY = 1;
-				f2dimZ = 0;
-				break;
-			case Function::W:
-				f2dimX = 0;
-				f2dimY = 0;
-				f2dimZ = 1;
-				break;
-			default:
-				break;
-		}
-		int add=+1, sub=-1;
-		return [&gf1, &gf2, delta, add, sub, 
-				 f1dimX, f1dimY, f1dimZ,
-				 f2dimX, f2dimY, f2dimZ
-			](int i, int j)
-			{
-				Real fgp = 
-					(gf1( i , j ) + gf1( i + f2dimX*add , j + f2dimY*add)) 
-					* 
-					(gf2( i , j ) + gf2( i + f1dimX*add, j + f1dimY*add));
-				Real fgm = 
-					(gf1( i + f2dimX*sub, j + f2dimY*sub) + gf1( i , j )) 
-					* 
-					(gf2( i + f2dimX*sub, j + f2dimY*sub) 
-					 + 
-					 gf2( i + f2dimX*sub + f1dimX*add, j + f2dimY*sub + f1dimY*add));
-				return (fgp - fgm) / (4.0*delta);
-			};
-	}
-
-
-	/* call those from outside */
-
 	std::function<Real(int, int)> getDerivative(
 			GridFunction& gf, 
+			/**< GridFunction to take the derivative of */
 			Delta d, 
-			Direction df)
-	{
-		switch(df)
-		{
-			case Direction::xf:
-			case Direction::yf:
-			case Direction::zf:
-			case Direction::xb:
-			case Direction::yb:
-			case Direction::zb:
-				return Derivatives::genFd(gf, d, df);
-				break;
-			case Direction::xx:
-			case Direction::yy:
-			case Direction::zz:
-				return genFdd(gf, d, df);
-				break;
-			default:
-				return [](int i, int j){ return i*j*0.0; };
-				break;
-		};
-	}
+			/**< Grid spacing delta, needed for finite difference. */
+			Direction df
+			/**< The direction in which the returned derivative operator should derive. */
+			);
+
+	/** Function to get first or second derivatives.
+	 * @return Returns a function 'Real D(int i, int j)' that evaluates as 
+	 * the demanded derivative at (i,j).
+	 *
+	 * This one takes an int as derivative direction. 
+	 * See the Derivatives::Direction enum for accepted values of df.
+	 */
 	std::function<Real(int, int)> getDerivative(
 			GridFunction& gf, 
+			/**< GridFunction to take the derivative of */
 			Delta d, 
-			int df)
-	{
-		Direction dff = static_cast<Derivatives::Direction>(df);
-		return Derivatives::getDerivative(gf, d, dff);
-	}
+			/**< Grid spacing delta, needed for finite difference. */
+			int df
+			/**< Integer that has a value corresponding to the demanded 
+			 * derivative operator (see Derivatives::Direction enum). */
+			);
 
-	std::function<Real(int, int)> getDerivative(
-			GridFunction& gf1, GridFunction& gf2, 
+	/** Function to get first derivative of product of functions (F*G).
+	 * @return Returns a function 'Real D(int i, int j)' that evaluates as 
+	 * the demanded derivative at (i,j).
+	 *
+	 * The semantics here are a little tricky: D(i,j) will evaluate at the
+	 * grid position of F(i,j), and the derivative will be taken in the direction
+	 * that is associated with G. 
+	 * Example: G==V => derive in y direction.
+	 * The order of functions matters: (F*G) =/= (G*F).
+	 * F and G can be different, or the same (grid-)function. 
+	 */
+	std::function<Real(int, int)> getProductFirstDerivative(
+			GridFunction& gfF, 
+			/**< GridFunction for first function, F, of the product. */
+			GridFunction& gfG, 
+			/**< GridFunction for second function, G, of the product. */
 			Delta d, 
-			Function f1, Function f2, Direction df)
-	{
-		switch(df)
-		{
-			case Direction::_x:
-			case Direction::_y:
-			case Direction::_z:
-				return genFG_d(gf1, gf2, d, f1, f2, df);
-				break;
-			default:
-				return [](int i, int j){ return i*j*0.0; };
-				break;
-		}
-	}
-	std::function<Real(int, int)> getDerivative(
-			GridFunction& gf1, GridFunction& gf2, 
-			Delta d, 
-			int f1, int f2, int df)
-	{
-		Function ff1 = static_cast<Derivatives::Function>(f1);
-		Function ff2 = static_cast<Derivatives::Function>(f2);
-		Direction dff = static_cast<Derivatives::Direction>(df);
-		return getDerivative(gf1, gf2, d, ff1, ff2, dff);
-	}
+			/**< Grid spacing delta, needed for finite difference. */
+			Function F, 
+			/**< Semantics of first function F: is it U or V (or W) ? */
+			Function G
+			/**< Semantics of second function G: is it U or V (or W) ? */
+			);
 
+	/** Function to get first derivative of product of functions (F*G).
+	 * @return Returns a function 'Real D(int i, int j)' that evaluates as 
+	 * the demanded derivative at (i,j).
+	 *
+	 * Just like the other getProductFirstDerivative, but this one takes 
+	 * integer values corresponding to the enums for F and G (see Derivatives::Function).
+	 */
+	std::function<Real(int, int)> getProductFirstDerivative(
+			GridFunction& gfF, 
+			GridFunction& gfG, 
+			Delta d, 
+			int F, 
+			int G
+			);
+
+	/** Returns first derivative of (F*G) with 'Donor-Cell Scheme' applied.
+	 * Semantics and usage same as in Derivatives::getProductFirstDerivative.
+	 */
+	std::function<Real(int, int)> getProductFirstDerivativeDCS(
+			GridFunction& gfF, 
+			GridFunction& gfG, 
+			Delta d, 
+			Function F, 
+			Function G
+			);
+
+	/** Returns first derivative of (F*G) with 'Donor-Cell Scheme' applied.
+	 * Semantics and usage same as in Derivatives::getProductFirstDerivative.
+	 */
+	std::function<Real(int, int)> getProductFirstDerivativeDCS(
+			GridFunction& gfF, 
+			GridFunction& gfG, 
+			Delta d, 
+			int F, 
+			int G
+			);
 };
 
 

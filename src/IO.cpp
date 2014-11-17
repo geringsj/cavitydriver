@@ -65,6 +65,26 @@ void IO::parseArguments(int argc, char** argv)
 			}
 			else --argc; ++argv;
 		}
+		else if (argv[0] == (std::string)"--d")
+		{
+			m_debug = true;
+			--argc; ++argv;
+		}
+		else if (argv[0] == (std::string)"--li")
+		{
+			m_log_info = true;
+			--argc; ++argv;
+		}
+		else if (argv[0] == (std::string)"--le")
+		{
+			m_log_err = true;
+			--argc; ++argv;
+		}
+		else if (argv[0] == (std::string)"--lw")
+		{
+			m_log_warn = true;
+			--argc; ++argv;
+		}
 		else
 		{
 			--argc; ++argv;
@@ -72,7 +92,7 @@ void IO::parseArguments(int argc, char** argv)
 	}
 }
 
-Simparam IO::readInputfile()
+SimParams IO::readInputfile()
 {
   //Store the input parameters.
 	std::ifstream file (settings, std::ios::in);// | std::ios::binary);
@@ -85,7 +105,7 @@ Simparam IO::readInputfile()
 	std::size_t foundat;
 
 
-	Simparam simparam;
+	SimParams simparam;
 
 	/* pretty much look for every option we support, one by one.
 	 * this way we also ignore substring that have nothing to do with 
@@ -332,11 +352,9 @@ IO::writeVTKFile (const Index & griddimension, GridFunction & u,
   Real deltaX = delta[0];
   Real deltaY = delta[1];
 
-  int iMax = griddimension[0];// -1;
-  int jMax = griddimension[1];// -1;
+  int iMax = griddimension[0];// w.r.t. inner of P
+  int jMax = griddimension[1];// w.r.t. inner of P
 
-  //char numstr[21];
-  //sprintf (numstr, "%d", step);
   std::string filename;
   filename.append("./");
   filename.append (output);
@@ -369,60 +387,56 @@ IO::writeVTKFile (const Index & griddimension, GridFunction & u,
   os << "<?xml version=\"1.0\"?>" << std::endl
     << "<VTKFile type=\"StructuredGrid\">" << std::endl
     << "<StructuredGrid WholeExtent=\""
-    << "0" << " " << (iMax - 1) << " "
-    << "0" << " " << (jMax - 1) << " "
+    << "0" << " " << (iMax-1) << " "
+    << "0" << " " << (jMax-1) << " "
     << "0" << " " << "0" << " "
     << "\" GhostLevel=\"" << "1" << "\">" << std::endl
     << "<Piece Extent=\""
-    << "0" << " " << (iMax - 1) << " "
-    << "0" << " " << (jMax - 1) << " "
+    << "0" << " " << (iMax-1) << " "
+    << "0" << " " << (jMax-1) << " "
     << "0" << " " << "0" << " "
     << "\">" << std::endl
     << "<Points>" << std::endl
     <<
     "<DataArray type=\"Float64\" format=\"ascii\" NumberOfComponents=\"3\"> "
     << std::endl;
-  for (int i = 0; i < iMax; ++i)
-    {
-      for (int j = 0; j < jMax; ++j)
-	{
-	  os << std::scientific << i * deltaX << " " << j *
-	    deltaY << " " << 0.0 << std::endl;
-	}
-    }
+  for (int i = 1; i <= iMax; ++i)
+  {
+	  for (int j = 1; j <= jMax; ++j)
+	  {
+		  os << std::scientific << i * deltaX << " " << j *
+			  deltaY << " " << 0.0 << std::endl;
+	  }
+  }
   os << "</DataArray>" << std::endl
     << "</Points>" << std::endl
     << "<PointData Vectors=\"field\"  Scalars=\"P\">"
     << std::endl <<
     "<DataArray Name=\"field\" NumberOfComponents=\"3\" type=\"Float64\" >" <<
     std::endl;
-  for (int i = 0; i < iMax; ++i)
-    {
-      Real x = i * deltaX;
-
-      for (int j = 0; j < jMax; ++j)
-	{
-	  Real y = j * deltaY;
-
-	  os << std::scientific << interpolateVelocityU (x, y, u,
-							 delta) << " " <<
-	    interpolateVelocityV (x, y, v, delta) << " " << 0. << std::endl;
-	}
-
-    }
+  for (int i = 1; i <= iMax; ++i)
+  {
+	  for (int j = 1; j <= jMax; ++j)
+	  {
+		  os << std::scientific << 
+			  (u(i,j)+u(i-1,j)) / 2.0
+			  /*interpolateVelocityU(x, y, u, delta)*/ << " " <<
+			  (v(i,j)+v(i,j-1)) / 2.0
+			  /*interpolateVelocityV(x, y, v, delta)*/ << " " << 
+			  0.0 << std::endl;
+	  }
+  }
   os << "</DataArray>" << std::endl
     << "<DataArray type=\"Float64\" Name=\"P\" format=\"ascii\">" <<
     std::endl;
-  for (int i = 0; i <= iMax; ++i)
-    {
-      for (int j = 0; j <= jMax; ++j)
-	{
-	  os << std::scientific << p(i,j) << " ";
-		//os << std::scientific << 0.0 << " ";
-	}
-      os << std::endl;
-
-    }
+  for (int i = 1; i <= iMax; ++i)
+  {
+	  for (int j = 1; j <= jMax; ++j)
+	  {
+		  os << std::scientific << p(i,j) << " ";
+	  }
+	  os << std::endl;
+  }
 
   os << "</DataArray>" << std::endl
     << "</PointData>" << std::endl

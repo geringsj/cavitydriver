@@ -1,3 +1,10 @@
+/**
+ * taken from 
+ * http://c.learncodethehardway.org/book/ex20.html
+ *
+ * those defines are very useful, but we did not invent them!
+ */
+
 #ifndef __dbg_h__
 #define __dbg_h__
 
@@ -6,18 +13,18 @@
 #include <string.h>
 
 #ifdef NDEBUG
-#define debug(M, ...)
+	#define debug(M, ...)
 #else
-#define debug(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+	#define debug(M, ...) fprintf(stdout/*stderr*/, "[DEBUG] " M " (%s:%d)\n", ##__VA_ARGS__, __FILE__, __LINE__);
 #endif
 
 #define clean_errno() (errno == 0 ? "None" : strerror(errno))
 
-#define log_err(M, ...) fprintf(stderr, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)
+#define log_err(M, ...) fprintf(stdout/*stderr*/, "[ERROR] " M " (%s:%d:errno:%s)\n", ##__VA_ARGS__, __FILE__, __LINE__, clean_errno())
 
-#define log_warn(M, ...) fprintf(stderr, "[WARN] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)
+#define log_warn(M, ...) fprintf(stdout/*stderr*/, "[WARN] " M " (%s:%d:errno:%s)\n", ##__VA_ARGS__, __FILE__, __LINE__, clean_errno())
 
-#define log_info(M, ...) fprintf(stderr, "[INFO] (%s:%d) " M "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+#define log_info(M, ...) fprintf(stdout, "[INFO] " M "\n", ##__VA_ARGS__)
 
 #define check(A, M, ...) if(!(A)) { log_err(M, ##__VA_ARGS__); errno=0; goto error; }
 
@@ -26,5 +33,16 @@
 #define check_mem(A) check((A), "Out of memory.")
 
 #define check_debug(A, M, ...) if(!(A)) { debug(M, ##__VA_ARGS__); errno=0; goto error; }
+
+/**
+ * I hate myself for doing this, but we need to do this if we want to set
+ * the output of the debug and log defines from the parseArguments function
+ * in IO.
+ * TODO: Find a nicer way to do this!!!
+ */
+extern bool m_debug;
+extern bool m_log_err;
+extern bool m_log_warn;
+extern bool m_log_info;
 
 #endif

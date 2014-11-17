@@ -1,22 +1,15 @@
 #include "GridFunction.hpp"
 
-void GridFunction::init(const uint dimX, const uint dimY, const uint dimZ = 1)
+GridFunction::GridFunction(Index dims) 
 {
-	dimension[0] = dimX;
-	dimension[1] = dimY;
-	dimension[2] = dimZ;
+	dimension[0] = dims.i;
+	dimension[1] = dims.j;
+	dimension[2] = 1;
 
-	this->grid = new Real[dimX*dimY*dimZ];
-}
+	this->grid = new Real[dimension[0]*dimension[1]*dimension[2]];
 
-GridFunction::GridFunction(const uint dimX, const uint dimY, const uint dimZ)
-{
-	this->init(dimX, dimY, dimZ);
-}
-
-GridFunction::GridFunction(Index griddimension) 
-{
-	this->init(griddimension[0], griddimension[1], griddimension[2]);
+	forall(i,j,Index(0,0),Index(this->dimension.i-1,this->dimension.j-1)) 
+		this->operator()(i,j) = 0.0;
 }
 
 GridFunction::~GridFunction()
@@ -30,13 +23,12 @@ Index GridFunction::getGridDimension() const
 	return this->dimension;
 }
 
-Real GridFunction::getMaxValueGridFunction(
-	const Index begin, 
-	const Index end)
+Real GridFunction::getMaxValueGridFunction()
 {
+	Index begin(0,0);
 	Real max = this->operator()(begin.i, begin.j);
 
-	forall(i,j,begin,end)
+	forall(i,j,begin,Index(this->dimension.i-1,this->dimension.j-1))
 	{
 		if(max < this->operator()(i,j))
 			max = this->operator()(i,j);
@@ -44,11 +36,36 @@ Real GridFunction::getMaxValueGridFunction(
 	return max;
 }
 
-Real GridFunction::getMaxValueGridFunction()
-{
-	Index begin; begin[0]=1; begin[1]=1;
-	Index end; 
-	end[0]=this->dimension[0]-1; end[1]=this->dimension[1]-1;
-	return getMaxValueGridFunction(begin,end);
+Real& GridFunction::operator[](Index d){
+	return this->operator()(d.i, d.j);
+}
+Real GridFunction::operator[](Index d) const {
+	return this->operator()(d.i, d.j);
+}
+Real& GridFunction::operator()(int i, int j){
+	return this->grid[i * dimension.j + j];
+}
+Real GridFunction::operator()(int i, int j) const { 
+	return this->grid[i * dimension.j + j];
 }
 
+//Real& operator()(int i, int j, int k){ /* TODO !? */
+//	return this->grid[i * dimension.j * dimension.k + j * dimension.k + k];
+//}
+//Real operator()(int i, int j, int k) const {
+//	return this->grid[i * dimension.j * dimension.k + j * dimension.k + k];
+//}
+
+void GridFunction::printSTDOUT()
+{
+	Index SI(0,0), EI(this->dimension.i-1,this->dimension.j-1);
+	for(int I=EI[1]; I>=SI[1]; I--)
+	{
+		for(int J=SI[0]; J<=EI[0]; J++)
+		{
+			std::cout <<std::setprecision(5)<<std::fixed << this->operator()(J,I) << "  ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}

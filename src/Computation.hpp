@@ -1,145 +1,107 @@
-//! This namespace implements the computation
-/*!
- * @author becherml, friesfn, geringsj
- * @date 2014
- */
 
 #ifndef Computation_hpp
 #define Computation_hpp
 
 #include "Domain.hpp"
-#include "Stencil.hpp"
-#include "Debug.hpp"
 
-#include <cmath>
-
+/** 
+ * Implements functions for computing several steps of the simulation algorithm.
+ *
+ * @author becherml, friesfn, geringsj
+ * @date 11/2014
+ *
+ * Since the Computation only operates on input values and has no need 
+ * for private members, it is a namespace.
+ *
+ * All functions expect a Domain to operate on and some values 
+ * from the simulation parameters SimParams. 
+ *
+ * The needed Grids to operate/compute on are retrieved from the domain 
+ * dimension-wise using an easy interface, which allows the implementation 
+ * of the Computation functions to be short and simple.
+ *
+ * Internally, for computation of derivatives, functions from the 
+ * Derivatives namespace are used.
+ */
 namespace Computation
 {
-Real computeTimestep(
-		Domain& domain,
-		const Real tau, const Real Re)
-{
-	Real result;
-	Real uMax, vMax;
 
-	uMax = domain.getVeolcity().m_u.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
-	vMax = domain.getVeolcity().m_v.getMaxValueGridFunction();//domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
-	result = std::fmin(
-			domain.getDelta().x*domain.getDelta().x *
-			domain.getDelta().y*domain.getDelta().y *Re
-			/
-			(2.0*(domain.getDelta().x*domain.getDelta().x+domain.getDelta().y*domain.getDelta().y)),
+	/** 
+	 * Compute the timestep deltaT that is to be used in further computations.
+	 *
+	 * @return Computed timestep deltaT.
+	 *
+	 * Implements chapter "3.2.5 Time Step - Stability Conditions" formulas from 
+	 * the script (page 25). 
+	 *
+	 * Needed grid width dx, height dy and uMax/vMax are retrieved from Domain.
+	 */
+	Real computeTimestep(
+			Domain& domain, 
+			/**< Domain where to get dy, dx, uMax, vMax from. */
+			const Real tau, 
+			/**< Some safety factor from simulation parameters SimParams. */
+			const Real Re 
+			/**< The Reynolds number from simulation parameters SimParams. */
+			); 
 
-			std::fmin(
-				domain.getDelta().x/std::abs(uMax),
-				domain.getDelta().y/std::abs(vMax)
-				));
 
-	return tau * result; /* tau is some safety factor in (0,1] */
-}
+	/** 
+	 * Compute the "preliminary velocities" F, G (, H), 
+	 * which result from the Momentum Equations given U and V.
+	 *
+	 * Implements chapter "3.2.1 Momentum Equations" formulas from the script (page 19f).
+	 * U and V (and W) are retrieved from the given Domain.
+	 * F and G ( and H) are stored in the given Domain.
+	 */
+	void computePreliminaryVelocities(
+			Domain& domain, 
+			/**< Domain where to get U, V, (and W) and where to store F and G (and H). */
+			const Real deltaT, 
+			/**< Time step as computed by Computation::computeTimestep. */
+			const Real Re, 
+			/**< The Reynolds number from simulation parameters SimParams. */
+			const Real alpha 
+			/**< Factor for weighted mean of 'original central difference 
+			 * and the Donor-Cell Scheme'. See script chapter "3.2.4", page 22ff. 
+			 * This value is stored in SimParams. */
+			);
 
-void computeMomentumEquationsFGH(
-		Domain& domain,
-		const Real deltaT, const Real Re)
-{
-	for(uint d=0; d<DIMENSIONS; d++)
-	{
-		auto Fxx = 
-			Derivatives::getDerivative(
-					domain.getVeolcity()[d],
-					domain.getDelta(),
-					Derivatives::Direction::xx);
-		auto Fyy = 
-			Derivatives::getDerivative(
-					domain.getVeolcity()[d],
-					domain.getDelta(),
-					Derivatives::Direction::yy);
-		/* TODO:
-		 * are those derivatives right? 
-		 * might explain the weird output 
-		 * dimension is tricky here */
-		auto FF_df = 
-			Derivatives::getDerivative(
-					domain.getVeolcity()[d],
-					domain.getVeolcity()[d],
-					domain.getDelta(),
-					1+d, 
-					1+d,
-					1+6+d); /* 7==Derivatives::Direction::_x */
-		int Gdim = (d+1)%DIMENSIONS;
-		auto FG_dg = 
-			Derivatives::getDerivative(
-					domain.getVeolcity()[d],
-					domain.getVeolcity()[Gdim],
-					domain.getDelta(),
-					1+d,
-					1+Gdim,
-					1+6+Gdim);
 
-		/* the formula: */
-		for(int i=domain.getBeginInnerDomains()[0]; 
-				i<= domain.getEndInnerDomain()[d][0]; i++)
-			for(int j=domain.getBeginInnerDomains()[1]; 
-					j<= domain.getEndInnerDomain()[d][1]; j++)
-		{
-			Point gpoint = Point(
-					/* here we are off by 1 or 2 because of the boundary */
-						Real(i)/domain.getEndInnerDomain()[d][0], 
-						Real(j)/domain.getEndInnerDomain()[d][1]);
+	/** 
+	 * Computes the right-hand side of the discrete Poisson equation for p^(n+1).
+	 * 
+	 * Implements Equation (3.3) on page 21 of the script 
+	 * (chapter "3.2.2 Continuity Equation".
+	 * The right-hand side RHS is computed as sum of backward differences of F and G,
+	 * divided by deltaT.
+	 * RHS is stored in the given Domain.
+	 */
+	void computeRighthandSide(
+			Domain& domain,
+			/**< Where F and G are read from, where right-hand side RHS is stored. */
+			const Real deltaT
+			/**< Time step as computed by Computation::computeTimestep. */
+			);
+	
 
-			domain.getPreliminaryVeolcity()[d](i, j) =
-				domain.getVeolcity()[d](i, j) + 
-				(deltaT/Re)*( Fxx(i,j) + Fyy(i,j) )
-				- FF_df(i,j) - FG_dg(i,j)
-				+ domain.g(d,gpoint);
-		}
-	}
-}
-
-void computeRighthandSide(
-		Domain& domain,
-		const Real deltaT)
-{
-	auto Fxb = Derivatives::getDerivative(
-			domain.F(),
-			domain.getDelta(),
-			Derivatives::Direction::xb);
-	auto Gyb = Derivatives::getDerivative(
-			domain.G(),
-			domain.getDelta(),
-			Derivatives::Direction::yb);
-
-	for(int i=domain.getBeginInnerDomains()[0]; 
-			i<= domain.getEndInnerDomain()[3][0]; i++)
-		for(int j=domain.getBeginInnerDomains()[1]; 
-				j<= domain.getEndInnerDomain()[3][1]; j++)
-	{
-		domain.p()(i,j) = ( Fxb(i,j) + Gyb(i,j) )/deltaT;
-	}
-}
-
-void computeNewVelocities(
-		Domain& domain,
-		const Real deltaT)
-{
-
-	for(uint d=0; d<DIMENSIONS; d++)
-	{
-		auto Pdb = Derivatives::getDerivative(
-				domain.p(),
-				domain.getDelta(),
-				-(int)(1+d));
-
-		for(int i=domain.getBeginInnerDomains()[0]; 
-				i<= domain.getEndInnerDomain()[d][0]; i++)
-			for(int j=domain.getBeginInnerDomains()[1]; 
-					j<= domain.getEndInnerDomain()[d][1]; j++)
-		{
-			domain.getVeolcity()[d]( i,j ) =
-				domain.getPreliminaryVeolcity()[d]( i,j ) - deltaT*Pdb(i,j);
-		}
-	}
-}
+	/** 
+	 * Computes new velocities U^(n+1) and V^(n+1) (and W^(n+1)).
+	 *
+	 * Implements equation (3.1) from the script, chapter 
+	 * "3.2.1 Momentum Equations" (page 20).
+	 *
+	 * New velocities are computed from old velocities U^(n), V^(n) (, W^(n)) 
+	 * and preliminary velocities F^(n), G^(n) (, H^(n))
+	 * using pressure p^(n+1) and timestep deltaT.
+	 */
+	void computeNewVelocities(
+			Domain& domain,
+			/**< Domain where to get F, G, (H) and pressure P, 
+			 * also where to store new velocities U, V (, W). */
+			const Real deltaT
+			/**< Time step as computed by Computation::computeTimestep. */
+			);
 };
 
 #endif
