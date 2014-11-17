@@ -1,7 +1,11 @@
 
 hokay, so heres the thing: 
 
--	evaluate simulation output in paraview (looks weird atm)
+-	move "writeToVTKFile" into a subclass which caches data in RAM and only
+	writes to disk when RAM is full / a limit/condition is reached
+	=> right now 1/3 of runnig time is writeVTK !!
+
+-	live visualization window instead of ParaView
 
 -	logging / debug messages system for nice, consistent output 
 	("std::cout << "is NOT nice) [check]
@@ -9,83 +13,44 @@ hokay, so heres the thing:
 
 some general ideas:
 -	write doxygen compatible documentation:
+	*
+	* check out Structs.hpp and Computation.cpp as examples of comment style 
+	*
+	* see: http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html
+	* DO QUOTE THE SCRIPT with chapter, page and equation reference (if possible)
 	* do NOT write about the obvious: "this file XXX implements class/namespace XXX"
 	* DO tell the reader what functionality is implemented and what input is
 	  expected: "class/namespace XXX implements functionality to do X, Y, Z. it
 	  expects A, B, C as input, A should have values in range ... "
 	* DO warn the user of weird behaviour 
--	clean up the code base. maybe put some namespaces in .hpp files back into
-	.cpp files, so the header is only the API a module exports
-	* maybe even make classes without member variables, just to encapsulate
-	  functionality. for example the Stencil.hpp is a namespace with functions
-	  the enduser should not use or see 
--	put shot description (see above), date, authors and a license (do we care? MIT? GPL?) in each file 
+-	put a license (do we care? MIT? GPL?) at beginning of each file 
 
 what needs to be done in each file:
 -	main.cpp:
-	* fix command line parameters parser [check]
-	* move command line parameters parser in IO [check]
-	* (??) move ParametersStruct from IO to Structs and return such a struct when
-	  reading 'inputvals' [check]
 	* compute omega for SOR cycle by hand
 	  Used the Method described in the paper (see comment), but the solver became
 	  unstable with the calculated omage. So reverted to the given one.
-	* rethink boundary reset: when do we need to do this?
 
 -	Computation.hpp
-	* make code prettier ? 
-	* check for correctness using formulas from script, especially if the correct
-	  derivatives are retrieved from the derivative generator (aka "Stencil")
-	* move implementation into .cpp ?
-	** WEIRD BUG: Computation.hpp uses the U, V, (W) GridFunctions
-	getMaxValueOfGridFunction() to compute the next TimeStep. when taking the max
-	value only in the inner of the grid in the first iteration we get a HUGE
-	timestep and skip all further iterations. when also considering the
-	GridFunction boundary values, we get a timestep=0.25 and the rest of the
-	algorithm runs nicely. initially the inner values are zero. should we move
-	the timestep computation from the beginning of the main loop to the end, when
-	we have larger values in the grids ?
+	* make code prettier ? [check, almost]
 
 -	Domain.hpp
 	* document usage of Domain constructor 
-	* move weird stuff to .cpp
-	* move Grid3D into Domain class as private struct ?
 
 -	GridFunction.hpp
-	* have a look at the comment at the beginning of the file: maybe kick
-	  everything except memory allocation, indexing operators and
-	  get{Dimension,MaxValue} ? we don't use the other functions, they are
-	  old-fashioned anyway 
-	  (except maybe "setGridFunctionToConstantValue(Real value)" )
-	  [check]
-	* have a look at the 3D operator()(int i, int j, int k) whether the memory
-	  access calculation is right [check]
-	** considering weird WEIRD BUG Computation.hpp (see above): remove one of the
-	two getMaxValue functions when we know what to do with the timestep
-	computation. (i would suggest taking Index begin and Index end from outside,
-	so the grid can truely not give a fuck about those things:
-	http://youtu.be/l8_ccuOYYQ8
 
 -	IO.hpp
-	* move SimParam struct into Structs.hpp and let IO return an instance of it
-	  after reading inputvals
-	* have a good look at their writeVTKFile implementation: are there off by 1
-	  errors which lead to a/the weird visualization in ParaView ?
+	* add an IO Logger class or somerhing? 
+	  that logger could then handle log levels and logging into files,
+	  but this seems rather time consuming and difficult to implement
 	* encapsulate command line parameters parser in IO class
 
 -	Solver.hpp
-	* IMPROVE SORCycle: implement DONOR CELL SCHEME !! but check whether we can
-	  formulate it as a DerivativeFunction from Stencil.hpp like FG_d, and if it
-	  then would still be correct. (this might be more of a Stencil.hpp thing)
-	* pass a Domain by reference instead of p/rhs/delta/inner_begin/inner_end,
-	  all if which the domain owns and knows anyway ?
-	* put implementation back in a .cpp ?
 
-- Stencil.cpp
+-	Stencil.cpp
+	* donor cell scheme is implemented, who can explain its correctness to me?
 	* document behaviour
 	* rename it? maybe to something like "Derivatives.hpp" ?
-	* move implementation to .cpp ?
-	* make a class out of it to hide construction of functions? (genF**())
 
 -	Structs.cpp
 	* i dont know
