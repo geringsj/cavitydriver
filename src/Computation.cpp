@@ -33,7 +33,7 @@ void computePreliminaryVelocities(
 {
 	for(uint D=0; D<DIMENSIONS; D++)
 	{
-		/* get derivatives for momentum equation for dimension D */
+		/* get second derivatives for momentum equation for dimension D */
 		auto Fxx =
 			Derivatives::getDerivative(domain.getVelocity()[D], domain.getDelta(),
 					Derivatives::Direction::xx);
