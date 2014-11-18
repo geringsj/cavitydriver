@@ -38,12 +38,10 @@ $(TESTS_OBJ): $(TESTS_SRC) $(OBJECTS)
 
 doxy:
 	doxygen ./doxygenconfig.txt
-	make -C ./documentation/latex/
-	zathura ./documentation/latex/refman.pdf
 
 .PHONY: clean
 clean:
-	rm -rf bin $(OBJECTS) src/*.hpp.gch
+	rm -rf bin $(OBJECTS) src/*.hpp.gch documentation
 
 new: clean all
 
