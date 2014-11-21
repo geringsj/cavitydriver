@@ -29,7 +29,7 @@ what needs to be done in each file:
 -	main.cpp:
 	* compute omega for SOR cycle by hand
 	  Used the Method described in the paper (see comment), but the solver became
-	  unstable with the calculated omage. So reverted to the given one.
+	  unstable with the calculated omage. So reverted to the given one. [check]
 
 -	Computation.hpp
 	* make code prettier ? [check, almost]

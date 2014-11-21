@@ -1,8 +1,8 @@
 xLength=1.0
 yLength=1.0
-iMax=128
-jMax=128
-re=1000
+iMax=32
+jMax=32
+re=200
 omg=1.7
 tau=0.5
 tEnd=36.5
