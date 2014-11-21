@@ -38,9 +38,6 @@
     <ClCompile Include="..\src\Solver.cpp" />
     <ClCompile Include="..\src\Stencil.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{43D3333A-6ACC-43DB-A937-5CD612680CD3}</ProjectGuid>
     <RootNamespace>cavitydriver</RootNamespace>

@@ -36,9 +36,12 @@ $(MAIN_BIN): $(MAIN) $(OBJECTS)
 $(TESTS_OBJ): $(TESTS_SRC) $(OBJECTS)
 	$(CXX) $(CPPFLAGS) -o $@ $(patsubst bin/%,tests/%.cpp,$@) $(filter src%,$^) $(LDFLAGS)
 
+doxy:
+	doxygen ./doxygenconfig.txt
+
 .PHONY: clean
 clean:
-	rm -rf bin $(OBJECTS) src/*.hpp.gch
+	rm -rf bin $(OBJECTS) src/*.hpp.gch documentation
 
 new: clean all
 

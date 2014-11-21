@@ -16,12 +16,19 @@
  *
  * The Domain class represents the domain the simulation is computed on.
  * Therefore it stores and manages all grids and their properties.
+ *
+ * Sorry for not documenting every method in detail. 
+ * We just have a bunch of getter-methods to get the grids and their properties.
+ * Also the Domain knows how to (re)set the boundaries of all grids ("itself").
  */
 class Domain
 {
 private: 
 	/** 
 	 * We need this struct for things to be easier.
+	 *
+	 * Because U, V (, W) and F, G (, H) have special needs for their dimensions, 
+	 * this struct is used to encapsulate the initialisation and storage of those grids.
 	 */
 	struct Grid3D
 	{
