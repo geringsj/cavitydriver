@@ -55,4 +55,9 @@ what needs to be done in each file:
 -	Structs.cpp
 	* i dont know
 
+-	Communication.hpp/cpp
+	* Look through the code and check if it works!
+	* maybe turn it into a namespace
+	* Documentation!
+
 
