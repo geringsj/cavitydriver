@@ -2,8 +2,10 @@
 ./bin/*
 *.o
 *.hpp.gch
+*.exe
 #out/*
 out*/
+documentation/*
 
 # linux workspace specific files
 .vimtags
