@@ -7,6 +7,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <chrono>
+
 Real u_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 {
 	Real value = simparam.ui;
@@ -29,6 +31,13 @@ Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 
 int main(int argc, char** argv)
 {
+	/* time measurement variables */
+	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
+	std::chrono::steady_clock::time_point t_sor_start, t_sor_end;
+	std::chrono::duration<double> time_span;
+	double t_sor_avg = 0.0;
+	double t_frame_avg = 0.0;
+
 	/* init IO/parameters */
 	IO io(argc, argv);
 	SimParams simparam = io.readInputfile();
@@ -68,10 +77,13 @@ int main(int argc, char** argv)
 	/* write initial state of velocities and pressure */
 	io.writeVTKFile(domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 	step++;
+	Real nextWrite = 0.0;
 
 	/* main loop */
 	while (t < simparam.tEnd)
 	{
+		t_frame_start = std::chrono::steady_clock::now();
+
 		/* the following block is for debugging purposes */
 		log_info("- Round %i", step);
 		if (m_log_info) log_info("= = = = = = = = = = = = = = =");
@@ -96,6 +108,7 @@ int main(int argc, char** argv)
 
 		Computation::computeRighthandSide(domain, dt);
 
+		t_sor_start = std::chrono::steady_clock::now();
 		do
 		{
 			domain.setPressureBoundaries();
@@ -108,7 +121,11 @@ int main(int argc, char** argv)
 					domain.p(), domain.rhs(), delta, 
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
 			it++;
-		} while (it < simparam.iterMax && res > simparam.eps); 
+		} while (it < simparam.iterMax && res > simparam.eps);
+		t_sor_end = std::chrono::steady_clock::now();
+		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_sor_end-t_sor_start);
+		t_sor_avg += time_span.count();
+		//log_info("SOR solver time: %f seconds",time_span.count());
 
 		if (m_log_info) 
 			log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
@@ -116,10 +133,25 @@ int main(int argc, char** argv)
 		it = 0;
 
 		Computation::computeNewVelocities(domain, dt);
-		io.writeVTKFile(
+
+		nextWrite += dt;
+		if(nextWrite > simparam.deltaVec)
+		{
+			io.writeVTKFile(
 				domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
+			nextWrite = 0;
+		}
 		step++;
+
+		t_frame_end = std::chrono::steady_clock::now();
+		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_frame_end-t_frame_start);
+		t_frame_avg += time_span.count();
+		//log_info("Overall frame time: %f seconds",time_span.count());
 	}
+
+	/* output average time per frame and pressure computation per frame */
+	log_info("Average frame time: %f seconds",t_frame_avg / (double)step-1);
+	log_info("Average SOR time: %f seconds",t_sor_avg / (double)step-1);
 
 	/* end of magic */
 	return 0;
