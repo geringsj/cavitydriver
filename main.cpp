@@ -64,6 +64,8 @@ int main(int argc, char** argv)
 			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
 		/* P==0 */[&simparam](Index i, GridFunction& gf, Dimension dim)
 			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
+	log_info("My Domain starts at Color: %s", 
+			(domain.getDomainFirstCellColor()==Color::Red)?("Red"):("Black"));
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);

@@ -1,18 +1,17 @@
 
-/** 
- * Communication via MPI 
- * 
- * @file Communication.hpp
- * @author becherml, friesfn, geringsj
- * @date 11/2014
- */
-
 #ifndef Communication_hpp
 #define Communication_hpp
 
 #include "GridFunction.hpp"
 #include "Domain.hpp"
 
+
+/** 
+ * Communication via MPI 
+ * 
+ * @author becherml, friesfn, geringsj
+ * @date 11/2014
+ */
 class Communication
 {
 	/* MPI will be asked to construct a cartesian grid of processes */
@@ -21,6 +20,7 @@ private:
 	Dimension m_procsGrid_myPosition;
 	Dimension m_globalDomain_dim;
 	Dimension m_myDomain_dim;
+	Color m_myDomainFirstCellColor;
 	Dimension m_myOffsetToGlobalDomain;
 
 	int m_numProcs;

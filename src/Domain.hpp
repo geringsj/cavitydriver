@@ -79,7 +79,8 @@ public:
 		std::function<Real(Point)> in_gy = 
 			[](Point coord)->Real{ return coord.x*0.0; },
 		std::function<Real(Point)> in_gz = 
-			[](Point coord)->Real{ return coord.x*0.0; }
+			[](Point coord)->Real{ return coord.x*0.0; },
+		Color firstCellColor=Color::Red
 		);
 
 	~Domain();
@@ -115,6 +116,8 @@ public:
 	Real gy(Point coord) { return m_forcefunc_gy(coord); }
 	Real gz(Point coord) { return m_forcefunc_gz(coord); }
 
+	Color getDomainFirstCellColor(){ return m_FirstCellColor; };
+
 	void setPressureBoundaries();
 	void setPreliminaryVelocitiesBoundaries();
 	void setVelocitiesBoundaries();
@@ -129,6 +132,11 @@ private:
 	 * Marks the inner of the domain.
 	 */
 	Dimension m_inner_begin, m_inner_end[4];
+
+	/**
+	 * Color of first inner ((1,1)) Cell of domain.
+	 */
+	Color m_FirstCellColor;
 
 	/**
 	 * Grid spacing.

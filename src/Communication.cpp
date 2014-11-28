@@ -1,14 +1,14 @@
 
 #include "Communication.hpp"
 
-#include <mpi.h>
+//#include <mpi.h>
 
 
 Communication::Communication(Dimension globalDomainDim)
 {
 }
 
-~Communication::Communication()
+Communication::~Communication()
 {
 }
 
