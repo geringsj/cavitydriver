@@ -252,4 +252,15 @@ struct SimParams
 	}
 };
 
+
+/**
+ * We use this for the Checkerboard-Solving Pattern in SOR, 
+ * and also in Communication for exchanging pressures.
+ */
+enum class Color {
+	All,
+	Red,
+	Black
+};
+
 #endif
