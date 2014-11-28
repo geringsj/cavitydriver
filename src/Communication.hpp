@@ -46,7 +46,7 @@ public:
 		PreliminaryVelocities
 	};
 
-	Communication(Dimension globalDomainDim);
+	Communication(Dimension globalDomainDim, /* MPI_Init needs argc and argv */int argc, char** argv);
 	~Communication();
 
 	void exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells=Color::All);

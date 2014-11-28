@@ -3,6 +3,8 @@
 #include "src/Computation.hpp"
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
+/* communication test */
+#include "src/Communication.hpp"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -50,6 +52,9 @@ int main(int argc, char** argv)
 	Delta delta;
 	delta.x = simparam.xLength / simparam.iMax;
 	delta.y = simparam.yLength / simparam.jMax;
+
+	/* communication test */
+	Communication comm = Communication(dim, argc, argv);
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(dim, delta,
