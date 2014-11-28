@@ -4,6 +4,7 @@
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
 
+#include <mpi.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -29,6 +30,22 @@ Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 
 int main(int argc, char** argv)
 {
+	int provided, claimed;
+
+	/*** Select one of the following
+	MPI_Init_thread( 0, 0, MPI_THREAD_SINGLE, &provided );
+	MPI_Init_thread( 0, 0, MPI_THREAD_FUNNELED, &provided );
+	MPI_Init_thread( 0, 0, MPI_THREAD_SERIALIZED, &provided );
+	MPI_Init_thread( 0, 0, MPI_THREAD_MULTIPLE, &provided );
+	***/
+
+	MPI_Init_thread(0, 0, MPI_THREAD_MULTIPLE, &provided);
+	MPI_Query_thread(&claimed);
+	printf("Query thread level= %d  Init_thread level= %d\n", claimed, provided);
+
+	MPI_Finalize();
+
+
 	/* init IO/parameters */
 	IO io(argc, argv);
 	SimParams simparam = io.readInputfile();
