@@ -1,15 +1,78 @@
 
 #include "Communication.hpp"
 
-//#include <mpi.h>
+#include <mpi.h>
 
 
-Communication::Communication(Dimension globalDomainDim)
+Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 {
+	m_globalDomain_dim = globalDomainDim;
+	/**
+	 * MPI initialization
+	 * We need argc and argv here so i had to pass them.
+	 * rc stores the errors that can occur during int.
+	 * m_numProcs stores the number of threads we create.
+	 * m_myRank stores the rank of each thread so we 
+	 *			know who the communication belongs to.
+	 * rc stores the return value from MPI_Init.
+	 *
+	 * Don't forget to call the destructor from Communication
+	 * because it calls MPI_Finalize to end the MPI programm.
+	 */
+	int rc = MPI_Init(&argc, &argv);
+	if (rc != MPI_SUCCESS) {
+		printf("Error starting MPI program. Terminating.\n");
+		MPI_Abort(MPI_COMM_WORLD, rc);
+	}
+
+	MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
+	MPI_Comm_rank(MPI_COMM_WORLD, &m_myRank);
+	printf("Number of tasks= %d My rank= %d \n", m_numProcs, m_myRank);
+}
+
+void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells)
+{
+	switch (grid)
+	{
+	case Communication::Handle::Pressure:
+		break;
+	case Communication::Handle::Velocities:
+		break;
+	case Communication::Handle::PreliminaryVelocities:
+		break;
+	default:
+		break;
+	}
+}
+
+void Communication::exchangeGridInnerValues(Domain domain, Handle grid)
+{
+	switch (grid)
+	{
+	case Communication::Handle::Pressure:
+		break;
+	case Communication::Handle::Velocities:
+		break;
+	case Communication::Handle::PreliminaryVelocities:
+		break;
+	default:
+		break;
+	}
+}
+
+bool Communication::checkForAnotherSORCycle(Real mySubResiduum)
+{
+
+}
+
+Real Communication::getGlobalTimeStep(Delta myMaxValues)
+{
+
 }
 
 Communication::~Communication()
 {
+	MPI_Finalize();
 }
 
 
