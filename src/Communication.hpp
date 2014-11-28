@@ -1,24 +1,64 @@
+
+#ifndef Communication_hpp
+#define Communication_hpp
+
 #include "GridFunction.hpp"
+#include "Domain.hpp"
 
-#include <mpi.h>
 
+/** 
+ * Communication via MPI 
+ * 
+ * @author becherml, friesfn, geringsj
+ * @date 11/2014
+ */
 class Communication
 {
-public:
-	Communication(int size, int reorder, MPI_Comm comm_cart);
-	void ExchangePValues(int rank_to, int rank_from, int count_p, GridFunction& p,
-		GridFunction& p_fromleft);
-	void ExchangeUVValues(int rank_to, int rank_from, int count_u, GridFunction& u, 
-		int count_v, GridFunction& v, GridFunction& u_fromleft, GridFunction& v_fromleft);
-	void ExchangeFGValues(int rank_to, int rank_from, int count_F, GridFunction& F, 
-		int count_G, GridFunction& G, GridFunction& F_fromleft, GridFunction& G_fromleft);
-	void ExchangeRHSValues(int rank_to, int rank_from, int count_rhs, GridFunction& rhs, 
-		GridFunction& rhs_fromleft);
+	/* MPI will be asked to construct a cartesian grid of processes */
 private:
-	MPI_Comm m_comm_cart;
-	MPI_Status status;
-	int m_size;
-	int* m_dims;
-	int* m_periods;
-	int m_reorder;
+	Dimension m_procsGrid_dim;
+	Dimension m_procsGrid_myPosition;
+	Dimension m_globalDomain_dim;
+	Dimension m_myDomain_dim;
+	Color m_myDomainFirstCellColor;
+	Dimension m_myOffsetToGlobalDomain;
+
+	int m_numProcs;
+
+	/* rank 0 process is manager (and also worker), others are workers */
+	int m_myRank;
+	int m_downRank;
+	int m_upRank;
+	int m_leftRank;
+	int m_rightRank;
+
+	void m_sendToOne(/* ... */);
+	void m_recvFromOne(/* ... */);
+
+	void m_sendToAll(/* ... */);
+	void m_recvFromAll(/* ... */);
+
+	bool SqrtIsEven(int number);
+
+public:
+
+	enum class Handle {
+		Pressure,
+		Velocities,
+		PreliminaryVelocities
+	};
+
+	Communication(Dimension globalDomainDim, /* MPI_Init needs argc and argv */int argc, char** argv);
+	~Communication();
+
+	void exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells=Color::All);
+
+	void exchangeGridInnerValues(Domain domain, Handle grid);
+
+	bool checkForAnotherSORCycle(Real mySubResiduum);
+
+	Real getGlobalTimeStep(Delta myMaxValues);
 };
+
+
+#endif

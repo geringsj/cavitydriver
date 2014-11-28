@@ -10,10 +10,13 @@ Domain::Domain(Dimension dimension, Delta delta,
 
 	std::function<Real(Point)> in_gx,
 	std::function<Real(Point)> in_gy,
-	std::function<Real(Point)> in_gz
+	std::function<Real(Point)> in_gz,
+
+	Color firstCellColor
 	) : 
 		m_dimension(dimension),
 		m_inner_begin(1,1,1), 
+		m_FirstCellColor(firstCellColor),
 		m_delta(delta),
 		m_p(Dimension(dimension[0]+2,dimension[1]+2)), 
 		m_p_rhs(Dimension(dimension[0]+2,dimension[1]+2)),

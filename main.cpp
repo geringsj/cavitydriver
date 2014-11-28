@@ -3,10 +3,14 @@
 #include "src/Computation.hpp"
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
+/* communication test */
+#include "src/Communication.hpp"
 
 #include <mpi.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#include <chrono>
 
 Real u_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 {
@@ -30,24 +34,22 @@ Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 
 int main(int argc, char** argv)
 {
-	int provided, claimed;
-
-	/*** Select one of the following
-	MPI_Init_thread( 0, 0, MPI_THREAD_SINGLE, &provided );
-	MPI_Init_thread( 0, 0, MPI_THREAD_FUNNELED, &provided );
-	MPI_Init_thread( 0, 0, MPI_THREAD_SERIALIZED, &provided );
-	MPI_Init_thread( 0, 0, MPI_THREAD_MULTIPLE, &provided );
-	***/
-
-	MPI_Init_thread(0, 0, MPI_THREAD_MULTIPLE, &provided);
-	MPI_Query_thread(&claimed);
-	printf("Query thread level= %d  Init_thread level= %d\n", claimed, provided);
-
-	MPI_Finalize();
-
+	/* time measurement variables */
+	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
+	std::chrono::steady_clock::time_point t_sor_start, t_sor_end;
+	std::chrono::duration<double> time_span;
+	double t_sor_avg = 0.0;
+	double t_frame_avg = 0.0;
 
 	/* init IO/parameters */
-	IO io(argc, argv);
+	int io_argc = argc;			
+	char** io_argv = argv;
+	/** 
+	 * The IO parser "eats" the arguments leaving them empty after the constructor.
+	 * We need these arguments for the MPI_Init call so we give the IO a copy of
+	 * the arguments.
+	 */
+	IO io(io_argc, io_argv);
 	SimParams simparam = io.readInputfile();
 	simparam.writeSimParamsToSTDOUT();
 
@@ -58,6 +60,9 @@ int main(int argc, char** argv)
 	Delta delta;
 	delta.x = simparam.xLength / simparam.iMax;
 	delta.y = simparam.yLength / simparam.jMax;
+
+	/* communication test */
+	Communication comm = Communication(dim, argc, argv);
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(dim, delta,
@@ -72,6 +77,8 @@ int main(int argc, char** argv)
 			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
 		/* P==0 */[&simparam](Index i, GridFunction& gf, Dimension dim)
 			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
+	log_info("My Domain starts at Color: %s", 
+			(domain.getDomainFirstCellColor()==Color::Red)?("Red"):("Black"));
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
@@ -85,10 +92,13 @@ int main(int argc, char** argv)
 	/* write initial state of velocities and pressure */
 	io.writeVTKFile(domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
 	step++;
+	Real nextWrite = 0.0;
 
 	/* main loop */
 	while (t < simparam.tEnd)
 	{
+		t_frame_start = std::chrono::steady_clock::now();
+
 		/* the following block is for debugging purposes */
 		log_info("- Round %i", step);
 		if (m_log_info) log_info("= = = = = = = = = = = = = = =");
@@ -113,6 +123,7 @@ int main(int argc, char** argv)
 
 		Computation::computeRighthandSide(domain, dt);
 
+		t_sor_start = std::chrono::steady_clock::now();
 		do
 		{
 			domain.setPressureBoundaries();
@@ -120,12 +131,18 @@ int main(int argc, char** argv)
 			Solver::SORCycle(
 					domain.p(), domain.rhs(), delta, 
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
+			//Solver::SORCycleRedBlack(domain, delta, simparam.omg, Color::Red);
+			//Solver::SORCycleRedBlack(domain, delta, simparam.omg, Color::Black);
 
 			res = Solver::computeResidual(
 					domain.p(), domain.rhs(), delta, 
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
 			it++;
-		} while (it < simparam.iterMax && res > simparam.eps); 
+		} while (it < simparam.iterMax && res > simparam.eps);
+		t_sor_end = std::chrono::steady_clock::now();
+		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_sor_end-t_sor_start);
+		t_sor_avg += time_span.count();
+		//log_info("SOR solver time: %f seconds",time_span.count());
 
 		if (m_log_info) 
 			log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
@@ -133,10 +150,25 @@ int main(int argc, char** argv)
 		it = 0;
 
 		Computation::computeNewVelocities(domain, dt);
-		io.writeVTKFile(
+
+		nextWrite += dt;
+		if(nextWrite > simparam.deltaVec)
+		{
+			io.writeVTKFile(
 				domain.getDimension(), domain.u(), domain.v(), domain.p(), delta, step);
+			nextWrite = 0;
+		}
 		step++;
+
+		t_frame_end = std::chrono::steady_clock::now();
+		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_frame_end-t_frame_start);
+		t_frame_avg += time_span.count();
+		//log_info("Overall frame time: %f seconds",time_span.count());
 	}
+
+	/* output average time per frame and pressure computation per frame */
+	log_info("Average frame time: %f seconds",t_frame_avg / (double)step-1);
+	log_info("Average SOR time: %f seconds",t_sor_avg / (double)step-1);
 
 	/* end of magic */
 	return 0;
