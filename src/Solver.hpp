@@ -11,6 +11,7 @@
 #ifndef Solver_hpp
 #define Solver_hpp
 
+#include "Domain.hpp"
 #include "GridFunction.hpp"
 
 namespace Solver
@@ -42,6 +43,16 @@ namespace Solver
 			const Point& delta,
 			Dimension inner_begin, Dimension inner_end,
 			Real omega);
+
+	/**
+	* Compute one SOR iterator on every 'red' cell of the pressure field
+	*/
+	void SORCycleRedBlack(
+			Domain& domain,
+			const Point& delta,
+			Real omega,
+			Color color);
+
 }
 
 #endif
