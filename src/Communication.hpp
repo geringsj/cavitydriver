@@ -38,6 +38,8 @@ private:
 	void m_sendToAll(/* ... */);
 	void m_recvFromAll(/* ... */);
 
+	bool SqrtIsEven(int number);
+
 public:
 
 	enum class Handle {

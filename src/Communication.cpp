@@ -28,6 +28,62 @@ Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &m_myRank);
 	printf("Number of tasks= %d My rank= %d \n", m_numProcs, m_myRank);
+
+	if(m_numProcs == 1)
+	{
+		/**
+		 * We just have one patch, so we only have to create
+		 * one Domain with the given dimensions.
+		 */
+	}
+	else if (m_numProcs == 2)
+	{
+		/**
+		 * We create 2 patchen with size x/2, y.
+		 */
+	}
+	else if(SqrtIsEven(m_numProcs))
+	{
+		/**
+		 * We can simply divide the grid into equal size
+		 * patches by setting the number of patches along
+		 * the x and y axes to sqrt(m_numProcs).
+		 */
+	}
+	else if((m_numProcs % 2) == 1)
+	{
+		/**
+		 * We can only create one row of patches because
+		 * the pathces have to be of the same size.
+		 */
+	}
+	else if ((m_numProcs % 2) == 0)
+	{
+		/**
+		 * We can at least create 2 rows of patches of 
+		 * the same size.
+		 */
+		if ((m_numProcs % 4) == 0)
+		{
+			/**
+			 * We can create 4 rows.
+			 */
+		}
+		else
+		{
+			/**
+			 * We can create 2 rows.
+			 */
+		}
+	}
+}
+
+bool Communication::SqrtIsEven(int number){
+	double root = sqrt(number);
+	int root_int = floor(root);
+	root_int = pow(root_int, 2);
+	if(root == (double)root_int) return true;
+	else return false;
 }
 
 void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells)

@@ -41,7 +41,14 @@ int main(int argc, char** argv)
 	double t_frame_avg = 0.0;
 
 	/* init IO/parameters */
-	IO io(argc, argv);
+	int io_argc = argc;			
+	char** io_argv = argv;
+	/** 
+	 * The IO parser "eats" the arguments leaving them empty after the constructor.
+	 * We need these arguments for the MPI_Init call so we give the IO a copy of
+	 * the arguments.
+	 */
+	IO io(io_argc, io_argv);
 	SimParams simparam = io.readInputfile();
 	simparam.writeSimParamsToSTDOUT();
 
