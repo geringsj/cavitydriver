@@ -82,11 +82,10 @@ namespace Solver
 		// else start with offset +1. Subsequently, the offset will be flipped between 0 and 1 after each column
 		// in order to achieve a check-board pattern (red-black scheme).
 		int offset = (color == domain.getDomainFirstCellColor()) ? 0 : 1;
-		if(color == Color::All) offset = 0; //TODO clarify the usage of Color::All for domain
 
-		for(int i=inner_begin[0]; i<inner_end[0]; i=i+2)
+		for(int i=inner_begin[0]; i<=inner_end[0]; i++)
 		{
-			for(int j=inner_begin[1]+offset; j<inner_end[0]; j=j+2)
+			for(int j=inner_begin[1]+offset; j<=inner_end[1]; j=j+2)// skip every other cell in y dimension
 			{
 				Real old_value = p(i,j);
 				Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
@@ -102,8 +101,8 @@ namespace Solver
 				p(i,j) = new_value;
 			}
 
-			// 'Flip' offset for next column, but only Color::All wasn't requested.
-			if(color != Color::All) offset = (offset+1)%2;
+			// 'Flip' offset for next column
+			offset = (offset+1)%2;
 		}
 
 	}

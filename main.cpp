@@ -118,6 +118,8 @@ int main(int argc, char** argv)
 			Solver::SORCycle(
 					domain.p(), domain.rhs(), delta, 
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
+			//Solver::SORCycleRedBlack(domain, delta, simparam.omg, Color::Red);
+			//Solver::SORCycleRedBlack(domain, delta, simparam.omg, Color::Black);
 
 			res = Solver::computeResidual(
 					domain.p(), domain.rhs(), delta, 
