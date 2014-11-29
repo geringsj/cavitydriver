@@ -1,7 +1,4 @@
-
 #include "Communication.hpp"
-
-#include <mpi.h>
 
 
 Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
@@ -29,65 +26,68 @@ Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &m_myRank);
 	printf("Number of tasks= %d My rank= %d \n", m_numProcs, m_myRank);
 
-	if(m_numProcs == 1)
-	{
-		/**
-		 * We just have one patch, so we only have to create
-		 * one Domain with the given dimensions.
-		 */
-	}
-	else if (m_numProcs == 2)
-	{
-		/**
-		 * We create 2 patchen with size x/2, y.
-		 */
-	}
-	else if(SqrtIsEven(m_numProcs))
+	int dim[2]; // dim[0] number of patches in x direction, dim[1] number of patches in y direction
+	int periods[2] = {false,false}; // our grid isn't periodic isn't it?	
+	if (SqrtIsEven(m_numProcs))
 	{
 		/**
 		 * We can simply divide the grid into equal size
 		 * patches by setting the number of patches along
 		 * the x and y axes to sqrt(m_numProcs).
 		 */
+		dim[0] = (int)sqrt(m_numProcs);
+		dim[1] = (int)sqrt(m_numProcs);
+		std::cout << "good\n";
 	}
-	else if((m_numProcs % 2) == 1)
-	{
-		/**
-		 * We can only create one row of patches because
-		 * the pathces have to be of the same size.
-		 */
+	else
+	{ //if size = 2 then dims = 2, 1; size = 4 then 2,2; 8 = 4, 2...
+		dim[1] = (int)sqrt(m_numProcs + m_numProcs);
+		dim[0] = dim[1] / 2;
 	}
-	else if ((m_numProcs % 2) == 0)
-	{
-		/**
-		 * We can at least create 2 rows of patches of 
-		 * the same size.
-		 */
-		if ((m_numProcs % 4) == 0)
-		{
-			/**
-			 * We can create 4 rows.
-			 */
-		}
-		else
-		{
-			/**
-			 * We can create 2 rows.
-			 */
-		}
-	}
+
+	printf("%d | %d \n", dim[0], dim[1]);
+
+	MPI_Dims_create(m_numProcs, 2, dim);
+	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, periods, 1, &comm);
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	int coordinates[2];
+	MPI_Cart_coords(comm, m_myRank, 2, coordinates);
+	
+	MPI_Cart_shift(comm, 1, -1, &m_rightRank, &m_leftRank);
+	MPI_Cart_shift(comm, 0, -1, &m_downRank, &m_upRank);
+	
+	
+	
+	printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 }
 
 bool Communication::SqrtIsEven(int number){
 	double root = sqrt(number);
-	int root_int = floor(root);
-	root_int = pow(root_int, 2);
-	if(root == (double)root_int) return true;
+	int root_int = (int)floor(root);
+	root_int = (int)pow(root_int, 2);
+	if (number == root_int)	return true;
 	else return false;
 }
 
 void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells)
 {
+	//int coordinates[2];
+	//int shiftsource, shiftdest;
+	//int ix, swap;
+	//MPI_Status status;
+
+	//MPI_Cart_coords(comm, m_myRank, 2, coordinates);
+	//
+	//MPI_Cart_shift(comm, 1, -1, &m_rightRank, &m_leftRank);
+	//MPI_Cart_shift(comm, 0, -1, &m_downRank, &m_upRank);
+	//
+	//
+	//
+	//printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
+
+
+
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
@@ -136,6 +136,66 @@ Communication::~Communication()
 
 
 
+
+//if (m_numProcs == 1)
+//{
+//	/**
+//	* We just have one patch, so we only have to create
+//	* one Domain with the given dimensions.
+//	*/
+//	dim[0] = 1;
+//	dim[1] = 1;
+//}
+//else if (m_numProcs == 2)
+//{
+//	/**
+//	* We create 2 patchen with size x/2, y.
+//	*/
+//	dim[0] = 2;
+//	dim[1] = 1;
+//}
+//else if (SqrtIsEven(m_numProcs))
+//{
+//	/**
+//	* We can simply divide the grid into equal size
+//	* patches by setting the number of patches along
+//	* the x and y axes to sqrt(m_numProcs).
+//	*/
+//	dim[0] = (int)sqrt(m_numProcs);
+//	dim[1] = (int)sqrt(m_numProcs);
+//}
+//else if ((m_numProcs % 2) == 1)
+//{
+//	/**
+//	* We can only create one row of patches because
+//	* the pathces have to be of the same size.
+//	*/
+//	dim[0] = m_numProcs;
+//	dim[1] = 1;
+//}
+//else if ((m_numProcs % 2) == 0)
+//{
+//	/**
+//	* We can at least create 2 rows of patches of
+//	* the same size.
+//	*/
+//	if ((m_numProcs % 4) == 0)
+//	{
+//		/**
+//		* We can create 4 rows.
+//		*/
+//		dim[0] = 4;
+//		dim[1] = (int)(m_numProcs / 4);
+//	}
+//	else
+//	{
+//		/**
+//		* We can create 2 rows.
+//		*/
+//		dim[0] = 2;
+//		dim[1] = (int)(m_numProcs / 2);
+//	}
+//}
 
 
 

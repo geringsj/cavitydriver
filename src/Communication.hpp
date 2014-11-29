@@ -5,6 +5,8 @@
 #include "GridFunction.hpp"
 #include "Domain.hpp"
 
+/* We need this here because MPI_Comm needs to be defined here in order to acess it in every function. :( */
+#include <mpi.h>
 
 /** 
  * Communication via MPI 
@@ -39,6 +41,8 @@ private:
 	void m_recvFromAll(/* ... */);
 
 	bool SqrtIsEven(int number);
+	
+	MPI_Comm comm;
 
 public:
 

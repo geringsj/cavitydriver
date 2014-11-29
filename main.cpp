@@ -34,6 +34,9 @@ Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 
 int main(int argc, char** argv)
 {
+	Dimension dim_c;
+	Communication comm = Communication(dim_c, argc, argv);
+
 	/* time measurement variables */
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
 	std::chrono::steady_clock::time_point t_sor_start, t_sor_end;
@@ -51,7 +54,7 @@ int main(int argc, char** argv)
 	 */
 	IO io(io_argc, io_argv);
 	SimParams simparam = io.readInputfile();
-	simparam.writeSimParamsToSTDOUT();
+	//simparam.writeSimParamsToSTDOUT();
 
 	/* init problem dimensions and grid spacing delta */
 	Dimension dim;
@@ -62,7 +65,7 @@ int main(int argc, char** argv)
 	delta.y = simparam.yLength / simparam.jMax;
 
 	/* communication test */
-	Communication comm = Communication(dim, argc, argv);
+	//Communication comm = Communication(dim, argc, argv);
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(dim, delta,
@@ -78,7 +81,8 @@ int main(int argc, char** argv)
 		/* P==0 */[&simparam](Index i, GridFunction& gf, Dimension dim)
 			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
 	log_info("My Domain starts at Color: %s", 
-			(domain.getDomainFirstCellColor()==Color::Red)?("Red"):("Black"));
+		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
+	comm.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
