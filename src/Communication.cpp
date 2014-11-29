@@ -169,10 +169,10 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 				buffer.push_back(u(domain.getBeginInnerDomains()[0],i));
 
 			// TODO send buffer to m_leftRank
-			m_sendToOne();
+			m_sendToOne(&buffer, buffer.size(), m_leftRank, m_myRank);
 
 			// TODO receive buffer from m_leftRank
-			m_recvFromOne();
+			//m_recvFromOne();
 
 			// TODO fill buffer with v values from left border
 
@@ -180,10 +180,10 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 				buffer.push_back(v(domain.getBeginInnerDomains()[1],i));
 
 			// TODO send buffer to m_leftRank
-			m_sendToOne();
+			m_sendToOne(&buffer,buffer.size(),m_leftRank,m_myRank);
 
 			// TODO receive buffer from m_leftRank
-			m_recvFromOne();
+			//m_recvFromOne();
 		}
 		else
 		{
@@ -197,7 +197,7 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 			// TODO fill buffer with values from upper border
 
 			// TODO send buffer to m_rightRank
-			m_sendToOne();
+			m_sendToOne(&buffer, buffer.size(), m_rightRank, m_myRank);
 
 			// TODO receive buffer from m_rightRank
 		}
@@ -214,10 +214,10 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 			std::vector<float> buffer(domain.getDimension()[0]);
 
 			// TODO send buffer to m_upRank
-			m_sendToOne();
+			m_sendToOne(&buffer, buffer.size(), m_upRank, m_myRank);
 
 			// TODO receive buffer from m_upRank
-			m_recvFromOne();
+			//m_recvFromOne();
 		}
 		else
 		{
@@ -231,7 +231,7 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 			// TODO fill buffer with values from upper border
 
 			// TODO send buffer to m_downRank
-			m_sendToOne();
+			m_sendToOne(&buffer, buffer.size(), m_downRank, m_myRank);
 
 			// TODO receive buffer from m_downRank
 		}
@@ -273,6 +273,16 @@ bool Communication::checkForAnotherSORCycle(Real mySubResiduum)
 Real Communication::getGlobalTimeStep(Delta myMaxValues)
 {
 
+}
+
+void Communication::m_sendToOne(void* buf, int count, int dest, int tag)
+{
+	MPI_Send(&buf, count, MPI_DOUBLE, dest, tag, m_comm);
+}
+
+void Communication::m_recvFromOne(void* buf, int count, int source, int tag, MPI_Status status)
+{
+	MPI_Recv(&buf, count, MPI_DOUBLE, source, tag, m_comm, &status);
 }
 
 Communication::~Communication()

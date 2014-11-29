@@ -35,11 +35,8 @@ private:
 	int m_leftRank;
 	int m_rightRank;
 
-	void m_sendToOne(void *buf,
-						int count,
-						int dest,
-						int tag);
-	void m_recvFromOne(/* ... */);
+	void m_sendToOne(void *buf, int count, int dest, int tag);
+	void m_recvFromOne(void* buf, int count, int source, int tag, MPI_Status status);
 
 	void m_sendToAll(/* ... */);
 	void m_recvFromAll(/* ... */);

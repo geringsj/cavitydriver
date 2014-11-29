@@ -74,7 +74,6 @@ int main(int argc, char** argv)
 	//Communication comm = Communication(dim, argc, argv);
 	//if (!comm.getValid())
 	//{
-	//	std::cout << "buhhhh \n";
 	//	return -1;
 	//}
 
