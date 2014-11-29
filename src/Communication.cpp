@@ -1,8 +1,51 @@
 #include "Communication.hpp"
 
+/**
+ * There was no other way to find out the thread causing the error
+ * so I had to use this "madness" to solve the problem.
+ * 
+ * We can define our own error handling function for MPI errors.
+ * The problem ist this is not allowed to be a member function of
+ * Communication. This leads us to the fact that we cann only use
+ * static variables to "communicate" between this function and
+ * our Communication object.
+ * 
+ * There is an bool array of a certain length and if a thread
+ * throws an error the respective value in the array is set to
+ * true.
+ *
+ * One could think of making this a std::pair, and pair the
+ * rank with the error but for now this works.
+ */
+#define MAX_NUMBER_OF_THREADS 500
+static bool error[MAX_NUMBER_OF_THREADS];
+
+void my_errhandler(MPI_Comm* Comm, int* errcode)
+{
+	int myid;
+	MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+	error[myid] = true;
+
+	/**
+	 * In case we need a detailed error description just uncomment
+	 * the next lines.
+	 */
+	/**
+	 * char      hostname[80];
+	 * char      errstring[MPI_MAX_ERROR_STRING];
+	 * int	      resultlen, myid;
+	 * 
+	 * MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+	 * MPI_Error_string(*errcode, errstring, &resultlen);
+	 * printf("Proc %d on %-15.12s: UserErrorhandler - ErrorCode %d Message %s\n",
+	 * 	myid, hostname, *errcode, errstring);
+	 */
+
+}
 
 Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 {
+	m_valid = true;
 	m_globalDomain_dim = globalDomainDim;
 	/**
 	 * MPI initialization
@@ -26,6 +69,12 @@ Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &m_myRank);
 	printf("Number of tasks= %d My rank= %d \n", m_numProcs, m_myRank);
 
+	/**
+	 * Create the Grid of threads that compute the solution.
+	 * If we have more threads than equal size patches we
+	 * "kill" the threads that are left over, by letting them
+	 * call the error handling function.
+	 */
 	int dim[2]; // dim[0] number of patches in x direction, dim[1] number of patches in y direction
 	int periods[2] = {false,false}; // our grid isn't periodic isn't it?	
 	if (SqrtIsEven(m_numProcs))
@@ -37,31 +86,49 @@ Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 		 */
 		dim[0] = (int)sqrt(m_numProcs);
 		dim[1] = (int)sqrt(m_numProcs);
-		std::cout << "good\n";
 	}
 	else
 	{ //if size = 2 then dims = 2, 1; size = 4 then 2,2; 8 = 4, 2...
 		dim[1] = (int)sqrt(m_numProcs + m_numProcs);
 		dim[0] = dim[1] / 2;
 	}
-
 	printf("%d | %d \n", dim[0], dim[1]);
-	MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-	int error_code = MPI_Cart_create(MPI_COMM_WORLD, 2, dim, periods, 1, &comm);
-	if(error_code != MPI_SUCCESS) 
+
+	/**
+	 * Error handling
+	 * We create a handle to the function my_errhandler and a handle
+	 * for the MPI_COMM_WORLD. If there is an error in the MPI_Cart_create
+	 * function our function is called and the thread is terminated.
+	 */
+	MPI_Errhandler errh, store_errh;
+	MPI_Comm_get_errhandler(MPI_COMM_WORLD, &store_errh);
+	MPI_Comm_create_errhandler((MPI_Handler_function *)(&my_errhandler), &errh);
+	MPI_Comm_set_errhandler(MPI_COMM_WORLD, errh);
+
+	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, periods, 1, &comm);
+
+	MPI_Errhandler_free(&errh);
+	MPI_Comm_set_errhandler(comm, store_errh);
+
+	/**
+	 * We have found an error so set the Communication to
+	 * not valid and return. The Thread is than terminated
+	 * in the main.cpp.
+	 */
+	if(error[m_myRank])
 	{
+		m_valid = false;
 		return;
 	}
-	MPI_Barrier(MPI_COMM_WORLD);
 
+	/**
+	 * This is just here for testing!
+	 */
 	int coordinates[2];
 	MPI_Cart_coords(comm, m_myRank, 2, coordinates);
-	
 	MPI_Cart_shift(comm, 1, -1, &m_rightRank, &m_leftRank);
 	MPI_Cart_shift(comm, 0, -1, &m_downRank, &m_upRank);
-	
-	
-	
+
 	printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 }
 
@@ -75,21 +142,12 @@ bool Communication::SqrtIsEven(int number){
 
 void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells)
 {
-	//int coordinates[2];
-	//int shiftsource, shiftdest;
-	//int ix, swap;
-	//MPI_Status status;
-
-	//MPI_Cart_coords(comm, m_myRank, 2, coordinates);
-	//
-	//MPI_Cart_shift(comm, 1, -1, &m_rightRank, &m_leftRank);
-	//MPI_Cart_shift(comm, 0, -1, &m_downRank, &m_upRank);
-	//
-	//
-	//
-	//printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
-
-
+	int coordinates[2];
+	MPI_Cart_coords(comm, m_myRank, 2, coordinates);
+	MPI_Cart_shift(comm, 1, -1, &m_rightRank, &m_leftRank);
+	MPI_Cart_shift(comm, 0, -1, &m_downRank, &m_upRank);
+	
+	printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 
 	switch (grid)
 	{

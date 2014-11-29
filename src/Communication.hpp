@@ -40,11 +40,24 @@ private:
 	void m_sendToAll(/* ... */);
 	void m_recvFromAll(/* ... */);
 
+	/**
+	 * Compute the square root of a given integer and check if the
+	 * result is an even number.
+	 *
+	 * @return If the square root is an even number.
+	 */
 	bool SqrtIsEven(int number);
-	
+	/* The communication handle */
 	MPI_Comm comm;
+	/**
+	 * Store weather the object is valid or not. If it is not valid the thread
+	 * handling it will be terminated
+	 */
+	bool m_valid;
 
 public:
+
+	bool getValid() { return m_valid; }
 
 	enum class Handle {
 		Pressure,

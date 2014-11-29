@@ -36,6 +36,11 @@ int main(int argc, char** argv)
 {
 	Dimension dim_c;
 	Communication comm = Communication(dim_c, argc, argv);
+	if (!comm.getValid())
+	{
+		std::cout << "buhhhh \n";
+		return -1;
+	}
 
 	/* time measurement variables */
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
