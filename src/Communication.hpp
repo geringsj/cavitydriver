@@ -7,6 +7,7 @@
 
 /* We need this here because MPI_Comm needs to be defined here in order to acess it in every function. :( */
 #include <mpi.h>
+#include <vector>
 
 /** 
  * Communication via MPI 
@@ -34,7 +35,10 @@ private:
 	int m_leftRank;
 	int m_rightRank;
 
-	void m_sendToOne(/* ... */);
+	void m_sendToOne(void *buf,
+						int count,
+						int dest,
+						int tag);
 	void m_recvFromOne(/* ... */);
 
 	void m_sendToAll(/* ... */);
@@ -48,7 +52,7 @@ private:
 	 */
 	bool SqrtIsEven(int number);
 	/* The communication handle */
-	MPI_Comm comm;
+	MPI_Comm m_comm;
 	/**
 	 * Store weather the object is valid or not. If it is not valid the thread
 	 * handling it will be terminated

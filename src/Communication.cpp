@@ -105,10 +105,10 @@ Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 	MPI_Comm_create_errhandler((MPI_Handler_function *)(&my_errhandler), &errh);
 	MPI_Comm_set_errhandler(MPI_COMM_WORLD, errh);
 
-	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, periods, 1, &comm);
+	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, periods, 1, &m_comm);
 
 	MPI_Errhandler_free(&errh);
-	MPI_Comm_set_errhandler(comm, store_errh);
+	MPI_Comm_set_errhandler(m_comm, store_errh);
 
 	/**
 	 * We have found an error so set the Communication to
@@ -125,9 +125,9 @@ Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 	 * This is just here for testing!
 	 */
 	int coordinates[2];
-	MPI_Cart_coords(comm, m_myRank, 2, coordinates);
-	MPI_Cart_shift(comm, 1, -1, &m_rightRank, &m_leftRank);
-	MPI_Cart_shift(comm, 0, -1, &m_downRank, &m_upRank);
+	MPI_Cart_coords(m_comm, m_myRank, 2, coordinates);
+	MPI_Cart_shift(m_comm, 1, -1, &m_rightRank, &m_leftRank);
+	MPI_Cart_shift(m_comm, 0, -1, &m_downRank, &m_upRank);
 
 	printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 }
@@ -143,9 +143,9 @@ bool Communication::SqrtIsEven(int number){
 void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells)
 {
 	int coordinates[2];
-	MPI_Cart_coords(comm, m_myRank, 2, coordinates);
-	MPI_Cart_shift(comm, 1, -1, &m_rightRank, &m_leftRank);
-	MPI_Cart_shift(comm, 0, -1, &m_downRank, &m_upRank);
+	MPI_Cart_coords(m_comm, m_myRank, 2, coordinates);
+	MPI_Cart_shift(m_comm, 1, -1, &m_rightRank, &m_leftRank);
+	MPI_Cart_shift(m_comm, 0, -1, &m_downRank, &m_upRank);
 	
 	printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 
@@ -154,7 +154,95 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 	case Communication::Handle::Pressure:
 		break;
 	case Communication::Handle::Velocities:
+	{
+		GridFunction& u = domain.u();
+		GridFunction& v = domain.v();
+
+		// a)
+		if(m_leftRank != -1)
+		{
+			// SERGEJ CHECK/FIX THIS
+			std::vector<float> buffer;
+			buffer.reserve(domain.getBeginInnerDomains()[1]-domain.getEndInnerDomainU()[1]+1); //TODO!!!! check if this size is correct
+			// TODO fill buffer with u values from left border
+			for(int i=domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+				buffer.push_back(u(domain.getBeginInnerDomains()[0],i));
+
+			// TODO send buffer to m_leftRank
+			m_sendToOne();
+
+			// TODO receive buffer from m_leftRank
+			m_recvFromOne();
+
+			// TODO fill buffer with v values from left border
+
+			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainV()[1]; i++)
+				buffer.push_back(v(domain.getBeginInnerDomains()[1],i));
+
+			// TODO send buffer to m_leftRank
+			m_sendToOne();
+
+			// TODO receive buffer from m_leftRank
+			m_recvFromOne();
+		}
+		else
+		{
+			// TODO ask domain to set left boundary values
+		}
+
+		// b)
+		if(m_rightRank != -1)
+		{
+			std::vector<float> buffer(domain.getDimension()[1]);
+			// TODO fill buffer with values from upper border
+
+			// TODO send buffer to m_rightRank
+			m_sendToOne();
+
+			// TODO receive buffer from m_rightRank
+		}
+		else
+		{
+			// TODO ask domain to set right boundary values
+		}
+
+		// c)
+		if(m_upRank != -1)
+		{
+			// TODO fill buffer with values from upper border
+			GridFunction& u = domain.u();
+			std::vector<float> buffer(domain.getDimension()[0]);
+
+			// TODO send buffer to m_upRank
+			m_sendToOne();
+
+			// TODO receive buffer from m_upRank
+			m_recvFromOne();
+		}
+		else
+		{
+			// TODO ask domain to set upper boundary values
+		}
+
+		// d)
+		if(m_downRank != -1)
+		{
+			std::vector<float> buffer(domain.getDimension()[0]);
+			// TODO fill buffer with values from upper border
+
+			// TODO send buffer to m_downRank
+			m_sendToOne();
+
+			// TODO receive buffer from m_downRank
+		}
+		else
+		{
+			// TODO ask domain to set lower boundary values
+		}
+
+
 		break;
+	}
 	case Communication::Handle::PreliminaryVelocities:
 		break;
 	default:
