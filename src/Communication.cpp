@@ -265,7 +265,7 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 		// d)
 		if(m_downRank != -1)
 		{
-			std::vector<float> buffer;
+			std::vector<double> buffer;
 			buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainU()[0] + 1); //TODO!!!! check if this size is correct
 			// TODO fill buffer with values from upper border
 			for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
