@@ -165,7 +165,7 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 			std::vector<float> buffer;
 			buffer.reserve(domain.getBeginInnerDomains()[1]-domain.getEndInnerDomainU()[1]+1); //TODO!!!! check if this size is correct
 			// TODO fill buffer with u values from left border
-			for(int i=domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
 				buffer.push_back(u(domain.getBeginInnerDomains()[0],i));
 
 			// TODO send buffer to m_leftRank
@@ -175,7 +175,6 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 			//m_recvFromOne();
 
 			// TODO fill buffer with v values from left border
-
 			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainV()[1]; i++)
 				buffer.push_back(v(domain.getBeginInnerDomains()[1],i));
 
@@ -193,13 +192,26 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 		// b)
 		if(m_rightRank != -1)
 		{
-			std::vector<float> buffer(domain.getDimension()[1]);
-			// TODO fill buffer with values from upper border
+			std::vector<float> buffer;
+			buffer.reserve(domain.getBeginInnerDomains()[1]-domain.getEndInnerDomainU()[1]+1); //TODO!!!! check if this size is correct
+			// TODO fill buffer with u values from left border
+			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+				buffer.push_back(u(domain.getEndInnerDomainU()[0],i));
 
 			// TODO send buffer to m_rightRank
 			m_sendToOne(&buffer, buffer.size(), m_rightRank, m_myRank);
 
 			// TODO receive buffer from m_rightRank
+
+			// TODO fill buffer with v values from left border
+			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainV()[1]; i++)
+				buffer.push_back(v(domain.getEndInnerDomainV()[0],i));
+
+			// TODO send buffer to m_rightRank
+			m_sendToOne(&buffer,buffer.size(),m_rightRank,m_myRank);
+
+			// TODO receive buffer from m_rightRank
+			//m_recvFromOne();
 		}
 		else
 		{
