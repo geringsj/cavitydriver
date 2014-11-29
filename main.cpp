@@ -34,6 +34,7 @@ Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 
 int main(int argc, char** argv)
 {
+	/* This is also just for testing, delete it if we are done with testing. */
 	Dimension dim_c;
 	Communication comm = Communication(dim_c, argc, argv);
 	if (!comm.getValid())
@@ -69,8 +70,13 @@ int main(int argc, char** argv)
 	delta.x = simparam.xLength / simparam.iMax;
 	delta.y = simparam.yLength / simparam.jMax;
 
-	/* communication test */
+	/* int Communication */
 	//Communication comm = Communication(dim, argc, argv);
+	//if (!comm.getValid())
+	//{
+	//	std::cout << "buhhhh \n";
+	//	return -1;
+	//}
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(dim, delta,
