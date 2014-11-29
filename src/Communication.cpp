@@ -46,9 +46,12 @@ Communication::Communication(Dimension globalDomainDim, int argc, char** argv)
 	}
 
 	printf("%d | %d \n", dim[0], dim[1]);
-
-	MPI_Dims_create(m_numProcs, 2, dim);
-	MPI_Cart_create(MPI_COMM_WORLD, 2, dim, periods, 1, &comm);
+	MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+	int error_code = MPI_Cart_create(MPI_COMM_WORLD, 2, dim, periods, 1, &comm);
+	if(error_code != MPI_SUCCESS) 
+	{
+		return;
+	}
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	int coordinates[2];
