@@ -213,7 +213,28 @@ bool Communication::checkForAnotherSORCycle(Real mySubResiduum)
 
 Real Communication::getGlobalTimeStep(Delta myMaxValues)
 {
-
+	if (m_myRank != 0)
+	{
+		double buffer[3];
+		buffer[0] = myMaxValues.x;
+		buffer[1] = myMaxValues.y;
+		buffer[2] = myMaxValues.z;
+		m_sendToOne(&buffer, 3, 0, 0);
+	}
+	else
+	{
+		std::vector<double> recvbuf;
+		m_recvFromAll(&recvbuf, 3);
+		std::vector<Delta> maxValues;
+		Delta tmp_maxValue;
+		for (unsigned int i = 0; i < recvbuf.size(); i = i + 3)
+		{
+			tmp_maxValue.x = recvbuf.at(i);
+			tmp_maxValue.y = recvbuf.at(i + 1);
+			tmp_maxValue.z = recvbuf.at(i + 2);
+		}
+		// todo: do something with the data.
+	}
 }
 
 void Communication::m_sendToOne(void* buf, int count, int dest, int tag)
@@ -231,15 +252,28 @@ void Communication::m_sendToAll(void* buf, int count)
 	MPI_Bcast(buf, count, MPI_DOUBLE, m_myRank, m_comm);
 }
 
-void Communication::m_recvFromAll(void* sendbuf, int sendcount, void* recvbuf, int recvcount)
+void Communication::m_recvFromAll(/*void* sendbuf, int sendcount,*/ void* recvbuf, int recvcount)
 {
-	/**
-	 * Gather the data from all threads in m_comm and distribute the combined data
-	 * to all threads.
-	 * We could use a foor loop and loop over all other threads in m_comm and just
-	 * recieve the data but i think this function could prove usefull.
-	 */
-	MPI_Allgather(sendbuf, sendcount, MPI_DOUBLE, recvbuf, recvcount, MPI_DOUBLE, m_comm);
+	std::vector<double> data;
+	MPI_Status status;
+	for (int i = 0; i < m_numProcs; i++)
+	{
+		std::vector<double> tmp_data;
+		m_recvFromOne(&tmp_data, recvcount, m_myRank, m_myRank, &status);
+		for (int j = 0; j < recvcount; j++)
+		{
+			data.push_back(tmp_data.at(j));
+		}
+	}
+	recvbuf = &data;
+	
+	///**
+	// * Gather the data from all threads in m_comm and distribute the combined data
+	// * to all threads.
+	// * We could use a foor loop and loop over all other threads in m_comm and just
+	// * recieve the data but i think this function could prove usefull.
+	// */
+	//MPI_Allgather(sendbuf, sendcount, MPI_DOUBLE, recvbuf, recvcount, MPI_DOUBLE, m_comm);
 }
 
 void Communication::ExchangeTwoGridFunctions(GridFunction& one, GridFunction& two, Domain domain)

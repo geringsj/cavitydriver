@@ -39,7 +39,7 @@ private:
 	void m_recvFromOne(void* buf, int count, int source, int tag, MPI_Status* status);
 
 	void m_sendToAll(void *buffer, int count);
-	void m_recvFromAll(void* sendbuf, int sendcount, void* recvbuf, int recvcount);
+	void m_recvFromAll(/*void* sendbuf, int sendcount,*/void* recvbuf, int recvcount);
 
 	/**
 	 * Compute the square root of a given integer and check if the
