@@ -341,6 +341,22 @@ void Communication::m_recvFromOne(void* buf, int count, int source, int tag, MPI
 	MPI_Recv(&buf, count, MPI_DOUBLE, source, tag, m_comm, status);
 }
 
+void Communication::m_sendToAll(void* buf, int count)
+{
+	MPI_Bcast(buf, count, MPI_DOUBLE, m_myRank, m_comm);
+}
+
+void Communication::m_recvFromAll(void* sendbuf, int sendcount, void* recvbuf, int recvcount)
+{
+	/**
+	 * Gather the data from all threads in m_comm and distribute the combined data
+	 * to all threads.
+	 * We could use a foor loop and loop over all other threads in m_comm and just
+	 * recieve the data but i think this function could prove usefull.
+	 */
+	MPI_Allgather(sendbuf, sendcount, MPI_DOUBLE, recvbuf, recvcount, MPI_DOUBLE, m_comm);
+}
+
 Communication::~Communication()
 {
 	MPI_Finalize();
