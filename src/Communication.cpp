@@ -149,157 +149,24 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 	
 	printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 
+	/* We need an empty GridFunction constructor :)*/
+	GridFunction& one = domain.u();
+	GridFunction& two = domain.u();
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
+		one = domain.p();
+		ExchangeOneGridFunction(one, domain);
 		break;
 	case Communication::Handle::Velocities:
-	{
-		GridFunction& u = domain.u();
-		GridFunction& v = domain.v();
-		MPI_Status status;
-
-		// a)
-		if(m_leftRank != -1)
-		{
-			// SERGEJ CHECK/FIX THIS
-			std::vector<double> buffer;
-			buffer.reserve(domain.getBeginInnerDomains()[1]-domain.getEndInnerDomainU()[1]+1); //TODO!!!! check if this size is correct
-			// TODO fill buffer with u values from left border
-			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-				buffer.push_back(u(domain.getBeginInnerDomains()[0],i));
-
-			// TODO send buffer to m_leftRank
-			m_sendToOne(&buffer, (int)buffer.size(), m_leftRank, m_myRank);
-
-			// TODO receive buffer from m_rightRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_rightRank,m_rightRank, &status);
-			// do something with the values in the buffer
-			buffer.clear();
-			buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainV()[1] + 1); //TODO!!!! check if this size is correct
-
-			// TODO fill buffer with v values from left border
-			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainV()[1]; i++)
-				buffer.push_back(v(domain.getBeginInnerDomains()[1],i));
-
-			// TODO send buffer to m_leftRank
-			m_sendToOne(&buffer,(int)buffer.size(),m_leftRank,m_myRank);
-
-			// TODO receive buffer from m_rightRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_rightRank, m_rightRank, &status);
-			// do something with the values in the buffer
-		}
-		else
-		{
-			// TODO ask domain to set left boundary values
-		}
-
-		// b)
-		if(m_rightRank != -1)
-		{
-			std::vector<double> buffer;
-			buffer.reserve(domain.getBeginInnerDomains()[1]-domain.getEndInnerDomainU()[1]+1); //TODO!!!! check if this size is correct
-			// TODO fill buffer with u values from left border
-			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-				buffer.push_back(u(domain.getEndInnerDomainU()[0],i));
-
-			// TODO send buffer to m_rightRank
-			m_sendToOne(&buffer, (int)buffer.size(), m_rightRank, m_myRank);
-
-			// TODO receive buffer from m_leftRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_leftRank, m_leftRank, &status);
-			// do something with the values in the buffer
-			buffer.clear();
-			buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainV()[1] + 1); //TODO!!!! check if this size is correct
-
-			// TODO fill buffer with v values from left border
-			for(int i=domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainV()[1]; i++)
-				buffer.push_back(v(domain.getEndInnerDomainV()[0],i));
-
-			// TODO send buffer to m_rightRank
-			m_sendToOne(&buffer,(int)buffer.size(),m_rightRank,m_myRank);
-
-			// TODO receive buffer from m_leftRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_leftRank, m_leftRank, &status);
-			// do something with the values in the buffer
-		}
-		else
-		{
-			// TODO ask domain to set right boundary values
-		}
-
-		// c)
-		if(m_upRank != -1)
-		{
-			std::vector<double> buffer;
-			buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainU()[0] + 1); //TODO!!!! check if this size is correct
-			// TODO fill buffer with values from upper border
-			for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-				buffer.push_back(u(i,domain.getEndInnerDomainU()[0]));
-
-			// TODO send buffer to m_upRank
-			m_sendToOne(&buffer, (int)buffer.size(), m_upRank, m_myRank);
-
-			// TODO receive buffer from m_downRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_downRank, m_downRank, &status);
-			// do something with the values in the buffer
-			buffer.clear();
-			buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainV()[0] + 1); //TODO!!!! check if this size is correct
-
-			// TODO fill buffer with values from upper border
-			for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainV()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-				buffer.push_back(v(i, domain.getEndInnerDomainV()[0]));
-
-			// TODO send buffer to m_upRank
-			m_sendToOne(&buffer, (int)buffer.size(), m_upRank, m_myRank);
-
-			// TODO receive buffer from m_downRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_downRank, m_downRank, &status);
-			// do something with the values in the buffer
-		}
-		else
-		{
-			// TODO ask domain to set upper boundary values
-		}
-
-		// d)
-		if(m_downRank != -1)
-		{
-			std::vector<double> buffer;
-			buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainU()[0] + 1); //TODO!!!! check if this size is correct
-			// TODO fill buffer with values from upper border
-			for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-				buffer.push_back(u(domain.getEndInnerDomainU()[0],i));
-
-			// TODO send buffer to m_downRank
-			m_sendToOne(&buffer, (int)buffer.size(), m_downRank, m_myRank);
-
-			// TODO receive buffer from m_upRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_upRank, m_upRank, &status);
-			// do something with the values in the buffer
-			buffer.clear();
-			buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainV()[0] + 1); //TODO!!!! check if this size is correct
-
-			// TODO fill buffer with values from upper border
-			for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-				buffer.push_back(v(domain.getEndInnerDomainV()[0], i));
-
-			// TODO send buffer to m_downRank
-			m_sendToOne(&buffer, (int)buffer.size(), m_downRank, m_myRank);
-
-			// TODO receive buffer from m_upRank
-			m_recvFromOne(&buffer, (int)buffer.size(), m_upRank, m_upRank, &status);
-			// do something with the values in the buffer
-		}
-		else
-		{
-			// TODO ask domain to set lower boundary values
-		}
-
-
+		one = domain.u();
+		two = domain.v();
+		ExchangeTwoGridFunctions(one, two, domain);
 		break;
-	}
 	case Communication::Handle::PreliminaryVelocities:
+		one = domain.F();
+		two = domain.G();
+		ExchangeTwoGridFunctions(one, two, domain);
 		break;
 	default:
 		break;
@@ -308,13 +175,31 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 
 void Communication::exchangeGridInnerValues(Domain domain, Handle grid)
 {
+	int coordinates[2];
+	MPI_Cart_coords(m_comm, m_myRank, 2, coordinates);
+	MPI_Cart_shift(m_comm, 1, -1, &m_rightRank, &m_leftRank);
+	MPI_Cart_shift(m_comm, 0, -1, &m_downRank, &m_upRank);
+
+	printf("rank = %d, rightrank = %d, downrank = %d, leftrank = %d, uprank = %d\n", m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
+
+	/* We need an empty GridFunction constructor :)*/
+	GridFunction& one = domain.u();
+	GridFunction& two = domain.u();
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
+		one = domain.p();
+		ExchangeOneGridFunction(one, domain);
 		break;
 	case Communication::Handle::Velocities:
+		one = domain.u();
+		two = domain.v();
+		ExchangeTwoGridFunctions(one, two, domain);
 		break;
 	case Communication::Handle::PreliminaryVelocities:
+		one = domain.F();
+		two = domain.G();
+		ExchangeTwoGridFunctions(one, two, domain);
 		break;
 	default:
 		break;
@@ -355,6 +240,239 @@ void Communication::m_recvFromAll(void* sendbuf, int sendcount, void* recvbuf, i
 	 * recieve the data but i think this function could prove usefull.
 	 */
 	MPI_Allgather(sendbuf, sendcount, MPI_DOUBLE, recvbuf, recvcount, MPI_DOUBLE, m_comm);
+}
+
+void Communication::ExchangeTwoGridFunctions(GridFunction& one, GridFunction& two, Domain domain)
+{
+	MPI_Status status;
+
+	// a)
+	if (m_leftRank != -1)
+	{
+		// SERGEJ CHECK/FIX THIS
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainU()[1] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with u values from left border
+		for (int i = domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(domain.getBeginInnerDomains()[0], i));
+
+		// TODO send buffer to m_leftRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_leftRank, m_myRank);
+
+		// TODO receive buffer from m_rightRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_rightRank, m_rightRank, &status);
+		// do something with the values in the buffer
+		buffer.clear();
+		buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainV()[1] + 1); //TODO!!!! check if this size is correct
+
+		// TODO fill buffer with v values from left border
+		for (int i = domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainV()[1]; i++)
+			buffer.push_back(two(domain.getBeginInnerDomains()[1], i));
+
+		// TODO send buffer to m_leftRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_leftRank, m_myRank);
+
+		// TODO receive buffer from m_rightRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_rightRank, m_rightRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set left boundary values
+	}
+
+	// b)
+	if (m_rightRank != -1)
+	{
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainU()[1] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with u values from left border
+		for (int i = domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(domain.getEndInnerDomainU()[0], i));
+
+		// TODO send buffer to m_rightRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_rightRank, m_myRank);
+
+		// TODO receive buffer from m_leftRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_leftRank, m_leftRank, &status);
+		// do something with the values in the buffer
+		buffer.clear();
+		buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainV()[1] + 1); //TODO!!!! check if this size is correct
+
+		// TODO fill buffer with v values from left border
+		for (int i = domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainV()[1]; i++)
+			buffer.push_back(two(domain.getEndInnerDomainV()[0], i));
+
+		// TODO send buffer to m_rightRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_rightRank, m_myRank);
+
+		// TODO receive buffer from m_leftRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_leftRank, m_leftRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set right boundary values
+	}
+
+	// c)
+	if (m_upRank != -1)
+	{
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainU()[0] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with values from upper border
+		for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(i, domain.getEndInnerDomainU()[0]));
+
+		// TODO send buffer to m_upRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_upRank, m_myRank);
+
+		// TODO receive buffer from m_downRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_downRank, m_downRank, &status);
+		// do something with the values in the buffer
+		buffer.clear();
+		buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainV()[0] + 1); //TODO!!!! check if this size is correct
+
+		// TODO fill buffer with values from upper border
+		for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainV()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(two(i, domain.getEndInnerDomainV()[0]));
+
+		// TODO send buffer to m_upRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_upRank, m_myRank);
+
+		// TODO receive buffer from m_downRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_downRank, m_downRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set upper boundary values
+	}
+
+	// d)
+	if (m_downRank != -1)
+	{
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainU()[0] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with values from upper border
+		for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(domain.getEndInnerDomainU()[0], i));
+
+		// TODO send buffer to m_downRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_downRank, m_myRank);
+
+		// TODO receive buffer from m_upRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_upRank, m_upRank, &status);
+		// do something with the values in the buffer
+		buffer.clear();
+		buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainV()[0] + 1); //TODO!!!! check if this size is correct
+
+		// TODO fill buffer with values from upper border
+		for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(two(domain.getEndInnerDomainV()[0], i));
+
+		// TODO send buffer to m_downRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_downRank, m_myRank);
+
+		// TODO receive buffer from m_upRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_upRank, m_upRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set lower boundary values
+	}
+}
+
+void Communication::ExchangeOneGridFunction(GridFunction& one, Domain domain)
+{
+
+	MPI_Status status;
+
+	// a)
+	if (m_leftRank != -1)
+	{
+		// SERGEJ CHECK/FIX THIS
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainU()[1] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with u values from left border
+		for (int i = domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(domain.getBeginInnerDomains()[0], i));
+
+		// TODO send buffer to m_leftRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_leftRank, m_myRank);
+
+		// TODO receive buffer from m_rightRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_rightRank, m_rightRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set left boundary values
+	}
+
+	// b)
+	if (m_rightRank != -1)
+	{
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[1] - domain.getEndInnerDomainU()[1] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with u values from left border
+		for (int i = domain.getBeginInnerDomains()[1]; i <= domain.getEndInnerDomainU()[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(domain.getEndInnerDomainU()[0], i));
+
+		// TODO send buffer to m_rightRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_rightRank, m_myRank);
+
+		// TODO receive buffer from m_leftRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_leftRank, m_leftRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set right boundary values
+	}
+
+	// c)
+	if (m_upRank != -1)
+	{
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainU()[0] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with values from upper border
+		for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(i, domain.getEndInnerDomainU()[0]));
+
+		// TODO send buffer to m_upRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_upRank, m_myRank);
+
+		// TODO receive buffer from m_downRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_downRank, m_downRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set upper boundary values
+	}
+
+	// d)
+	if (m_downRank != -1)
+	{
+		std::vector<double> buffer;
+		buffer.reserve(domain.getBeginInnerDomains()[0] - domain.getEndInnerDomainU()[0] + 1); //TODO!!!! check if this size is correct
+		// TODO fill buffer with values from upper border
+		for (int i = domain.getBeginInnerDomains()[0]; i <= domain.getEndInnerDomainU()[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(one(domain.getEndInnerDomainU()[0], i));
+
+		// TODO send buffer to m_downRank
+		m_sendToOne(&buffer, (int)buffer.size(), m_downRank, m_myRank);
+
+		// TODO receive buffer from m_upRank
+		m_recvFromOne(&buffer, (int)buffer.size(), m_upRank, m_upRank, &status);
+		// do something with the values in the buffer
+	}
+	else
+	{
+		// TODO ask domain to set lower boundary values
+	}
 }
 
 Communication::~Communication()

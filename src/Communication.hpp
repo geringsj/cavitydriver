@@ -56,6 +56,10 @@ private:
 	 */
 	bool m_valid;
 
+	void ExchangeTwoGridFunctions(GridFunction& one, GridFunction& two, Domain domain);
+
+	void ExchangeOneGridFunction(GridFunction& one, Domain domain);
+
 public:
 
 	bool getValid() { return m_valid; }
