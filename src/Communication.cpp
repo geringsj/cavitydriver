@@ -208,14 +208,31 @@ void Communication::exchangeGridInnerValues(Domain domain, Handle grid)
 
 bool Communication::checkForAnotherSORCycle(Real mySubResiduum)
 {
-
+	if (m_myRank != 0)
+	{
+		Real buffer[1];
+		buffer[0] = mySubResiduum;
+		m_sendToOne(&buffer, 1, 0, 0);
+	}
+	else
+	{
+		std::vector<Real> recvbuf;
+		m_recvFromAll(&recvbuf, 1);
+		std::vector<Real> Residuuen;
+		Real tmp_residuum;
+		for (unsigned int i = 0; i < recvbuf.size(); i++)
+		{
+			tmp_residuum = recvbuf.at(i);
+		}
+		// do something with the data
+	}
 }
 
 Real Communication::getGlobalTimeStep(Delta myMaxValues)
 {
 	if (m_myRank != 0)
 	{
-		double buffer[3];
+		Real buffer[3];
 		buffer[0] = myMaxValues.x;
 		buffer[1] = myMaxValues.y;
 		buffer[2] = myMaxValues.z;
@@ -223,7 +240,7 @@ Real Communication::getGlobalTimeStep(Delta myMaxValues)
 	}
 	else
 	{
-		std::vector<double> recvbuf;
+		std::vector<Real> recvbuf;
 		m_recvFromAll(&recvbuf, 3);
 		std::vector<Delta> maxValues;
 		Delta tmp_maxValue;
