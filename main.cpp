@@ -3,10 +3,10 @@
 #include "src/Computation.hpp"
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
+
 /* communication test */
 #include "src/Communication.hpp"
 
-#include <mpi.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -32,17 +32,12 @@ Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 	return value;
 }
 
+void mainLoop()
+{
+}
+
 int main(int argc, char** argv)
 {
-	/* This is also just for testing, delete it if we are done with testing. */
-	Dimension dim_c;
-	Communication comm = Communication(dim_c, argc, argv);
-	if (!comm.getValid())
-	{
-		std::cout << "buhhhh \n";
-		return -1;
-	}
-
 	/* time measurement variables */
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
 	std::chrono::steady_clock::time_point t_sor_start, t_sor_end;
@@ -51,34 +46,29 @@ int main(int argc, char** argv)
 	double t_frame_avg = 0.0;
 
 	/* init IO/parameters */
-	int io_argc = argc;			
-	char** io_argv = argv;
-	/** 
-	 * The IO parser "eats" the arguments leaving them empty after the constructor.
-	 * We need these arguments for the MPI_Init call so we give the IO a copy of
-	 * the arguments.
-	 */
-	IO io(io_argc, io_argv);
+	IO io(argc, argv);
 	SimParams simparam = io.readInputfile();
 	//simparam.writeSimParamsToSTDOUT();
 
 	/* init problem dimensions and grid spacing delta */
-	Dimension dim;
-	dim.i = simparam.iMax;
-	dim.j = simparam.jMax;
+	Dimension global_dim;
+	global_dim.i = simparam.iMax;
+	global_dim.j = simparam.jMax;
 	Delta delta;
 	delta.x = simparam.xLength / simparam.iMax;
 	delta.y = simparam.yLength / simparam.jMax;
 
-	/* int Communication */
-	//Communication comm = Communication(dim, argc, argv);
-	//if (!comm.getValid())
-	//{
-	//	return -1;
-	//}
+	/* This is just for testing, delete it if we are done with testing. */
+	Communication comm = Communication(global_dim);
+	if (!comm.getValid())
+	{
+		std::cout << "buhhhh \n";
+		return -1;
+	}
+	Dimension local_dim = comm.getLocalDimensions();
 
 	/* init domain, which holds all grids and knows about their dimensions */
-	Domain domain(dim, delta,
+	Domain domain(local_dim, delta,
 		/* 
 		 * you can ignore the next few lines. 
 		 * they set the boundary conditions on the domain by passing boundary functions */
@@ -98,7 +88,7 @@ int main(int argc, char** argv)
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
 	// concerning h, see: http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
 	if (simparam.xLength == simparam.yLength) 
-		simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); //debug("omega: %f", simparam.omg);
+		simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
 
 	Real t = 0.0, dt = simparam.deltaT, res;
 	int it = 0, step=0;
@@ -113,18 +103,7 @@ int main(int argc, char** argv)
 	{
 		t_frame_start = std::chrono::steady_clock::now();
 
-		/* the following block is for debugging purposes */
 		log_info("- Round %i", step);
-		if (m_log_info) log_info("= = = = = = = = = = = = = = =");
-		if (m_log_info) log_info("Grids with borders: ");
-		if (m_log_info) { log_info("U:"); domain.u().printSTDOUT(); }
-		if (m_log_info) { log_info("F:"); domain.F().printSTDOUT(); }
-		if (m_log_info) { log_info("V:"); domain.v().printSTDOUT();	}
-		if (m_log_info) { log_info("G:"); domain.G().printSTDOUT();	}
-		if (m_log_info) { log_info("P:"); domain.p().printSTDOUT();	}
-		if (m_log_info) { log_info("RHS:"); domain.rhs().printSTDOUT(); }
-		if (m_log_info) log_info("= = = = = = = = = = = = = = =");
-
 
 		/* the magic starts here */
 		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
@@ -145,8 +124,8 @@ int main(int argc, char** argv)
 			Solver::SORCycle(
 					domain.p(), domain.rhs(), delta, 
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
-			//Solver::SORCycleRedBlack(domain, delta, simparam.omg, Color::Red);
-			//Solver::SORCycleRedBlack(domain, delta, simparam.omg, Color::Black);
+			//Solver::SORCycleRedBlack(domain, simparam.omg, Color::Red);
+			//Solver::SORCycleRedBlack(domain, simparam.omg, Color::Black);
 
 			res = Solver::computeResidual(
 					domain.p(), domain.rhs(), delta, 
@@ -158,8 +137,7 @@ int main(int argc, char** argv)
 		t_sor_avg += time_span.count();
 		//log_info("SOR solver time: %f seconds",time_span.count());
 
-		if (m_log_info) 
-			log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
+		log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
 					it, simparam.iterMax, res, simparam.eps);
 		it = 0;
 

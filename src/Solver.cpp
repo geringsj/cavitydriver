@@ -65,17 +65,17 @@ namespace Solver
 	
 	void SORCycleRedBlack(
 			Domain& domain,
-			const Point& delta,
 			Real omega,
 			Color color)
 	{
-		Real dxx = pow(delta.x, 2.0);
-		Real dyy = pow(delta.y, 2.0);
-
 		GridFunction& p = domain.p();
 		GridFunction& rhs = domain.rhs();
-		Dimension& inner_begin = domain.getBeginInnerDomains();
-		Dimension& inner_end = domain.getEndInnerDomainP();
+		const Delta& delta = domain.getDelta();
+		const Dimension& inner_begin = domain.getBeginInnerDomains();
+		const Dimension& inner_end = domain.getEndInnerDomainP();
+
+		Real dxx = pow(delta.x, 2.0);
+		Real dyy = pow(delta.y, 2.0);
 
 		// Decided offset (in y-direction) based on color of first cell.
 		// If color matches the color of the first cell, no offset is required in the first column,

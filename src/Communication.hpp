@@ -5,28 +5,19 @@
 #include "GridFunction.hpp"
 #include "Domain.hpp"
 
-/* We need this here because MPI_Comm needs to be defined here in order to acess it in every function. :( */
-#include <mpi.h>
-#include <vector>
-
 /** 
- * Communication via MPI 
+ * Communication via MPI.
  * 
  * @author becherml, friesfn, geringsj
  * @date 11/2014
  */
 class Communication
 {
-	/* MPI will be asked to construct a cartesian grid of processes */
 private:
-	Dimension m_procsGrid_dim;
-	Dimension m_procsGrid_myPosition;
-	Dimension m_globalDomain_dim;
-	Dimension m_myDomain_dim;
-	Color m_myDomainFirstCellColor;
-	Dimension m_myOffsetToGlobalDomain;
-
 	int m_numProcs;
+
+	Dimension m_procsGrid_dim;
+	Index m_procsGrid_myPosition;
 
 	/* rank 0 process is manager (and also worker), others are workers */
 	int m_myRank;
@@ -35,26 +26,23 @@ private:
 	int m_leftRank;
 	int m_rightRank;
 
-	void m_sendToOne(void *buf, int count, int dest, int tag);
-	void m_recvFromOne(void* buf, int count, int source, int tag, MPI_Status* status);
+	Dimension m_globalDomain_dim;
+	Dimension m_myDomain_dim;
+	Color m_myDomainFirstCellColor;
+	Index m_myOffsetToGlobalDomain;
 
+	uint m_bufferSize;
+	Real* m_sendBuffer;
+	Real* m_recvBuffer;
+
+	/* use these to send/receive the filled send/receive buffer */
+	void m_sendToOne(int count, int dest, int tag);
+	int m_recvFromOne(int source, int tag);
+
+	/* maybe we won't need those later, because we can tell MPI directly to sum over all received residdums and stuff
+	 * so maybe use an MPI call on check*SORCycle / getGlobalTimeStep */
 	void m_sendToAll(void *buffer, int count);
 	void m_recvFromAll(/*void* sendbuf, int sendcount,*/void* recvbuf, int recvcount);
-
-	/**
-	 * Compute the square root of a given integer and check if the
-	 * result is an even number.
-	 *
-	 * @return If the square root is an even number.
-	 */
-	bool SqrtIsEven(int number);
-	/* The communication handle */
-	MPI_Comm m_comm;
-	/**
-	 * Store weather the object is valid or not. If it is not valid the thread
-	 * handling it will be terminated
-	 */
-	bool m_valid;
 
 	void ExchangeTwoGridFunctions(GridFunction& one, GridFunction& two, Domain domain);
 
@@ -62,7 +50,8 @@ private:
 
 public:
 
-	bool getValid() { return m_valid; }
+	bool getValid() const { return m_myRank>=0; }
+	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 
 	enum class Handle {
 		Pressure,
@@ -70,7 +59,7 @@ public:
 		PreliminaryVelocities
 	};
 
-	Communication(Dimension globalDomainDim, /* MPI_Init needs argc and argv */int argc, char** argv);
+	Communication(Dimension globalDomainDim);
 	~Communication();
 
 	void exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells=Color::All);

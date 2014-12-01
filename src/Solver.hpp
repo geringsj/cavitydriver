@@ -49,7 +49,6 @@ namespace Solver
 	*/
 	void SORCycleRedBlack(
 			Domain& domain,
-			const Point& delta,
 			Real omega,
 			Color color);
 
