@@ -345,10 +345,12 @@ Real
 	#include "sys/stat.h"
 #endif
 
-void IO::writeVTKMasterFile(const Index & griddimension, int step, int &stencilwidth, Communication &comm)
+void IO::writeVTKMasterFile(const Index & griddimension, 
+	int step, int &stencilwidth, Communication &comm)
 {
-	int iMax = griddimension[0]; // s.iLocalMax - 1; // w.r.t. inner of P
-	int jMax = griddimension[1]; // s.jLocalMax - 1; // w.r.t. inner of P
+	// iLocalMax & jLocalMax are the size of the area..
+	int iMax = comm.getLocalDimensions()[0] - 1; // s.iLocalMax - 1; // w.r.t. inner of P
+	int jMax = comm.getLocalDimensions()[1] - 1; // s.jLocalMax - 1; // w.r.t. inner of P
 
 	std::string filename;
 	filename.append("./");
@@ -397,7 +399,7 @@ void IO::writeVTKMasterFile(const Index & griddimension, int step, int &stencilw
 		{
 			int curRank;
 			int coords[2] = { x, y };
-			comm.getRankByCoords(coords, &curRank);
+			comm.getRankByCoords(coords, curRank);
 			int x1 = x * iMax - stencilwidth;
 			int x2 = (x + 1) * iMax + stencilwidth - 1;
 			int x3 = y * jMax - stencilwidth;
@@ -426,17 +428,15 @@ void IO::writeVTKMasterFile(const Index & griddimension, int step, int &stencilw
 	os << "</VTKFile>" << std::endl;
 }
 
-void IO::writeVTKSlaveFile(const Index & griddimension,
-	GridFunction& u, GridFunction& v,
-	GridFunction& p, const Point& delta, int step,
+void IO::writeVTKSlaveFile(Domain& domain, int step,
 	int &stencilwidth, Communication &comm,
 	SimParams sim_params)
 {
-	int iMax = griddimension[0]; // s.iLocalMax - 1;
-	int jMax = griddimension[1]; // s.jLocalMax - 1;
+	int iMax = comm.getLocalDimensions()[0] - 1; // s.iLocalMax - 1;
+	int jMax = comm.getLocalDimensions()[1] - 1; // s.jLocalMax - 1;
 
-	Real deltaX = delta[0];
-	Real deltaY = delta[1];
+	Real deltaX = domain.getDelta()[0];
+	Real deltaY = domain.getDelta()[1];
 
 	int rank = comm.getRank();
 
@@ -471,9 +471,9 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
 	std::ostream os(&fb);
 
-	int coords[2];
-	comm.getOwnCoords(coords);
-
+	//int coords[2];
+	//comm.getOwnCoords(coords); //TODO obtain this information via getProcsGridPosition and us an Index here
+	Index coords = comm.getProcsGridPosition();
 	int x = coords[0];
 	int y = coords[1];
 
@@ -552,7 +552,7 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 	{
 		for (int i = 0; i <= iMax + 1; ++i)
 		{
-			os << std::scientific << u(i,j) << " " << v(i,j) << " " << 0.
+			os << std::scientific << domain.u()(i,j) << " " << domain.v()(i,j) << " " << 0.
 				<< " ";
 		}
 		os << std::endl;
@@ -565,7 +565,7 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 	{
 		for (int i = 1; i <= iMax + 2; i++)
 		{
-			os << std::scientific << (p(i,j) + p(i,j + 1)) / 2. << " ";
+			os << std::scientific << (domain.p()(i,j) + domain.p()(i,j + 1)) / 2. << " ";
 		}
 		os << std::endl;
 	}
@@ -573,7 +573,7 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 	// print last line of pressure:
 	for (int i = 1; i <= iMax + 2; i++)
 	{
-		os << std::scientific << p(i,jMax + 2);
+		os << std::scientific << domain.p()(i,jMax + 2);
 	}
 	os << "</DataArray>" << std::endl;
 
@@ -590,8 +590,8 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 		os << std::scientific << 0.0 << " ";
 		for (int i = 1; i <= iMax; i++)
 		{
-			Real zeta = (u(i,j + 1) - u(i,j)) / delta[1]
-				- (v(i + 1,j) - v(i,j)) / delta[0];
+			Real zeta = (domain.u()(i, j + 1) - domain.u()(i, j)) / deltaY
+				- (domain.v()(i + 1, j) - domain.v()(i, j)) / deltaX;
 			os << std::scientific << zeta << " ";
 		}
 		os << std::scientific << 0.0 << std::endl;
@@ -614,7 +614,7 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 		for (int j = 1; j <= jMax + 1; j++)
 		{
 			stream(i,j) = stream(i,j - 1)
-				+ u(i,j) * delta[1];
+				+ domain.u()(i, j) * deltaY;
 		}
 	}
 
@@ -643,15 +643,13 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 }
 
 void
-IO::writeVTKFile (const Index & griddimension, GridFunction & u,
-		  GridFunction & v, GridFunction & p,
-		  const Point & delta, int step)
+IO::writeVTKFile (Domain& domain, int step)
 {
-  Real deltaX = delta[0];
-  Real deltaY = delta[1];
+  Real deltaX = domain.getDelta()[0];
+  Real deltaY = domain.getDelta()[1];
 
-  int iMax = griddimension[0];// w.r.t. inner of P
-  int jMax = griddimension[1];// w.r.t. inner of P
+  int iMax = domain.getDimension()[0];// w.r.t. inner of P
+  int jMax = domain.getDimension()[1];// w.r.t. inner of P
 
   std::string filename;
   filename.append("./");
@@ -717,9 +715,9 @@ IO::writeVTKFile (const Index & griddimension, GridFunction & u,
 	  for (int j = 1; j <= jMax; ++j)
 	  {
 		  os << std::scientific << 
-			  (u(i,j)+u(i-1,j)) / 2.0
+			  (domain.u()(i, j) + domain.u()(i - 1, j)) / 2.0
 			  /*interpolateVelocityU(x, y, u, delta)*/ << " " <<
-			  (v(i,j)+v(i,j-1)) / 2.0
+			  (domain.v()(i, j) + domain.v()(i, j - 1)) / 2.0
 			  /*interpolateVelocityV(x, y, v, delta)*/ << " " << 
 			  0.0 << std::endl;
 	  }
@@ -731,7 +729,7 @@ IO::writeVTKFile (const Index & griddimension, GridFunction & u,
   {
 	  for (int j = 1; j <= jMax; ++j)
 	  {
-		  os << std::scientific << p(i,j) << " ";
+		  os << std::scientific << domain.p()(i, j) << " ";
 	  }
 	  os << std::endl;
   }

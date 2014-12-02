@@ -46,17 +46,12 @@ public:
    * \param delta The mesh width in x direction and y direction
    * \param step The number of the timestep.
    */
-  void writeVTKFile (const Index & griddimension,
-		     GridFunction & u, GridFunction & v,
-		     GridFunction & p, const Point & delta, 
-			 int step);
+  void writeVTKFile (Domain& domain, int step);
 
-  void writeVTKMasterFile(const Index & griddimension, 
-			 int step, int &stencilwidth, Communication &comm);
+  void writeVTKMasterFile(/* the whole grid!! */const Index & griddimension, int step,
+			 int &stencilwidth, Communication &comm);
 
-  void writeVTKSlaveFile(const Index & griddimension,
-			 GridFunction &u, GridFunction &v,
-			 GridFunction &p, const Point &delta, int step,
+  void writeVTKSlaveFile(Domain& domain, int step,
 			 int &stencilwidth, Communication &comm,
 			 SimParams sim_params);
 
