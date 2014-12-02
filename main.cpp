@@ -182,11 +182,11 @@ int main(int argc, char** argv)
 			int dummy_stencil_width = 1;
 
 			// write all slave files
-			io.writeVTKSlaveFile(domain,step,dummy_stencil_width,comm,simparam);
+			io.writeVTKSlaveFile(domain,step,dummy_stencil_width,communication,simparam);
 
 			// only rank 0 writes a master file
-			if(comm.getRank() == 0)
-				io.writeVTKMasterFile(global_dim,step,dummy_stencil_width,comm);
+			if(communication.getRank() == 0)
+				io.writeVTKMasterFile(global_dim,step,dummy_stencil_width,communication);
 		}
 		step++;
 
