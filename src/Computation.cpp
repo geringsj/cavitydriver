@@ -122,3 +122,42 @@ void computeNewVelocities(
 
 
 };
+
+
+
+/**
+ * TODO:
+ * Please move to IO after we have one that is able to deal with MPI stuff.
+ */
+void ComputeVorticity(GridFunction& vorticity, Domain domain)
+{
+	GridFunction u = domain.u();
+	GridFunction v = domain.v();
+	Real delta_x = domain.getDelta().x;
+	Real delta_y = domain.getDelta().y;
+	for (int i = 0; i < domain.getDimension().i; i++)
+	{
+		for (int j = 0; j < domain.getDimension().j; j++)
+		{
+			vorticity(i, j) = (u(i, j + 1) - u(i, j)) / delta_y - (v(i + 1, j) - v(i, j)) / delta_x;
+		}
+	}
+}
+
+void ComputeFlowFunction(GridFunction& flow, Domain domain)
+{
+	GridFunction u = domain.u();
+	Real delta_y = domain.getDelta().y;
+	/* Set the border values */
+	for (int i = 0; i < domain.getDimension().i; i++)
+	{
+		flow(i, 0) = 0.0;
+	}
+	for (int i = 0; i < domain.getDimension().i; i++)
+	{
+		for (int j = 1; j < domain.getDimension().j; j++)
+		{
+			flow(i, j) = flow(i, j - 1) + u(i, j) * delta_y;
+		}
+	}
+}
