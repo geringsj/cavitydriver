@@ -8,9 +8,11 @@ Domain::Domain(Dimension dimension, Delta delta,
 	std::function<Real(Index, GridFunction&, Dimension)> in_w,
 	std::function<Real(Index, GridFunction&, Dimension)> in_p,
 
-	std::function<Real(Point)> in_gx,
-	std::function<Real(Point)> in_gy,
-	std::function<Real(Point)> in_gz,
+	Real in_gx,
+	Real in_gy,
+	Real in_gz,
+
+	Domain::Boundary bndry,
 
 	Color firstCellColor
 	) : 
@@ -22,7 +24,8 @@ Domain::Domain(Dimension dimension, Delta delta,
 		m_p_rhs(Dimension(dimension[0]+2,dimension[1]+2)),
 		m_velocities(dimension),
 		m_preliminary_velocities_FGH(dimension),
-		m_forcefunc_gx(in_gx), m_forcefunc_gy(in_gy), m_forcefunc_gz(in_gz)
+		m_boundary(bndry),
+		m_force_gx(in_gx), m_force_gy(in_gy), m_force_gz(in_gz)
 {
 	/* set indices for end of inner of grids u, v, w and p individually */
 	/* for now, everything < inner_begin and everything > inner_end 
