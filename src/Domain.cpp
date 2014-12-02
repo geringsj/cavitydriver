@@ -118,7 +118,6 @@ Domain::~Domain()
 
 void Domain::setVelocitiesBoundaries()
 {
-	Dimension current;
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		LEFT(m_inner_begin, m_inner_end[d])
@@ -180,5 +179,116 @@ void Domain::setPressureBoundaries()
 	BOTTOM(m_inner_begin, m_dimension)
 	{
 		PRESSUREBOUNDARIES(i, j);
+	}
+}
+
+
+void Domain::setBoundaries(Boundaries boundaries, int grid)
+{
+	switch (grid)
+	{
+	case 0:
+		// pressure
+		if (boundaries == Boundaries::LEFT)
+		{
+			LEFT(m_inner_begin, m_dimension)
+			{
+				PRESSUREBOUNDARIES(i, j);
+			}
+		}
+		if (boundaries == Boundaries::RIGHT)
+		{
+			RIGHT(m_inner_begin, m_dimension)
+			{
+				PRESSUREBOUNDARIES(i, j);
+			}
+		}
+
+		if (boundaries == Boundaries::TOP)
+		{
+			TOP(m_inner_begin, m_dimension)
+			{
+				PRESSUREBOUNDARIES(i, j);
+			}
+		}
+
+		if (boundaries == Boundaries::BOTTOM)
+		{
+			BOTTOM(m_inner_begin, m_dimension)
+			{
+				PRESSUREBOUNDARIES(i, j);
+			}
+		}
+		break;
+	case 1:
+		// velocities
+		for (uint d = 0; d < DIMENSIONS; d++)
+		{
+			if (boundaries == Boundaries::LEFT)
+			{
+				LEFT(m_inner_begin, m_inner_end[d])
+				{
+					VELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+			if (boundaries == Boundaries::RIGHT)
+			{
+				RIGHT(m_inner_begin, m_inner_end[d])
+				{
+					VELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+			if (boundaries == Boundaries::TOP)
+			{
+				TOP(m_inner_begin, m_inner_end[d])
+				{
+					VELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+			if (boundaries == Boundaries::BOTTOM)
+			{
+				BOTTOM(m_inner_begin, m_inner_end[d])
+				{
+					VELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+		}
+		break;
+	case 2:
+		// preliminaryvelocities
+		for (uint d = 0; d<DIMENSIONS; d++)
+		{
+			if (boundaries == Boundaries::LEFT)
+			{
+				LEFT(m_inner_begin, m_inner_end[d])
+				{
+					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+			if (boundaries == Boundaries::RIGHT)
+			{
+				RIGHT(m_inner_begin, m_inner_end[d])
+				{
+					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+			if (boundaries == Boundaries::TOP)
+			{
+				TOP(m_inner_begin, m_inner_end[d])
+				{
+					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+			if (boundaries == Boundaries::BOTTOM)
+			{
+				BOTTOM(m_inner_begin, m_inner_end[d])
+				{
+					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
+				}
+			}
+		}
+		break;
+	default:
+		break;
 	}
 }
