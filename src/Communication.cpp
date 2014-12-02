@@ -310,28 +310,22 @@ void Communication::ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction
 	{
 		// SERGEJ CHECK/FIX THIS
 		// fill buffer with u values from left border
-		std::vector<Real> buffer;
-		buffer.reserve(u_end[1] - u_begin[1] + 1); //TODO!!!! check if this size is correct
 		for (int i = u_begin[1]; i <= u_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(u(u_begin[0], i));
+			m_sendBuffer[i] = (u(u_begin[0], i));
 
 		// send buffer to m_leftRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(),m_leftRank,m_myRank);
+		m_sendToOne(u_end[1]-u_begin[1]+1,m_leftRank,m_myRank); // TODO check size
 
 		// TODO receive buffer from m_rightRank
 		m_recvFromOne(m_rightRank, m_myRank);
 		// do something with the values in the buffer
 
 		// fill buffer with v values from left border
-		buffer.clear();
-		buffer.reserve(v_end[1] - v_begin[1] + 1); //TODO!!!! check if this size is correct
 		for (int i = v_begin[1]; i <= v_end[1]; i++)
-			buffer.push_back(v(v_begin[0], i));
+			m_sendBuffer[i] = (v(v_begin[0], i));
 
 		// send buffer to m_leftRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_leftRank, m_myRank);
+		m_sendToOne(v_end[1]-v_begin[1]+1, m_leftRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_rightRank
 		m_recvFromOne(m_rightRank, m_myRank);
@@ -346,28 +340,22 @@ void Communication::ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction
 	if (m_rightRank != -1)
 	{
 		// fill buffer with u values from left border
-		std::vector<Real> buffer;
-		buffer.reserve(u_end[1] - u_begin[1] + 1); //TODO!!!! check if this size is correct
 		for (int i = u_begin[1]; i <= u_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(u(u_end[0], i));
+			m_sendBuffer[i] = (u(u_end[0], i));
 
 		// send buffer to m_rightRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_rightRank, m_myRank);
+		m_sendToOne(u_end[1]-u_begin[1]+1, m_rightRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_leftRank
 		m_recvFromOne(m_leftRank, m_myRank);
 		// do something with the values in the buffer
 
 		// fill buffer with v values from right border
-		buffer.clear();
-		buffer.reserve(v_end[1] - v_begin[1] + 1); //TODO!!!! check if this size is correct
 		for (int i = v_begin[1]; i <= v_end[1]; i++)
-			buffer.push_back(v(v_end[0], i));
+			m_sendBuffer[i] = (v(v_end[0], i));
 
 		// send buffer to m_rightRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_rightRank, m_myRank);
+		m_sendToOne(v_end[1]-v_begin[1]+1, m_rightRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_leftRank
 		m_recvFromOne(m_leftRank, m_myRank);
@@ -382,28 +370,22 @@ void Communication::ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction
 	if (m_upRank != -1)
 	{
 		// fill buffer with values from upper border
-		std::vector<Real> buffer;
-		buffer.reserve(u_end[0] - u_begin[0] + 1); //TODO!!!! check if this size is correct
 		for (int i = u_begin[0]; i <= u_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(u(i, u_end[1]));
+			m_sendBuffer[i] = (u(i, u_end[1]));
 
 		// send buffer to m_upRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_upRank, m_myRank);
+		m_sendToOne(u_end[0]-u_begin[0]+1, m_upRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_downRank
 		m_recvFromOne(m_downRank, m_myRank);
 		// do something with the values in the buffer
 
 		// fill buffer with values from upper border
-		buffer.clear();
-		buffer.reserve(v_end[0] - v_begin[0] + 1); //TODO!!!! check if this size is correct
 		for (int i = v_begin[0]; i <= v_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(v(i, v_end[1]));
+			m_sendBuffer[i] = (v(i, v_end[1]));
 
 		// send buffer to m_upRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_upRank, m_myRank);
+		m_sendToOne(v_end[0]-v_begin[0]+1, m_upRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_downRank
 		m_recvFromOne(m_downRank, m_myRank);
@@ -418,28 +400,22 @@ void Communication::ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction
 	if (m_downRank != -1)
 	{
 		// fill buffer with values from lower border
-		std::vector<Real> buffer;
-		buffer.reserve(u_end[0] - u_begin[0] + 1); //TODO!!!! check if this size is correct
 		for (int i = u_begin[0]; i <= u_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(u(i,u_begin[1]));
+			m_sendBuffer[i] = (u(i,u_begin[1]));
 
 		// send buffer to m_downRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_downRank, m_myRank);
+		m_sendToOne(u_end[0]-u_begin[0]+1, m_downRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_upRank
 		m_recvFromOne(m_upRank, m_myRank);
 		// do something with the values in the buffer
 
 		// fill buffer with values from upper border
-		buffer.clear();
-		buffer.reserve(v_end[0] - v_begin[0] + 1); //TODO!!!! check if this size is correct
 		for (int i = v_begin[0]; i <= v_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(v(i,v_begin[1]));
+			m_sendBuffer[i] = (v(i,v_begin[1]));
 
 		// send buffer to m_downRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_downRank, m_myRank);
+		m_sendToOne(v_end[0]-v_begin[0]+1, m_downRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_upRank
 		m_recvFromOne(m_upRank, m_myRank);
@@ -459,14 +435,11 @@ void Communication::ExchangePressureBoundaryValues(GridFunction& p,
 	{
 		// SERGEJ CHECK/FIX THIS
 		// fill buffer with p values from left border
-		std::vector<Real> buffer;
-		buffer.reserve(p_end[1] - p_begin[1] + 1); //TODO!!!! check if this size is correct
 		for (int i = p_begin[1]; i <= p_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(p(p_begin[0], i));
+			m_sendBuffer[i] = (p(p_begin[0], i));
 
 		// send buffer to m_leftRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_leftRank, m_myRank);
+		m_sendToOne(p_end[1]-p_begin[1]+1, m_leftRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_rightRank
 		m_recvFromOne(m_rightRank, m_myRank);
@@ -481,14 +454,11 @@ void Communication::ExchangePressureBoundaryValues(GridFunction& p,
 	if (m_rightRank != -1)
 	{
 		// fill buffer with u values from left border
-		std::vector<Real> buffer;
-		buffer.reserve(p_end[1] - p_begin[1] + 1); //TODO!!!! check if this size is correct
 		for (int i = p_begin[1]; i <= p_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(p(p_end[0], i));
+			m_sendBuffer[i] = (p(p_end[0], i));
 
 		// send buffer to m_rightRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_rightRank, m_myRank);
+		m_sendToOne(p_end[1]-p_begin[1]+1, m_rightRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_leftRank
 		m_recvFromOne(m_leftRank, m_myRank);
@@ -503,14 +473,11 @@ void Communication::ExchangePressureBoundaryValues(GridFunction& p,
 	if (m_upRank != -1)
 	{
 		// fill buffer with values from upper border
-		std::vector<Real> buffer;
-		buffer.reserve(p_end[0] - p_begin[0] + 1); //TODO!!!! check if this size is correct
 		for (int i = p_begin[0]; i <= p_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(p(i, p_end[1]));
+			m_sendBuffer[i] = (p(i, p_end[1]));
 
 		// send buffer to m_upRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_upRank, m_myRank);
+		m_sendToOne(p_end[0]-p_begin[0]+1, m_upRank, m_myRank); // TODO check size
 
 		// TODO receive buffer from m_downRank
 		m_recvFromOne(m_downRank, m_myRank);
@@ -524,15 +491,12 @@ void Communication::ExchangePressureBoundaryValues(GridFunction& p,
 	// d)
 	if (m_downRank != -1)
 	{
-		// fill buffer with values from upper border
-		std::vector<Real> buffer;
-		buffer.reserve(p_end[0] - p_begin[0] + 1); //TODO!!!! check if this size is correct
+		// fill buffer with values from lower border
 		for (int i = p_begin[0]; i <= p_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(p(i, p_begin[1]));
+			m_sendBuffer[i] = (p(i, p_begin[1]));
 
 		// send buffer to m_downRank
-		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_downRank, m_myRank);
+		m_sendToOne(p_end[0]-p_begin[0]+1, m_downRank, m_myRank); // TODO check size
 
 		// receive buffer from m_upRank
 		m_recvFromOne(m_upRank, m_myRank);
