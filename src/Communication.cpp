@@ -269,3 +269,7 @@ void Communication::exchangeGridBoundaryValues(
 	/* attention: domain handles real boundaries somewhere else, not in this function */
 }
 
+Index Communication::getProcsGridPosition()
+{
+	return m_procsGrid_myPosition;
+}
