@@ -134,7 +134,7 @@ Delta Communication::getGlobalMaxVelocities(Delta myMaxValues)
 }
 
 void Communication::exchangeGridBoundaryValues(
-		Domain domain, Handle grid) 
+		Domain& domain, Handle grid) 
 {
 	switch (grid)
 	{

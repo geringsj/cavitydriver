@@ -44,12 +44,6 @@ private:
 			Index ibegin, 
 			Index iend);
 
-	void ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction& v,
-		Index u_begin, Index u_end, Index v_begin, Index v_end);
-
-	void ExchangePressureBoundaryValues(GridFunction& p,
-		Index dim_one_begin, Index dim_one_end);
-
 public:
 
 	enum class Handle {
@@ -61,7 +55,7 @@ public:
 	Communication(Dimension globalDomainDim);
 	~Communication();
 
-	void exchangeGridBoundaryValues(Domain domain, Handle grid);
+	void exchangeGridBoundaryValues(Domain& domain, Handle grid);
 
 	//void exchangeGridInnerValues(Domain domain, Handle grid);
 
@@ -72,6 +66,13 @@ public:
 	bool getProcessValid() const { return m_myRank>=0; }
 	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
+
+	Domain::Boundary getBoundaryCompetence() const 
+	{ 
+		return Domain::Boundary
+			(m_upRank>=0, m_downRank>=0, m_leftRank>=0, m_rightRank>=0); 
+	}
+
 	// this is the equivalent to getOwnCoords
 	Index getProcsGridPosition();
 	int getRank() { return m_myRank; }

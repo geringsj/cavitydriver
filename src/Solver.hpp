@@ -30,7 +30,8 @@ namespace Solver
 			GridFunction& p,
 			GridFunction& rhs,
 			const Point& delta,
-			Dimension inner_begin, Dimension inner_end);
+			Dimension inner_begin, Dimension inner_end,
+			Dimension globalDims);
 
 	/**
 	* Compute the squared residual res that is to be used as an exit condition.
@@ -44,7 +45,8 @@ namespace Solver
 			GridFunction& p,
 			GridFunction& rhs,
 			const Point& delta,
-			Dimension inner_begin, Dimension inner_end);
+			Dimension inner_begin, Dimension inner_end,
+			Dimension globalDims);
 	
 	/**
 	* Compute one SOR iteration on the pressure p.

@@ -59,8 +59,8 @@ int main(int argc, char** argv)
 	delta.y = simparam.yLength / simparam.jMax;
 
 	/* This is just for testing, delete it if we are done with testing. */
-	Communication comm = Communication(global_dim);
-	if(!comm.getProcessValid())
+	Communication communication = Communication(global_dim);
+	if(!communication.getProcessValid())
 	{
 		log_info("I am a useless process. Bye.");
 		return 0;
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 		log_info("I am a good process. Yaay.");
 		return 0;
 	}
-	Dimension local_dim = comm.getLocalDimensions();
+	Dimension local_dim = communication.getLocalDimensions();
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(local_dim, delta,
@@ -88,11 +88,11 @@ int main(int argc, char** argv)
 		/* outer forces */
 			simparam.gx, simparam.gy, 0.0,
 		/* boundaries and color pattern */
-			Domain::Boundary(), Color::Red);
+			communication.getBoundaryCompetence(), communication.getFirstCellColor());
 
 	log_info("My Domain starts at Color: %s", 
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
-	comm.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
+	communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
@@ -116,12 +116,22 @@ int main(int argc, char** argv)
 		log_info("- Round %i", step);
 
 		/* the magic starts here */
-		dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
+		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
+		Delta maxVelocities = 
+			Delta(domain.u().getMaxValueGridFunction(), domain.v().getMaxValueGridFunction());
+		maxVelocities = communication.getGlobalMaxVelocities(maxVelocities);
+
+		dt = Computation::computeTimestepFromMaxVelocities
+			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
 		t += dt;
 		log_info("-- dt=%f | t/tmax=%f", dt, t / simparam.tEnd);
 
+		communication.exchangeGridBoundaryValues(domain, Communication::Handle::Velocities);
 		domain.setVelocitiesBoundaries();
+
 		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
+
+		communication.exchangeGridBoundaryValues(domain, Communication::Handle::PreliminaryVelocities);
 		domain.setPreliminaryVelocitiesBoundaries();
 
 		Computation::computeRighthandSide(domain, dt);
@@ -131,15 +141,24 @@ int main(int argc, char** argv)
 		{
 			domain.setPressureBoundaries();
 
-			Solver::SORCycle(
-					domain.p(), domain.rhs(), delta, 
-					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
-			//Solver::SORCycleRedBlack(domain, simparam.omg, Color::Red);
-			//Solver::SORCycleRedBlack(domain, simparam.omg, Color::Black);
+			//Solver::SORCycle(
+			//		domain.p(), domain.rhs(), delta, 
+			//		domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
 
-			res = Solver::computeResidual(
+			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Red);
+			communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
+
+			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Black);
+			communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
+
+			//res = Solver::computeResidual(
+			//		domain.p(), domain.rhs(), delta, 
+			//		domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), global_dim);
+			res = Solver::computeSquaredResidual(
 					domain.p(), domain.rhs(), delta, 
-					domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
+					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), global_dim);
+			res = communication.getGlobalResidual(res);
+			/* TODO check SOR end globally end broadcast */
 			it++;
 		} while (it < simparam.iterMax && res > simparam.eps);
 		t_sor_end = std::chrono::steady_clock::now();
