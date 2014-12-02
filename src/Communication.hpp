@@ -62,7 +62,6 @@ public:
 	~Communication();
 
 	void exchangeGridBoundaryValues(Domain domain, Handle grid);
-	// color not needed for pressure ?: , Color handleColorCells=Color::All);
 
 	//void exchangeGridInnerValues(Domain domain, Handle grid);
 

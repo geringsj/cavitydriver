@@ -25,14 +25,34 @@ class Domain
 {
 public:
 	struct Boundary {
-		bool Top;
-		bool Bottom;
-		bool Left;
-		bool Right;
+		/* to be used as booleans ! */
+		int Up;
+		int Down;
+		int Left;
+		int Right;
 
-		Boundary() : Top(1), Bottom(1), Left(1), Right(1) {};
-		Boundary(bool t, bool b, bool l, bool r) 
-			: Top(t), Bottom(b), Left(l), Right(r) {};
+		Boundary() : Up(1), Down(1), Left(1), Right(1) {};
+		Boundary(int u, int d, int l, int r) 
+			: Up(u), Down(d), Left(l), Right(r) {};
+
+		bool operator[](int i)
+		{
+			switch(i)
+			{
+				case 0: /* U */
+					return Right;
+					break;
+				case 1: /* V */
+					return Up;
+					break;
+				case 3: /* W */
+					return 0; /* TODO Front/Back */
+					break;
+				default:
+					return 0;
+					break;
+			}
+		}
 	};
 
 private: 
@@ -44,9 +64,9 @@ private:
 	 */
 	struct Grid3D
 	{
-		Grid3D(Dimension dim) : 
-			m_u(Dimension(dim.i+1,dim.j+2)),
-			m_v(Dimension(dim.i+2,dim.j+1)),
+		Grid3D(Dimension dim, Boundary bndry=Boundary()) : 
+			m_u(Dimension(dim.i+2-(int)bndry.Right,dim.j+2)),
+			m_v(Dimension(dim.i+2,dim.j+2-(int)bndry.Up)),
 			m_w(Dimension(0,0)) {}
 	
 		GridFunction m_u;

@@ -135,22 +135,24 @@ Delta Communication::getGlobalMaxVelocities(Delta myMaxValues)
 }
 
 void Communication::exchangeGridBoundaryValues(
-		Domain domain, Handle grid) //, Color handleColorCells)
+		Domain domain, Handle grid) 
 {
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
-		ExchangePressureBoundaryValues(domain.p(),
+		exchangeGridBoundaryValues(domain.p(),
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
 		break;
 	case Communication::Handle::Velocities:
-		ExchangeVelocityBoundaryValues(domain.u(), domain.v(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU(), 
+		exchangeGridBoundaryValues(domain.u(), 
+			domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
+		exchangeGridBoundaryValues(domain.v(), 
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
 		break;
 	case Communication::Handle::PreliminaryVelocities:
-		ExchangeVelocityBoundaryValues(domain.F(), domain.G(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU(),
+		exchangeGridBoundaryValues(domain.F(),
+			domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
+		exchangeGridBoundaryValues(domain.G(),
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
 		break;
 	default:
@@ -197,7 +199,7 @@ void Communication::exchangeGridBoundaryValues(
 	if(m_rightRank >= 0)
 	{
 		// receive buffer from m_rightRank
-		recvBufferFrom(m_rightRank, m_myRank);
+		recvBufferFrom(m_rightRank, m_rightRank);
 
 		// copy data from buffer to grid
 		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
@@ -217,7 +219,7 @@ void Communication::exchangeGridBoundaryValues(
 	if(m_leftRank >= 0)
 	{
 		// receive buffer from m_leftRank
-		recvBufferFrom(m_leftRank, m_myRank);
+		recvBufferFrom(m_leftRank, m_leftRank);
 
 		// copy data from buffer to grid
 		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
@@ -237,7 +239,7 @@ void Communication::exchangeGridBoundaryValues(
 	if(m_downRank >= 0)
 	{
 		// receive buffer from m_downRank
-		recvBufferFrom(m_downRank, m_myRank);
+		recvBufferFrom(m_downRank, m_downRank);
 
 		// copy data from buffer to grid
 		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
@@ -257,227 +259,13 @@ void Communication::exchangeGridBoundaryValues(
 	if(m_upRank >= 0)
 	{
 		// receive buffer from m_upRank
-		recvBufferFrom(m_upRank, m_myRank);
+		recvBufferFrom(m_upRank, m_upRank);
 
 		// copy data from buffer to grid
 		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
 			gf(i, iend[1]+1) = m_recvBuffer[n];
 	}
 
-	/* attention: Domain should handle real boundaries somewhere else, 
-	 * not in this function 
-	 * maybe give back to Domain class ? */
-}
-
-void Communication::ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction& v,
-		Index u_begin, Index u_end, Index v_begin, Index v_end)
-{
-	// a)
-	if (m_leftRank >= 0)
-	{
-		// SERGEJ CHECK/FIX THIS
-		// fill buffer with u values from left border
-		for(int i = u_begin[1]; i <= u_end[1]; i++) 
-			//DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i /* <- this is dangerous TODO */ ] = (u(u_begin[0], i));
-
-		// send buffer to m_leftRank
-		sendBufferTo(u_end[1]-u_begin[1]+1,m_leftRank,m_myRank); 
-		// TODO check size
-
-		// TODO receive buffer from m_rightRank
-		recvBufferFrom(m_rightRank, m_myRank);
-		// TODO do something with the values in the buffer
-
-		// fill buffer with v values from left border
-		for (int i = v_begin[1]; i <= v_end[1]; i++)
-			m_sendBuffer[i] = (v(v_begin[0], i));
-
-		// send buffer to m_leftRank
-		sendBufferTo(v_end[1]-v_begin[1]+1, m_leftRank, m_myRank); 
-		// TODO check size
-
-		// TODO receive buffer from m_rightRank
-		recvBufferFrom(m_rightRank, m_myRank);
-		// TODO do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set left boundary values
-	}
-
-	// b)
-	if (m_rightRank != -1)
-	{
-		// fill buffer with u values from left border
-		for (int i = u_begin[1]; i <= u_end[1]; i++) 
-			//DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i /* <- this is STILL dangerous , TODO */] = (u(u_end[0], i));
-
-		// send buffer to m_rightRank
-		sendBufferTo(u_end[1]-u_begin[1]+1, m_rightRank, m_myRank); 
-		// TODO check size
-
-		// TODO receive buffer from m_leftRank
-		recvBufferFrom(m_leftRank, m_myRank);
-		// TODO do something with the values in the buffer
-
-		// fill buffer with v values from right border
-		for (int i = v_begin[1]; i <= v_end[1]; i++)
-			m_sendBuffer[i] = (v(v_end[0], i));
-
-		// send buffer to m_rightRank
-		sendBufferTo(v_end[1]-v_begin[1]+1, m_rightRank, m_myRank); 
-		// TODO check size
-
-		// TODO receive buffer from m_leftRank
-		recvBufferFrom(m_leftRank, m_myRank);
-		// TODO do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set right boundary values
-	}
-
-	// c)
-	if (m_upRank != -1)
-	{
-		// fill buffer with values from upper border
-		for (int i = u_begin[0]; i <= u_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (u(i, u_end[1]));
-
-		// send buffer to m_upRank
-		sendBufferTo(u_end[0]-u_begin[0]+1, m_upRank, m_myRank); // TODO check size
-
-		// TODO receive buffer from m_downRank
-		recvBufferFrom(m_downRank, m_myRank);
-		// do something with the values in the buffer
-
-		// fill buffer with values from upper border
-		for (int i = v_begin[0]; i <= v_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (v(i, v_end[1]));
-
-		// send buffer to m_upRank
-		sendBufferTo(v_end[0]-v_begin[0]+1, m_upRank, m_myRank); // TODO check size
-
-		// TODO receive buffer from m_downRank
-		recvBufferFrom(m_downRank, m_myRank);
-		// do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set upper boundary values
-	}
-
-	// d)
-	if (m_downRank != -1)
-	{
-		// fill buffer with values from lower border
-		for (int i = u_begin[0]; i <= u_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (u(i,u_begin[1]));
-
-		// send buffer to m_downRank
-		sendBufferTo(u_end[0]-u_begin[0]+1, m_downRank, m_myRank); // TODO check size
-
-		// TODO receive buffer from m_upRank
-		recvBufferFrom(m_upRank, m_myRank);
-		// do something with the values in the buffer
-
-		// fill buffer with values from upper border
-		for (int i = v_begin[0]; i <= v_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (v(i,v_begin[1]));
-
-		// send buffer to m_downRank
-		sendBufferTo(v_end[0]-v_begin[0]+1, m_downRank, m_myRank); // TODO check size
-
-		// TODO receive buffer from m_upRank
-		recvBufferFrom(m_upRank, m_myRank);
-		// do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set lower boundary values
-	}
-}
-
-void Communication::ExchangePressureBoundaryValues(GridFunction& p,
-		Index p_begin, Index p_end)
-{
-	// a)
-	if (m_leftRank != -1)
-	{
-		// SERGEJ CHECK/FIX THIS
-		// fill buffer with p values from left border
-		for (int i = p_begin[1]; i <= p_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (p(p_begin[0], i));
-
-		// send buffer to m_leftRank
-		sendBufferTo(p_end[1]-p_begin[1]+1, m_leftRank, m_myRank); // TODO check size
-
-		// TODO receive buffer from m_rightRank
-		recvBufferFrom(m_rightRank, m_myRank);
-		// do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set left boundary values
-	}
-
-	// b)
-	if (m_rightRank != -1)
-	{
-		// fill buffer with u values from left border
-		for (int i = p_begin[1]; i <= p_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (p(p_end[0], i));
-
-		// send buffer to m_rightRank
-		sendBufferTo(p_end[1]-p_begin[1]+1, m_rightRank, m_myRank); // TODO check size
-
-		// TODO receive buffer from m_leftRank
-		recvBufferFrom(m_leftRank, m_myRank);
-		// do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set right boundary values
-	}
-
-	// c)
-	if (m_upRank != -1)
-	{
-		// fill buffer with values from upper border
-		for (int i = p_begin[0]; i <= p_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (p(i, p_end[1]));
-
-		// send buffer to m_upRank
-		sendBufferTo(p_end[0]-p_begin[0]+1, m_upRank, m_myRank); // TODO check size
-
-		// TODO receive buffer from m_downRank
-		recvBufferFrom(m_downRank, m_myRank);
-		// do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set upper boundary values
-	}
-
-	// d)
-	if (m_downRank != -1)
-	{
-		// fill buffer with values from lower border
-		for (int i = p_begin[0]; i <= p_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			m_sendBuffer[i] = (p(i, p_begin[1]));
-
-		// send buffer to m_downRank
-		sendBufferTo(p_end[0]-p_begin[0]+1, m_downRank, m_myRank); // TODO check size
-
-		// receive buffer from m_upRank
-		recvBufferFrom(m_upRank, m_myRank);
-		// do something with the values in the buffer
-	}
-	else
-	{
-		// TODO ask domain to set lower boundary values
-	}
+	/* attention: domain handles real boundaries somewhere else, not in this function */
 }
 

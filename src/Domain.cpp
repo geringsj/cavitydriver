@@ -32,7 +32,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	 * is border of the grid */
 	for(uint d=0; d<DIMENSIONS; d++)
 		for(uint e=0; e<DIMENSIONS; e++)
-			m_inner_end[d][e] = dimension[e] + ((e==d)?(-1):(0)); 
+			m_inner_end[d][e] = dimension[e] + ((e==d)?(-1*(int)bndry[d]):(0)); 
 
 	/* the pressure is fourth entry of the array and has symmetric dimensions */
 	m_inner_end[3] = dimension; 
@@ -128,9 +128,9 @@ void Domain::setVelocitiesBoundaries()
 			LEFT(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Right)
 			RIGHT(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Top)
+		if (m_boundary.Up)
 			TOP(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Bottom)
+		if (m_boundary.Down)
 			BOTTOM(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
 	}
 }
@@ -143,9 +143,9 @@ void Domain::setPreliminaryVelocitiesBoundaries()
 			LEFT(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Right)
 			RIGHT(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Top)
+		if (m_boundary.Up)
 			TOP(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Bottom)
+		if (m_boundary.Down)
 			BOTTOM(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
 	}
 }
@@ -156,8 +156,8 @@ void Domain::setPressureBoundaries()
 		LEFT(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
 	if (m_boundary.Right)
 		RIGHT(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
-	if (m_boundary.Top)
+	if (m_boundary.Up)
 		TOP(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
-	if (m_boundary.Bottom)
+	if (m_boundary.Down)
 		BOTTOM(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
 }
