@@ -91,6 +91,18 @@ int main(int argc, char** argv)
 		/* boundaries and color pattern */
 			communication.getBoundaryCompetence(), communication.getFirstCellColor());
 
+	log_info("process %i has competence over boundaries: %s %s %s %s",
+			communication.getRank(),
+			((communication.getBoundaryCompetence().Up) ?
+			("Up ") : ("")),
+			((communication.getBoundaryCompetence().Right) ?
+			("Right ") : ("")),
+			((communication.getBoundaryCompetence().Down) ?
+			("Down ") : ("")),
+			((communication.getBoundaryCompetence().Left) ?
+			("Left") : (""))
+			);
+
 	log_info("My Domain starts at Color: %s", 
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
 	communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);

@@ -397,13 +397,14 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 
 	iMax = comm.getLocalDimensions()[0]-1; // s.iLocalMax - 1; // w.r.t. inner of P
 	jMax = comm.getLocalDimensions()[1]-1; // s.jLocalMax - 1; // w.r.t. inner of P
-	for (int x = 0; x < griddimension.i; x++)
+	for (int x = 0; x < comm.getProcsGridDim().i; x++)
 	{
-		for (int y = 0; y < griddimension.j; y++)
+		for (int y = 0; y < comm.getProcsGridDim().j; y++)
 		{
 			int curRank;
 			int coords[2] = { x, y };
 			comm.getRankByCoords(coords, curRank);
+			/* here, write extends of sub-domain of every process Omega_{i,j} */
 			int x1 = x * iMax - stencilwidth;
 			int x2 = (x + 1) * iMax + stencilwidth - 1;
 			int x3 = y * jMax - stencilwidth;
