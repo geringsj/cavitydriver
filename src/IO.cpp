@@ -399,7 +399,7 @@ void IO::writeVTKMasterFile(const Index & area_size, const Index & griddimension
 		{
 			int curRank;
 			int coords[2] = { x, y };
-			comm.getRankByCoords(coords, &curRank);
+			comm.getRankByCoords(coords, curRank);
 			int x1 = x * iMax - stencilwidth;
 			int x2 = (x + 1) * iMax + stencilwidth - 1;
 			int x3 = y * jMax - stencilwidth;
@@ -474,9 +474,9 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
 	std::ostream os(&fb);
 
-	int coords[2];
-	comm.getOwnCoords(coords); //TODO obtain this information via getProcsGridPosition and us an Index here
-
+	//int coords[2];
+	//comm.getOwnCoords(coords); //TODO obtain this information via getProcsGridPosition and us an Index here
+	Index coords = comm.getProcsGridPosition();
 	int x = coords[0];
 	int y = coords[1];
 

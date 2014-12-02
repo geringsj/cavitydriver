@@ -72,9 +72,10 @@ public:
 	bool getProcessValid() const { return m_myRank>=0; }
 	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
-
 	// this is the equivalent to getOwnCoords
 	Index getProcsGridPosition();
+	int getRank() { return m_myRank; }
+	void getRankByCoords(int* coords, int& rank);
 };
 
 

@@ -90,7 +90,6 @@ Communication::Communication(Dimension globalDomainDim)
 			m_myRank, m_myOffsetToGlobalDomain.i, m_myOffsetToGlobalDomain.j,
 			m_myDomain_dim.i, m_myDomain_dim.j, 
 			(m_myDomainFirstCellColor==Color::Red)?("Red"):("Black"), m_bufferSize);
-
 }
 
 Communication::~Communication()
@@ -272,4 +271,10 @@ void Communication::exchangeGridBoundaryValues(
 Index Communication::getProcsGridPosition()
 {
 	return m_procsGrid_myPosition;
+}
+
+void Communication::getRankByCoords(int* coords, int& rank)
+{
+	rank = (int)floor(coords[0] / (m_globalDomain_dim.i - 1) * m_procsGrid_dim.i) * m_procsGrid_dim.j +
+		(int)floor(coords[1] / (m_globalDomain_dim.j - 1) * m_procsGrid_dim.j);
 }
