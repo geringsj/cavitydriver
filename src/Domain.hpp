@@ -45,7 +45,7 @@ public:
 				case 1: /* V */
 					return Up;
 					break;
-				case 3: /* W */
+				case 2: /* W */
 					return 0; /* TODO Front/Back */
 					break;
 				default:

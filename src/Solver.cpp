@@ -11,20 +11,21 @@ namespace Solver
 			GridFunction& p,
 			GridFunction& rhs,
 			const Point& delta,
-			Dimension inner_begin, Dimension inner_end)
+			Dimension inner_begin, Dimension inner_end,
+			Dimension globalDims)
 	{
-		return sqrt( computeSquaredResidual(p, rhs, delta, inner_begin, inner_end) );
+		return sqrt( computeSquaredResidual(p, rhs, delta, inner_begin, inner_end, globalDims) );
 	}
 
 	Real computeSquaredResidual(
 			GridFunction& p,
 			GridFunction& rhs,
 			const Point& delta,
-			Dimension inner_begin, Dimension inner_end)
+			Dimension inner_begin, Dimension inner_end,
+			Dimension globalDims)
 	{
 		Real numerator = 0.0;
-		Real denominator = 
-			Real((inner_end.i-inner_begin.i+1) * (inner_end.j-inner_begin.j+1));
+		Real denominator = (globalDims.i * globalDims.j);
 
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
