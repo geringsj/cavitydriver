@@ -121,6 +121,23 @@ public:
 	void setPressureBoundaries();
 	void setPreliminaryVelocitiesBoundaries();
 	void setVelocitiesBoundaries();
+
+	/**
+	 * Used to set the border values if the MPI thread doesn't
+	 * have a neighbour and is at the actual border.
+	 */
+	enum class Boundaries{
+		LEFT, RIGHT, TOP, BOTTOM
+	};
+	/**
+	 * Reset the boundary values for cells that are at the actual
+	 * border of our grid and don't have a neighbouring thread.
+	 */
+	void setBoundaries(
+		/**< Determines which boundary (left, right, top or bottom) we want to set. */
+		Boundaries boundaries, 
+		/**< Determines for which grid (velocities, pressure, or preliminaryvelocities) the boundary will be set. */
+		int grid);
 private:
 	/* TODO document in a non-stupid manner. 
 	 * also mention: we are prepared to do 3D, but don't do it yet */
