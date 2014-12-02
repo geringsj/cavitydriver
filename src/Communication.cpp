@@ -179,27 +179,19 @@ Communication::Communication(Dimension globalDomainDim)
 
 void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells)
 {
-	/* We need an empty GridFunction constructor :)*/
-	GridFunction& one = domain.u();
-	GridFunction& two = domain.u();
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
-		one = domain.p();
-		ExchangeOneGridFunction(one, domain,
+		ExchangePressureBoundaryValues(domain.p(),
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
 		break;
 	case Communication::Handle::Velocities:
-		one = domain.u();
-		two = domain.v();
-		ExchangeTwoGridFunctions(one, two, domain,
+		ExchangeVelocityBoundaryValues(domain.u(), domain.v(),
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainU(), 
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
 		break;
 	case Communication::Handle::PreliminaryVelocities:
-		one = domain.F();
-		two = domain.G();
-		ExchangeTwoGridFunctions(one, two, domain,
+		ExchangeVelocityBoundaryValues(domain.F(), domain.G(),
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainU(),
 			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
 		break;
@@ -210,29 +202,13 @@ void Communication::exchangeGridBoundaryValues(Domain domain, Handle grid, Color
 
 void Communication::exchangeGridInnerValues(Domain domain, Handle grid)
 {
-	/* We need an empty GridFunction constructor :)*/
-	GridFunction& one = domain.u();
-	GridFunction& two = domain.u();
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
-		one = domain.p();
-		ExchangeOneGridFunction(one, domain,
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
 		break;
 	case Communication::Handle::Velocities:
-		one = domain.u();
-		two = domain.v();
-		ExchangeTwoGridFunctions(one, two, domain,
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
 		break;
 	case Communication::Handle::PreliminaryVelocities:
-		one = domain.F();
-		two = domain.G();
-		ExchangeTwoGridFunctions(one, two, domain,
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
 		break;
 	default:
 		break;
@@ -326,34 +302,34 @@ void Communication::m_recvFromAll(/*void* sendbuf, int sendcount,*/ void* recvbu
 	//MPI_Allgather(sendbuf, sendcount, MPI_DOUBLE, recvbuf, recvcount, MPI_DOUBLE, m_comm);
 }
 
-void Communication::ExchangeTwoGridFunctions(GridFunction& one, GridFunction& two, Domain domain,
-	Dimension dim_one_begin, Dimension dim_one_end, Dimension dim_two_begin, Dimension dim_two_end)
+void Communication::ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction& v,
+		Index u_begin, Index u_end, Index v_begin, Index v_end)
 {
 	// a)
 	if (m_leftRank != -1)
 	{
 		// SERGEJ CHECK/FIX THIS
+		// fill buffer with u values from left border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[1] - dim_one_begin[1] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with u values from left border
-		for (int i = dim_one_begin[1]; i <= dim_one_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(dim_one_begin[1], i));
+		buffer.reserve(u_end[1] - u_begin[1] + 1); //TODO!!!! check if this size is correct
+		for (int i = u_begin[1]; i <= u_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(u(u_begin[0], i));
 
-		// TODO send buffer to m_leftRank
+		// send buffer to m_leftRank
 		m_sendBuffer = buffer.data();
-		m_sendToOne((int)buffer.size(), m_leftRank,m_myRank);
+		m_sendToOne((int)buffer.size(),m_leftRank,m_myRank);
 
 		// TODO receive buffer from m_rightRank
 		m_recvFromOne(m_rightRank, m_myRank);
 		// do something with the values in the buffer
+
+		// fill buffer with v values from left border
 		buffer.clear();
-		buffer.reserve(dim_two_end[1] - dim_two_begin[1] + 1); //TODO!!!! check if this size is correct
+		buffer.reserve(v_end[1] - v_begin[1] + 1); //TODO!!!! check if this size is correct
+		for (int i = v_begin[1]; i <= v_end[1]; i++)
+			buffer.push_back(v(v_begin[0], i));
 
-		// TODO fill buffer with v values from left border
-		for (int i = dim_two_begin[1]; i <= dim_two_end[1]; i++)
-			buffer.push_back(two(dim_two_begin[1], i));
-
-		// TODO send buffer to m_leftRank
+		// send buffer to m_leftRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_leftRank, m_myRank);
 
@@ -369,27 +345,27 @@ void Communication::ExchangeTwoGridFunctions(GridFunction& one, GridFunction& tw
 	// b)
 	if (m_rightRank != -1)
 	{
+		// fill buffer with u values from left border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[1] - dim_one_begin[1] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with u values from left border
-		for (int i = dim_one_begin[1]; i <= dim_one_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(dim_one_end[1], i));
+		buffer.reserve(u_end[1] - u_begin[1] + 1); //TODO!!!! check if this size is correct
+		for (int i = u_begin[1]; i <= u_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(u(u_end[0], i));
 
-		// TODO send buffer to m_rightRank
+		// send buffer to m_rightRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_rightRank, m_myRank);
 
 		// TODO receive buffer from m_leftRank
 		m_recvFromOne(m_leftRank, m_myRank);
 		// do something with the values in the buffer
+
+		// fill buffer with v values from right border
 		buffer.clear();
-		buffer.reserve(dim_two_end[1] - dim_two_begin[1] + 1); //TODO!!!! check if this size is correct
+		buffer.reserve(v_end[1] - v_begin[1] + 1); //TODO!!!! check if this size is correct
+		for (int i = v_begin[1]; i <= v_end[1]; i++)
+			buffer.push_back(v(v_end[0], i));
 
-		// TODO fill buffer with v values from right border
-		for (int i = dim_two_begin[1]; i <= dim_two_end[1]; i++)
-			buffer.push_back(two(dim_two_end[1], i));
-
-		// TODO send buffer to m_rightRank
+		// send buffer to m_rightRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_rightRank, m_myRank);
 
@@ -405,27 +381,27 @@ void Communication::ExchangeTwoGridFunctions(GridFunction& one, GridFunction& tw
 	// c)
 	if (m_upRank != -1)
 	{
+		// fill buffer with values from upper border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[0] - dim_one_begin[0] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with values from upper border
-		for (int i = dim_one_begin[0]; i <= dim_one_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(i, dim_one_end[0]));
+		buffer.reserve(u_end[0] - u_begin[0] + 1); //TODO!!!! check if this size is correct
+		for (int i = u_begin[0]; i <= u_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(u(i, u_end[1]));
 
-		// TODO send buffer to m_upRank
+		// send buffer to m_upRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_upRank, m_myRank);
 
 		// TODO receive buffer from m_downRank
 		m_recvFromOne(m_downRank, m_myRank);
 		// do something with the values in the buffer
+
+		// fill buffer with values from upper border
 		buffer.clear();
-		buffer.reserve(dim_two_end[0] - dim_two_begin[0] + 1); //TODO!!!! check if this size is correct
+		buffer.reserve(v_end[0] - v_begin[0] + 1); //TODO!!!! check if this size is correct
+		for (int i = v_begin[0]; i <= v_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(v(i, v_end[1]));
 
-		// TODO fill buffer with values from upper border
-		for (int i = dim_two_begin[0]; i <= dim_two_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(two(i, dim_two_end[0]));
-
-		// TODO send buffer to m_upRank
+		// send buffer to m_upRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_upRank, m_myRank);
 
@@ -441,27 +417,28 @@ void Communication::ExchangeTwoGridFunctions(GridFunction& one, GridFunction& tw
 	// d)
 	if (m_downRank != -1)
 	{
+		// fill buffer with values from lower border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[0] - dim_one_begin[0] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with values from upper border
-		for (int i = dim_one_begin[0]; i <= dim_one_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(dim_one_end[0], i));
+		buffer.reserve(u_end[0] - u_begin[0] + 1); //TODO!!!! check if this size is correct
+		for (int i = u_begin[0]; i <= u_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(u(i,u_begin[1]));
 
-		// TODO send buffer to m_downRank
+		// send buffer to m_downRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_downRank, m_myRank);
 
 		// TODO receive buffer from m_upRank
 		m_recvFromOne(m_upRank, m_myRank);
 		// do something with the values in the buffer
+
+		// fill buffer with values from upper border
 		buffer.clear();
-		buffer.reserve(dim_two_end[0] - dim_two_begin[0] + 1); //TODO!!!! check if this size is correct
+		buffer.reserve(v_end[0] - v_begin[0] + 1); //TODO!!!! check if this size is correct
+		for (int i = v_begin[0]; i <= v_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(v(i,v_begin[1]));
 
-		// TODO fill buffer with values from upper border
-		for (int i = dim_two_begin[0]; i <= dim_two_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(two(dim_two_end[0], i));
-
-		// TODO send buffer to m_downRank
+		// send buffer to m_downRank
+		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_downRank, m_myRank);
 
 		// TODO receive buffer from m_upRank
@@ -474,20 +451,20 @@ void Communication::ExchangeTwoGridFunctions(GridFunction& one, GridFunction& tw
 	}
 }
 
-void Communication::ExchangeOneGridFunction(GridFunction& one, Domain domain,
-	Dimension dim_one_begin, Dimension dim_one_end)
+void Communication::ExchangePressureBoundaryValues(GridFunction& p,
+		Index p_begin, Index p_end)
 {
 	// a)
 	if (m_leftRank != -1)
 	{
 		// SERGEJ CHECK/FIX THIS
+		// fill buffer with p values from left border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[1] - dim_one_begin[1] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with u values from left border
-		for (int i = dim_one_begin[1]; i <= dim_one_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(dim_one_begin[1], i));
+		buffer.reserve(p_end[1] - p_begin[1] + 1); //TODO!!!! check if this size is correct
+		for (int i = p_begin[1]; i <= p_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(p(p_begin[0], i));
 
-		// TODO send buffer to m_leftRank
+		// send buffer to m_leftRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_leftRank, m_myRank);
 
@@ -503,13 +480,13 @@ void Communication::ExchangeOneGridFunction(GridFunction& one, Domain domain,
 	// b)
 	if (m_rightRank != -1)
 	{
+		// fill buffer with u values from left border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[1] - dim_one_begin[1] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with u values from left border
-		for (int i = dim_one_begin[1]; i <= dim_one_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(dim_one_end[1], i));
+		buffer.reserve(p_end[1] - p_begin[1] + 1); //TODO!!!! check if this size is correct
+		for (int i = p_begin[1]; i <= p_end[1]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(p(p_end[0], i));
 
-		// TODO send buffer to m_rightRank
+		// send buffer to m_rightRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_rightRank, m_myRank);
 
@@ -525,13 +502,13 @@ void Communication::ExchangeOneGridFunction(GridFunction& one, Domain domain,
 	// c)
 	if (m_upRank != -1)
 	{
+		// fill buffer with values from upper border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[0] - dim_one_begin[0] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with values from upper border
-		for (int i = dim_one_begin[0]; i <= dim_one_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(i, dim_one_end[0]));
+		buffer.reserve(p_end[0] - p_begin[0] + 1); //TODO!!!! check if this size is correct
+		for (int i = p_begin[0]; i <= p_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(p(i, p_end[1]));
 
-		// TODO send buffer to m_upRank
+		// send buffer to m_upRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_upRank, m_myRank);
 
@@ -547,17 +524,17 @@ void Communication::ExchangeOneGridFunction(GridFunction& one, Domain domain,
 	// d)
 	if (m_downRank != -1)
 	{
+		// fill buffer with values from upper border
 		std::vector<Real> buffer;
-		buffer.reserve(dim_one_end[0] - dim_one_begin[0] + 1); //TODO!!!! check if this size is correct
-		// TODO fill buffer with values from upper border
-		for (int i = dim_one_begin[0]; i <= dim_one_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
-			buffer.push_back(one(dim_one_end[0], i));
+		buffer.reserve(p_end[0] - p_begin[0] + 1); //TODO!!!! check if this size is correct
+		for (int i = p_begin[0]; i <= p_end[0]; i++) //DOUBLE-TODO!!!! check if this size is correct
+			buffer.push_back(p(i, p_begin[1]));
 
-		// TODO send buffer to m_downRank
+		// send buffer to m_downRank
 		m_sendBuffer = buffer.data();
 		m_sendToOne((int)buffer.size(), m_downRank, m_myRank);
 
-		// TODO receive buffer from m_upRank
+		// receive buffer from m_upRank
 		m_recvFromOne(m_upRank, m_myRank);
 		// do something with the values in the buffer
 	}

@@ -44,11 +44,11 @@ private:
 	void m_sendToAll(void *buffer, int count);
 	void m_recvFromAll(/*void* sendbuf, int sendcount,*/void* recvbuf, int recvcount);
 
-	void ExchangeTwoGridFunctions(GridFunction& one, GridFunction& two, Domain domain, 
-		Dimension dim_one_begin, Dimension dim_one_end, Dimension dim_two_begin, Dimension dim_two_end);
+	void ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction& v,
+		Index u_begin, Index u_end, Index v_begin, Index v_end);
 
-	void ExchangeOneGridFunction(GridFunction& one, Domain domain, 
-		Dimension dim_one_begin, Dimension dim_one_end);
+	void ExchangePressureBoundaryValues(GridFunction& p,
+		Index dim_one_begin, Index dim_one_end);
 
 public:
 
