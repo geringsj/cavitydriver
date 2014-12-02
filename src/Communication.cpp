@@ -118,6 +118,13 @@ Real Communication::getGlobalResidual(Real mySubResidual)
 	return sqrt(m_recvBuffer[0]);
 }
 
+bool Communication::checkGlobalFinishSOR(bool myLoopCondition)
+{
+	MPI_Allreduce(MPI_IN_PLACE, &myLoopCondition, 1, /*TODO switch?*/MPI_CXX_BOOL, 
+			MPI_LAND, MPI_COMM_WORLD);
+	return myLoopCondition;
+}
+
 Delta Communication::getGlobalMaxVelocities(Delta myMaxValues)
 {
 	m_sendBuffer[0] = myMaxValues.x;

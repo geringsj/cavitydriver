@@ -68,8 +68,9 @@ int main(int argc, char** argv)
 	else
 	{
 		log_info("I am a good process. Yaay.");
-		return 0;
+		//return 0;
 	}
+
 	Dimension local_dim = communication.getLocalDimensions();
 
 	/* init domain, which holds all grids and knows about their dimensions */
@@ -158,9 +159,9 @@ int main(int argc, char** argv)
 					domain.p(), domain.rhs(), delta, 
 					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), global_dim);
 			res = communication.getGlobalResidual(res);
-			/* TODO check SOR end globally end broadcast */
 			it++;
-		} while (it < simparam.iterMax && res > simparam.eps);
+		} while (communication.checkGlobalFinishSOR
+				(it < simparam.iterMax && res > simparam.eps));
 		t_sor_end = std::chrono::steady_clock::now();
 		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_sor_end-t_sor_start);
 		t_sor_avg += time_span.count();

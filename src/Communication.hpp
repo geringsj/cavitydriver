@@ -63,6 +63,8 @@ public:
 
 	Delta getGlobalMaxVelocities(Delta myMaxValues);
 
+	bool checkGlobalFinishSOR(bool myLoopCondition);
+
 	bool getProcessValid() const { return m_myRank>=0; }
 	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
