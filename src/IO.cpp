@@ -345,10 +345,12 @@ Real
 	#include "sys/stat.h"
 #endif
 
-void IO::writeVTKMasterFile(const Index & griddimension, int step, int &stencilwidth, Communication &comm)
+void IO::writeVTKMasterFile(const Index & area_size, const Index & griddimension, 
+	int step, int &stencilwidth, Communication &comm)
 {
-	int iMax = griddimension[0]; // s.iLocalMax - 1; // w.r.t. inner of P
-	int jMax = griddimension[1]; // s.jLocalMax - 1; // w.r.t. inner of P
+	// iLocalMax & jLocalMax are the size of the area..
+	int iMax = area_size[0] - 1; // s.iLocalMax - 1; // w.r.t. inner of P
+	int jMax = area_size[1] - 1; // s.jLocalMax - 1; // w.r.t. inner of P
 
 	std::string filename;
 	filename.append("./");
@@ -427,13 +429,14 @@ void IO::writeVTKMasterFile(const Index & griddimension, int step, int &stencilw
 }
 
 void IO::writeVTKSlaveFile(const Index & griddimension,
+	const Index& area_size,
 	GridFunction& u, GridFunction& v,
 	GridFunction& p, const Point& delta, int step,
 	int &stencilwidth, Communication &comm,
 	SimParams sim_params)
 {
-	int iMax = griddimension[0]; // s.iLocalMax - 1;
-	int jMax = griddimension[1]; // s.jLocalMax - 1;
+	int iMax = area_size[0] - 1; // s.iLocalMax - 1;
+	int jMax = area_size[1] - 1; // s.jLocalMax - 1;
 
 	Real deltaX = delta[0];
 	Real deltaY = delta[1];

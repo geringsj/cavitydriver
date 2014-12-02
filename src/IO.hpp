@@ -52,9 +52,11 @@ public:
 			 int step);
 
   void writeVTKMasterFile(const Index & griddimension, 
-			 int step, int &stencilwidth, Communication &comm);
+			 const Index& area_size, int step, 
+			 int &stencilwidth, Communication &comm);
 
   void writeVTKSlaveFile(const Index & griddimension,
+			 const Index& area_size,
 			 GridFunction &u, GridFunction &v,
 			 GridFunction &p, const Point &delta, int step,
 			 int &stencilwidth, Communication &comm,
