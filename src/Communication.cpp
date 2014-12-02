@@ -180,35 +180,89 @@ void Communication::exchangeGridBoundaryValues(
 		Index ibegin, 
 		Index iend)
 {
-	/* handle all neighbour boundaries 
-	 **/
+	/* 
+	 *handle all neighbour boundaries 
+	 */
+
+	/* a) send left - receive right */
 	if(m_leftRank >= 0)
-	{/* send left */
-	}
-	/* (maybe) receive from right */
-	if(m_rightRank >= 0)
-	{}
+	{
+		// copy data to buffer
+		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
+			m_sendBuffer[n] = (gf(ibegin[0], j));
 
-	if(m_rightRank >= 0)
-	{/* send right */
+		// send buffer to m_leftRank
+		sendBufferTo(iend[1]-ibegin[1]+1, m_leftRank, m_myRank);
 	}
-	/* (maybe) receive from left */
+	if(m_rightRank >= 0)
+	{
+		// receive buffer from m_rightRank
+		recvBufferFrom(m_rightRank, m_myRank);
+
+		// copy data from buffer to grid
+		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
+			 gf(iend[0]+1, j) = m_recvBuffer[n];
+	}
+
+	/* b) send right - receive left */
+	if(m_rightRank >= 0)
+	{
+		// copy data to buffer
+		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
+			m_sendBuffer[n] = (gf(iend[0], j));
+
+		// send buffer to m_rightRank
+		sendBufferTo(iend[1]-ibegin[1]+1, m_rightRank, m_myRank);
+	}
 	if(m_leftRank >= 0)
-	{}
+	{
+		// receive buffer from m_leftRank
+		recvBufferFrom(m_leftRank, m_myRank);
 
-	if(m_upRank >= 0)
-	{/* send up */
+		// copy data from buffer to grid
+		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
+			 gf(ibegin[0]-1, j) = m_recvBuffer[n];
 	}
-	/* (maybe) receive from down*/
-	if(m_downRank >= 0)
-	{}
 
-	if(m_downRank >= 0)
-	{/* send down */
-	}
-	/* (maybe) receive from up*/
+	/* c) send up - receive down */
 	if(m_upRank >= 0)
-	{}
+	{
+		// copy data to buffer
+		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
+			m_sendBuffer[n] = (gf(i, iend[1]));
+
+		// send buffer to m_upRank
+		sendBufferTo(iend[0]-ibegin[0]+1, m_upRank, m_myRank);
+	}
+	if(m_downRank >= 0)
+	{
+		// receive buffer from m_downRank
+		recvBufferFrom(m_downRank, m_myRank);
+
+		// copy data from buffer to grid
+		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
+			gf(i, ibegin[1]-1) = m_recvBuffer[n];
+	}
+
+	/* d) send down - receive up */
+	if(m_downRank >= 0)
+	{
+		// copy data to buffer
+		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
+			m_sendBuffer[n] = (gf(i, ibegin[1]));
+
+		// send buffer to m_downRank
+		sendBufferTo(iend[0]-ibegin[0]+1, m_downRank, m_myRank);
+	}
+	if(m_upRank >= 0)
+	{
+		// receive buffer from m_upRank
+		recvBufferFrom(m_upRank, m_myRank);
+
+		// copy data from buffer to grid
+		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
+			gf(i, iend[1]+1) = m_recvBuffer[n];
+	}
 
 	/* attention: Domain should handle real boundaries somewhere else, 
 	 * not in this function 
