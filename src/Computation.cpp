@@ -77,21 +77,13 @@ void computePreliminaryVelocities(
 		/* the formula: */
 		forall(i,j,domain.getBeginInnerDomains(), domain.getEndInnerDomain()[D])
 		{
-			/* this point is used for the outer force g_D in dimension D, 
-			 * it tells the outer force function where in the domain it should evaluate */
-			Point gpoint = Point(
-					/* here we are off by 1 or 2 because of the boundary */
-						Real(i)/domain.getEndInnerDomain()[D][0], 
-						Real(j)/domain.getEndInnerDomain()[D][1]);
-
-			/* the formula (for real): */
 			domain.getPreliminaryVelocity()[D]( i,j ) =
 				domain.getVelocity()[D]( i,j ) 
 				+ deltaT*
 				( 
 				 ( Fxx(i,j) + Fyy(i,j) )/Re
 				  - ( FFf(i,j) + alpha*FFfdc(i,j) ) - ( FGg(i,j) + alpha*FGgdc(i,j) )
-				 + domain.g(D,gpoint)
+				 + domain.g(D)
 				);
 		}
 	}

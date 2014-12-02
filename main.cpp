@@ -84,7 +84,12 @@ int main(int argc, char** argv)
 		/* W==0 */[](Index i, GridFunction& gf, Dimension dim)
 			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
 		/* P==0 */[&simparam](Index i, GridFunction& gf, Dimension dim)
-			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); });
+			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); },
+		/* outer forces */
+			simparam.gx, simparam.gy, 0.0,
+		/* boundaries and color pattern */
+			Domain::Boundary(), Color::Red);
+
 	log_info("My Domain starts at Color: %s", 
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
 	comm.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);

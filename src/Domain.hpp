@@ -23,6 +23,18 @@
  */
 class Domain
 {
+public:
+	struct Boundary {
+		bool Top;
+		bool Up;
+		bool Left;
+		bool Right;
+
+		Boundary() : Top(1), Up(1), Left(1), Right(1) {};
+		Boundary(bool t, bool u, bool l, bool r) 
+			: Top(t), Up(u), Left(l), Right(r) {};
+	};
+
 private: 
 	/** 
 	 * We need this struct for things to be easier.
@@ -69,18 +81,11 @@ public:
 		std::function<Real(Index,GridFunction&,Dimension)> in_v,
 		std::function<Real(Index,GridFunction&,Dimension)> in_w,
 		std::function<Real(Index, GridFunction&, Dimension)> in_p,
-
-		/* if no outer forces are given, we assume they are zero. 
-		 * TODO: can this be done in .cpp with the preset values still beeing used? 
-		 * or maybe split into two constructors ? 
-		 * => constructor delegation would be nice to use*/
-		std::function<Real(Point)> in_gx = 
-			[](Point coord)->Real{ return coord.x*0.0; }, 
-		std::function<Real(Point)> in_gy = 
-			[](Point coord)->Real{ return coord.x*0.0; },
-		std::function<Real(Point)> in_gz = 
-			[](Point coord)->Real{ return coord.x*0.0; },
-		Color firstCellColor=Color::Red
+		Real in_gx = 0.0,
+		Real in_gy = 0.0,
+		Real in_gz = 0.0,
+		Domain::Boundary bndry = Boundary(),
+		Color firstCellColor = Color::Red
 		);
 
 	~Domain();
@@ -109,12 +114,12 @@ public:
 	GridFunction& H() { return m_preliminary_velocities_FGH.m_w ; }
 	GridFunction& rhs() { return m_p_rhs; }
 
-	Real g(int dim, Point coord) 
-	{ if(dim == 0) return gx(coord); if(dim == 1) return gy(coord); return gz(coord); }
+	Real g(int dim) 
+	{ if(dim == 0) return gx(); if(dim == 1) return gy(); return gz(); }
 
-	Real gx(Point coord) { return m_forcefunc_gx(coord); }
-	Real gy(Point coord) { return m_forcefunc_gy(coord); }
-	Real gz(Point coord) { return m_forcefunc_gz(coord); }
+	Real gx() const { return m_force_gx; }
+	Real gy() const { return m_force_gy; }
+	Real gz() const { return m_force_gz; }
 
 	Color getDomainFirstCellColor(){ return m_FirstCellColor; };
 
@@ -185,12 +190,14 @@ private:
 	std::function<Real(Index)> m_borderfunc_v;
 	std::function<Real(Index)> m_borderfunc_w;
 
+	Boundary m_boundary;
+
 	/**
 	 * External forces
 	 */
-	std::function<Real(Point)> m_forcefunc_gx;
-	std::function<Real(Point)> m_forcefunc_gy;
-	std::function<Real(Point)> m_forcefunc_gz;
+	Real m_force_gx;
+	Real m_force_gy;
+	Real m_force_gz;
 };
 
 #endif
