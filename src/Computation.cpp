@@ -14,14 +14,27 @@ Real computeTimestep(
 {
 	Real uMax = domain.getVelocity().m_u.getMaxValueGridFunction();
 	Real vMax = domain.getVelocity().m_v.getMaxValueGridFunction();
+	Delta maxVels(uMax, vMax);
 
-	Real dxx = pow(domain.getDelta().x, 2.0);
-	Real dyy = pow(domain.getDelta().y, 2.0);
+	return computeTimestepFromMaxVelocities
+		(maxVels, domain.getDelta(), tau, Re); /* tau is some safety factor in (0,1] */
+}
+
+Real computeTimestepFromMaxVelocities(
+		Delta maxVelocities,
+		Delta cellsDelta,
+		const Real tau, const Real Re)
+{
+	Real uMax = maxVelocities.x;
+	Real vMax = maxVelocities.y;
+
+	Real dxx = pow(cellsDelta.x, 2.0);
+	Real dyy = pow(cellsDelta.y, 2.0);
 
 	Real result = std::fmin(
 			(dxx * dyy * Re) / (2.0*(dxx+dyy)), std::fmin(
-			domain.getDelta().x / std::fabs(uMax),
-			domain.getDelta().y / std::fabs(vMax) ));
+			cellsDelta.x / std::fabs(uMax),
+			cellsDelta.y / std::fabs(vMax) ));
 
 	return tau * result; /* tau is some safety factor in (0,1] */
 }
@@ -131,10 +144,12 @@ void computeNewVelocities(
  */
 void ComputeVorticity(GridFunction& vorticity, Domain domain)
 {
-	GridFunction u = domain.u();
-	GridFunction v = domain.v();
+	GridFunction& u = domain.u();
+	GridFunction& v = domain.v();
 	Real delta_x = domain.getDelta().x;
 	Real delta_y = domain.getDelta().y;
+	/* watch out: on all other grids starting from i=0/j=0 means taking with you
+	 * the mostly useless left/lower boundary of that grid */
 	for (int i = 0; i < domain.getDimension().i; i++)
 	{
 		for (int j = 0; j < domain.getDimension().j; j++)
@@ -154,7 +169,7 @@ void ComputeFlowFunction(GridFunction& flow, Domain domain)
 		flow(i, 0) = 0.0;
 	}
 	for (int i = 0; i < domain.getDimension().i; i++)
-	{
+	{ /* TODO: why j=_1_ here ? */
 		for (int j = 1; j < domain.getDimension().j; j++)
 		{
 			flow(i, j) = flow(i, j - 1) + u(i, j) * delta_y;

@@ -65,6 +65,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	}
 
 	/* init pressure and rhs 
+	 * TODO:
 	 * we don't use the pressure init function in_p after this,
 	 * maybe kick it and just init with zero? would the script be against us? */
 	forall(i,j,m_inner_begin,m_inner_end[3])
@@ -183,11 +184,11 @@ void Domain::setPressureBoundaries()
 }
 
 
-void Domain::setBoundaries(Boundaries boundaries, int grid)
+void Domain::setBoundaries(Boundaries boundaries, Grid grid)
 {
 	switch (grid)
 	{
-	case 0:
+		case Grid::Pressure:
 		// pressure
 		if (boundaries == Boundaries::LEFT)
 		{
@@ -220,7 +221,7 @@ void Domain::setBoundaries(Boundaries boundaries, int grid)
 			}
 		}
 		break;
-	case 1:
+		case Grid::Velocities:
 		// velocities
 		for (uint d = 0; d < DIMENSIONS; d++)
 		{
@@ -254,7 +255,7 @@ void Domain::setBoundaries(Boundaries boundaries, int grid)
 			}
 		}
 		break;
-	case 2:
+		case Grid::PreliminaryVelocities:
 		// preliminaryvelocities
 		for (uint d = 0; d<DIMENSIONS; d++)
 		{

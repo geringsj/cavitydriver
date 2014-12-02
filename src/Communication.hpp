@@ -36,13 +36,13 @@ private:
 	Real* m_recvBuffer;
 
 	/* use these to send/receive the filled send/receive buffer */
-	void m_sendToOne(int count, int dest, int tag);
-	int m_recvFromOne(int source, int tag);
+	void sendBufferTo(int count, int dest, int tag=0);
+	void recvBufferFrom(int source, int tag=0);
 
-	/* maybe we won't need those later, because we can tell MPI directly to sum over all received residdums and stuff
-	 * so maybe use an MPI call on check*SORCycle / getGlobalTimeStep */
-	void m_sendToAll(void *buffer, int count);
-	void m_recvFromAll(/*void* sendbuf, int sendcount,*/void* recvbuf, int recvcount);
+	void exchangeGridBoundaryValues(
+			GridFunction& gf,
+			Index ibegin, 
+			Index iend);
 
 	void ExchangeVelocityBoundaryValues(GridFunction& u, GridFunction& v,
 		Index u_begin, Index u_end, Index v_begin, Index v_end);
@@ -51,9 +51,6 @@ private:
 		Index dim_one_begin, Index dim_one_end);
 
 public:
-
-	bool getValid() const { return m_myRank>=0; }
-	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 
 	enum class Handle {
 		Pressure,
@@ -64,13 +61,18 @@ public:
 	Communication(Dimension globalDomainDim);
 	~Communication();
 
-	void exchangeGridBoundaryValues(Domain domain, Handle grid, Color handleColorCells=Color::All);
+	void exchangeGridBoundaryValues(Domain domain, Handle grid);
+	// color not needed for pressure ?: , Color handleColorCells=Color::All);
 
-	void exchangeGridInnerValues(Domain domain, Handle grid);
+	//void exchangeGridInnerValues(Domain domain, Handle grid);
 
-	bool checkForAnotherSORCycle(Real mySubResiduum);
+	Real getGlobalResidual(Real mySubResidual);
 
-	Real getGlobalTimeStep(Delta myMaxValues);
+	Delta getGlobalMaxVelocities(Delta myMaxValues);
+
+	bool getProcessValid() const { return m_myRank>=0; }
+	Dimension getLocalDimensions() const { return m_myDomain_dim; }
+	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
 };
 
 

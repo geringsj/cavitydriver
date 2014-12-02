@@ -31,6 +31,20 @@ namespace Solver
 			GridFunction& rhs,
 			const Point& delta,
 			Dimension inner_begin, Dimension inner_end);
+
+	/**
+	* Compute the squared residual res that is to be used as an exit condition.
+	*
+	* @return Computed squared residual res.
+	*
+	* Implements chapter "3.2.5 Time Step - Stability Conditions" formulas from
+	* the script (page 25).
+	*/
+	Real computeSquaredResidual(
+			GridFunction& p,
+			GridFunction& rhs,
+			const Point& delta,
+			Dimension inner_begin, Dimension inner_end);
 	
 	/**
 	* Compute one SOR iteration on the pressure p.
@@ -45,7 +59,7 @@ namespace Solver
 			Real omega);
 
 	/**
-	* Compute one SOR iterator on every 'red' cell of the pressure field
+	* Compute one SOR iterator on every 'Red' or 'Black' cell of the pressure field.
 	*/
 	void SORCycleRedBlack(
 			Domain& domain,

@@ -1,5 +1,6 @@
 
-CXX=g++
+CXX=mpic++
+#CXX=g++
 #CXX=clang++
 CPPFLAGS=-Wall -g -Wextra -Isrc -std=c++11 
 #-Iexternal/include/

@@ -89,12 +89,12 @@ public:
 	 * on the other hand: explaining multiple simple similiar functions is stupid, 
 	 * better have the user see what is done? */
 	Dimension getDimension() { return m_dimension; }
-	Dimension getBeginInnerDomains() {return m_inner_begin; }
-	Dimension* getEndInnerDomain() {return m_inner_end; }
-	Dimension getEndInnerDomainU() {return m_inner_end[0]; }
-	Dimension getEndInnerDomainV() {return m_inner_end[1]; }
-	Dimension getEndInnerDomainW() {return m_inner_end[2]; }
-	Dimension getEndInnerDomainP() {return m_inner_end[3]; }
+	Dimension getBeginInnerDomains() { return m_inner_begin; }
+	Dimension* getEndInnerDomain() { return m_inner_end; }
+	Dimension getEndInnerDomainU() { return m_inner_end[0]; }
+	Dimension getEndInnerDomainV() { return m_inner_end[1]; }
+	Dimension getEndInnerDomainW() { return m_inner_end[2]; }
+	Dimension getEndInnerDomainP() { return m_inner_end[3]; }
 	Point getDelta() { return m_delta; }
 
 	Grid3D& getVelocity() { return m_velocities; }
@@ -129,6 +129,11 @@ public:
 	enum class Boundaries{
 		LEFT, RIGHT, TOP, BOTTOM
 	};
+	enum class Grid{
+		Pressure,
+		Velocities,
+		PreliminaryVelocities
+	};
 	/**
 	 * Reset the boundary values for cells that are at the actual
 	 * border of our grid and don't have a neighbouring thread.
@@ -137,7 +142,8 @@ public:
 		/**< Determines which boundary (left, right, top or bottom) we want to set. */
 		Boundaries boundaries, 
 		/**< Determines for which grid (velocities, pressure, or preliminaryvelocities) the boundary will be set. */
-		int grid);
+		Grid grid);
+
 private:
 	/* TODO document in a non-stupid manner. 
 	 * also mention: we are prepared to do 3D, but don't do it yet */

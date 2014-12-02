@@ -60,10 +60,15 @@ int main(int argc, char** argv)
 
 	/* This is just for testing, delete it if we are done with testing. */
 	Communication comm = Communication(global_dim);
-	if (!comm.getValid())
+	if(!comm.getProcessValid())
 	{
-		std::cout << "buhhhh \n";
-		return -1;
+		log_info("I am a useless process. Bye.");
+		return 0;
+	}
+	else
+	{
+		log_info("I am a good process. Yaay.");
+		return 0;
 	}
 	Dimension local_dim = comm.getLocalDimensions();
 

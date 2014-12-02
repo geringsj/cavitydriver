@@ -45,6 +45,27 @@ namespace Computation
 			/**< The Reynolds number from simulation parameters SimParams. */
 			); 
 
+	/** 
+	 * Compute the timestep deltaT that is to be used in further computations.
+	 *
+	 * @return Computed timestep deltaT.
+	 *
+	 * Implements chapter "3.2.5 Time Step - Stability Conditions" formulas from 
+	 * the script (page 25). 
+	 *
+	 * Needed grid width dx, height dy and uMax/vMax are retrieved from Domain.
+	 */
+	Real computeTimestepFromMaxVelocities(
+			Delta maxVelocities,
+			/**< The max values of the velocities grids in each dimension. */
+			Delta cellsDelta,
+			/**< The grid width in each dimension. */
+			const Real tau, 
+			/**< Some safety factor from simulation parameters SimParams. */
+			const Real Re
+			/**< The Reynolds number from simulation parameters SimParams. */
+			);
+
 
 	/** 
 	 * Compute the "preliminary velocities" F, G (, H), 
