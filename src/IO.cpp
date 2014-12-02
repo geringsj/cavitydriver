@@ -475,7 +475,7 @@ void IO::writeVTKSlaveFile(const Index & griddimension,
 	std::ostream os(&fb);
 
 	int coords[2];
-	comm.getOwnCoords(coords);
+	comm.getOwnCoords(coords); //TODO obtain this information via getProcsGridPosition and us an Index here
 
 	int x = coords[0];
 	int y = coords[1];
