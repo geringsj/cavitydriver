@@ -26,13 +26,13 @@ class Domain
 public:
 	struct Boundary {
 		bool Top;
-		bool Up;
+		bool Bottom;
 		bool Left;
 		bool Right;
 
-		Boundary() : Top(1), Up(1), Left(1), Right(1) {};
-		Boundary(bool t, bool u, bool l, bool r) 
-			: Top(t), Up(u), Left(l), Right(r) {};
+		Boundary() : Top(1), Bottom(1), Left(1), Right(1) {};
+		Boundary(bool t, bool b, bool l, bool r) 
+			: Top(t), Bottom(b), Left(l), Right(r) {};
 	};
 
 private: 
@@ -126,28 +126,6 @@ public:
 	void setPressureBoundaries();
 	void setPreliminaryVelocitiesBoundaries();
 	void setVelocitiesBoundaries();
-
-	/**
-	 * Used to set the border values if the MPI thread doesn't
-	 * have a neighbour and is at the actual border.
-	 */
-	enum class Boundaries{
-		LEFT, RIGHT, TOP, BOTTOM
-	};
-	enum class Grid{
-		Pressure,
-		Velocities,
-		PreliminaryVelocities
-	};
-	/**
-	 * Reset the boundary values for cells that are at the actual
-	 * border of our grid and don't have a neighbouring thread.
-	 */
-	void setBoundaries(
-		/**< Determines which boundary (left, right, top or bottom) we want to set. */
-		Boundaries boundaries, 
-		/**< Determines for which grid (velocities, pressure, or preliminaryvelocities) the boundary will be set. */
-		Grid grid);
 
 private:
 	/* TODO document in a non-stupid manner. 

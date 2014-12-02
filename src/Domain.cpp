@@ -124,22 +124,14 @@ void Domain::setVelocitiesBoundaries()
 {
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
-		LEFT(m_inner_begin, m_inner_end[d])
-		{
-			VELOCITIESBOUNDARIES(i, j, d);
-		}
-		RIGHT(m_inner_begin, m_inner_end[d]) 
-		{
-			VELOCITIESBOUNDARIES(i, j, d);
-		}
-		TOP(m_inner_begin, m_inner_end[d])
-		{
-			VELOCITIESBOUNDARIES(i, j, d);
-		}
-		BOTTOM(m_inner_begin, m_inner_end[d])
-		{
-			VELOCITIESBOUNDARIES(i, j, d);
-		}
+		if (m_boundary.Left)
+			LEFT(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
+		if (m_boundary.Right)
+			RIGHT(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
+		if (m_boundary.Top)
+			TOP(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
+		if (m_boundary.Bottom)
+			BOTTOM(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
 	}
 }
 
@@ -147,152 +139,25 @@ void Domain::setPreliminaryVelocitiesBoundaries()
 {
 	for (uint d = 0; d<DIMENSIONS; d++)
 	{
-		LEFT(m_inner_begin, m_inner_end[d])
-		{
-			PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-		}
-		RIGHT(m_inner_begin, m_inner_end[d])
-		{
-			PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-		}
-		TOP(m_inner_begin, m_inner_end[d])
-		{
-			PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-		}
-		BOTTOM(m_inner_begin, m_inner_end[d])
-		{
-			PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-		}
+		if (m_boundary.Left)
+			LEFT(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
+		if (m_boundary.Right)
+			RIGHT(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
+		if (m_boundary.Top)
+			TOP(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
+		if (m_boundary.Bottom)
+			BOTTOM(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
 	}
 }
 
 void Domain::setPressureBoundaries()
 {
-	LEFT(m_inner_begin, m_dimension)
-	{
-		PRESSUREBOUNDARIES(i, j);
-	}
-	RIGHT(m_inner_begin, m_dimension)
-	{
-		PRESSUREBOUNDARIES(i, j);
-	}
-	TOP(m_inner_begin, m_dimension)
-	{
-		PRESSUREBOUNDARIES(i, j);
-	}
-	BOTTOM(m_inner_begin, m_dimension)
-	{
-		PRESSUREBOUNDARIES(i, j);
-	}
-}
-
-
-void Domain::setBoundaries(Boundaries boundaries, Grid grid)
-{
-	switch (grid)
-	{
-		case Grid::Pressure:
-		// pressure
-		if (boundaries == Boundaries::LEFT)
-		{
-			LEFT(m_inner_begin, m_dimension)
-			{
-				PRESSUREBOUNDARIES(i, j);
-			}
-		}
-		if (boundaries == Boundaries::RIGHT)
-		{
-			RIGHT(m_inner_begin, m_dimension)
-			{
-				PRESSUREBOUNDARIES(i, j);
-			}
-		}
-
-		if (boundaries == Boundaries::TOP)
-		{
-			TOP(m_inner_begin, m_dimension)
-			{
-				PRESSUREBOUNDARIES(i, j);
-			}
-		}
-
-		if (boundaries == Boundaries::BOTTOM)
-		{
-			BOTTOM(m_inner_begin, m_dimension)
-			{
-				PRESSUREBOUNDARIES(i, j);
-			}
-		}
-		break;
-		case Grid::Velocities:
-		// velocities
-		for (uint d = 0; d < DIMENSIONS; d++)
-		{
-			if (boundaries == Boundaries::LEFT)
-			{
-				LEFT(m_inner_begin, m_inner_end[d])
-				{
-					VELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-			if (boundaries == Boundaries::RIGHT)
-			{
-				RIGHT(m_inner_begin, m_inner_end[d])
-				{
-					VELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-			if (boundaries == Boundaries::TOP)
-			{
-				TOP(m_inner_begin, m_inner_end[d])
-				{
-					VELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-			if (boundaries == Boundaries::BOTTOM)
-			{
-				BOTTOM(m_inner_begin, m_inner_end[d])
-				{
-					VELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-		}
-		break;
-		case Grid::PreliminaryVelocities:
-		// preliminaryvelocities
-		for (uint d = 0; d<DIMENSIONS; d++)
-		{
-			if (boundaries == Boundaries::LEFT)
-			{
-				LEFT(m_inner_begin, m_inner_end[d])
-				{
-					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-			if (boundaries == Boundaries::RIGHT)
-			{
-				RIGHT(m_inner_begin, m_inner_end[d])
-				{
-					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-			if (boundaries == Boundaries::TOP)
-			{
-				TOP(m_inner_begin, m_inner_end[d])
-				{
-					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-			if (boundaries == Boundaries::BOTTOM)
-			{
-				BOTTOM(m_inner_begin, m_inner_end[d])
-				{
-					PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);
-				}
-			}
-		}
-		break;
-	default:
-		break;
-	}
+	if (m_boundary.Left)
+		LEFT(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
+	if (m_boundary.Right)
+		RIGHT(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
+	if (m_boundary.Top)
+		TOP(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
+	if (m_boundary.Bottom)
+		BOTTOM(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
 }
