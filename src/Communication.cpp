@@ -121,7 +121,7 @@ Real Communication::getGlobalResidual(Real mySubResidual)
 bool Communication::checkGlobalFinishSOR(bool myLoopCondition)
 {
 	bool ret;
-	MPI_Allreduce(&myLoopCondition /*MPI_IN_PLACE*/, /*&myLoopCondition*/&ret, 1, /*TODO switch?*/MPI_CXX_BOOL, 
+	MPI_Allreduce(&myLoopCondition /*MPI_IN_PLACE*/, /*&myLoopCondition*/&ret, 1, /*TODO switch?*/MPI_C_BOOL, 
 			MPI_LOR, MPI_COMM_WORLD);
 	return ret;//myLoopCondition;
 }

@@ -49,10 +49,10 @@ public:
   void writeVTKFile (Domain& domain, int step);
 
   void writeVTKMasterFile(/* the whole grid!! */const Index & griddimension, int step,
-			 int &stencilwidth, Communication &comm);
+			 Communication &comm);
 
   void writeVTKSlaveFile(Domain& domain, int step,
-			 int &stencilwidth, Communication &comm,
+			 Communication &comm,
 			 SimParams sim_params);
 
   /*!

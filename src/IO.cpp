@@ -346,11 +346,9 @@ Real
 #endif
 
 void IO::writeVTKMasterFile(const Index & griddimension, 
-	int step, int &stencilwidth, Communication &comm)
+	int step, Communication &comm)
 {
-	// iLocalMax & jLocalMax are the size of the area..
-	int iMax = comm.getLocalDimensions()[0] - 1; // s.iLocalMax - 1; // w.r.t. inner of P
-	int jMax = comm.getLocalDimensions()[1] - 1; // s.jLocalMax - 1; // w.r.t. inner of P
+	int stencilwidth = 0;
 
 	std::string filename;
 	filename.append("./");
@@ -381,6 +379,9 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
 	std::ostream os(&fb);
 
+	// iLocalMax & jLocalMax are the size of the area..
+	int iMax = griddimension.i; 
+	int jMax = griddimension.j; 
 	os << "<?xml version=\"1.0\"?>" << std::endl;
 	os << "<VTKFile type=\"PRectilinearGrid\">" << std::endl;
 	os << "<PRectilinearGrid WholeExtent=\"0 " << (iMax - 1) << " 0 "
@@ -393,6 +394,9 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 	os << "</PCoordinates>" << std::endl;
 
 	// iterate the dimensions, calculating the rank of the specific coords and the respective variables...
+
+	iMax = comm.getLocalDimensions()[0]-1; // s.iLocalMax - 1; // w.r.t. inner of P
+	jMax = comm.getLocalDimensions()[1]-1; // s.jLocalMax - 1; // w.r.t. inner of P
 	for (int x = 0; x < griddimension.i; x++)
 	{
 		for (int y = 0; y < griddimension.j; y++)
@@ -429,9 +433,9 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 }
 
 void IO::writeVTKSlaveFile(Domain& domain, int step,
-	int &stencilwidth, Communication &comm,
-	SimParams sim_params)
+	Communication &comm, SimParams sim_params)
 {
+	int stencilwidth = 0;
 	int iMax = comm.getLocalDimensions()[0] - 1; // s.iLocalMax - 1;
 	int jMax = comm.getLocalDimensions()[1] - 1; // s.jLocalMax - 1;
 

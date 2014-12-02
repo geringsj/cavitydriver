@@ -105,10 +105,9 @@ int main(int argc, char** argv)
 	int it = 0, step=0;
 
 	/* write initial state of velocities and pressure */
-	int one = 1;
-	io.writeVTKSlaveFile(domain,step,one,communication,simparam);
+	io.writeVTKSlaveFile(domain,step,communication,simparam);
 	if(communication.getRank() == 0)
-		io.writeVTKMasterFile(global_dim,step,one,communication);
+		io.writeVTKMasterFile(global_dim,step,communication);
 	step++;
 	Real nextWrite = 0.0;
 
@@ -184,14 +183,12 @@ int main(int argc, char** argv)
 			//io.writeVTKFile(
 			//	domain, step);
 
-			int dummy_stencil_width = 1;
-
 			// write all slave files
-			io.writeVTKSlaveFile(domain,step,dummy_stencil_width,communication,simparam);
+			io.writeVTKSlaveFile(domain,step,communication,simparam);
 
 			// only rank 0 writes a master file
 			if(communication.getRank() == 0)
-				io.writeVTKMasterFile(global_dim,step,dummy_stencil_width,communication);
+				io.writeVTKMasterFile(global_dim,step,communication);
 		}
 		step++;
 
