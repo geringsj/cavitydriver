@@ -12,6 +12,7 @@
 #include "Debug.hpp"
 
 #include "GridFunction.hpp"
+#include "Communication.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -47,7 +48,17 @@ public:
    */
   void writeVTKFile (const Index & griddimension,
 		     GridFunction & u, GridFunction & v,
-		     GridFunction & p, const Point & delta, int step);
+		     GridFunction & p, const Point & delta, 
+			 int step);
+
+  void writeVTKMasterFile(const Index & griddimension, 
+			 int step, int &stencilwidth, Communication &comm);
+
+  void writeVTKSlaveFile(const Index & griddimension,
+			 GridFunction &u, GridFunction &v,
+			 GridFunction &p, const Point &delta, int step,
+			 int &stencilwidth, Communication &comm,
+			 SimParams sim_params);
 
   /*!
   * Methods reads the simulation parameters from the specified input file.

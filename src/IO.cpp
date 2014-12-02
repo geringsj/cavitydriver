@@ -344,6 +344,304 @@ Real
 #if defined(__linux)
 	#include "sys/stat.h"
 #endif
+
+void IO::writeVTKMasterFile(const Index & griddimension, int step, int &stencilwidth, Communication &comm)
+{
+	int iMax = griddimension[0]; // s.iLocalMax - 1; // w.r.t. inner of P
+	int jMax = griddimension[1]; // s.jLocalMax - 1; // w.r.t. inner of P
+
+	std::string filename;
+	filename.append("./");
+	filename.append(output);
+	filename.append("/");
+
+	// Test if the directory exits, if not create it.
+	std::filebuf test_dir;
+	test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
+
+	if (!test_dir.is_open())
+	{
+		// Directory doesn't exist.
+		#if defined(_WIN64)
+			CreateDirectory(filename.c_str(), NULL);
+		#elif defined(_WIN32)
+			CreateDirectory(filename.c_str(), NULL);
+		#elif defined(__linux)
+			mkdir(filename.c_str(), 0700);
+		#endif
+	}
+
+	filename.append("field_");
+	filename.append(std::to_string(step));
+	filename.append(".pvtr");
+
+	std::filebuf fb;
+	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
+	std::ostream os(&fb);
+
+	os << "<?xml version=\"1.0\"?>" << std::endl;
+	os << "<VTKFile type=\"PRectilinearGrid\">" << std::endl;
+	os << "<PRectilinearGrid WholeExtent=\"0 " << (iMax - 1) << " 0 "
+		<< (jMax - 1) << " 0 0\" GhostLevel=\"" << stencilwidth << "\">"
+		<< std::endl;
+	os << "<PCoordinates>" << std::endl;
+	os << "<PDataArray type=\"Float64\"/>" << std::endl;
+	os << "<PDataArray type=\"Float64\"/>" << std::endl;
+	os << "<PDataArray type=\"Float64\"/>" << std::endl;
+	os << "</PCoordinates>" << std::endl;
+
+	// iterate the dimensions, calculating the rank of the specific coords and the respective variables...
+	for (int x = 0; x < griddimension.i; x++)
+	{
+		for (int y = 0; y < griddimension.j; y++)
+		{
+			int curRank;
+			int coords[2] = { x, y };
+			comm.getRankByCoords(coords, &curRank);
+			int x1 = x * iMax - stencilwidth;
+			int x2 = (x + 1) * iMax + stencilwidth - 1;
+			int x3 = y * jMax - stencilwidth;
+			int x4 = (y + 1) * jMax + stencilwidth - 1;
+
+			os << "<Piece Extent=\"" << x1 << " " << x2 << " " << x3 << " "
+				<< x4 << " 0 0\" Source=\"field_" << std::to_string(step) << "_processor_"
+				<< curRank << ".vtr\"/>" << std::endl;
+		}
+	}
+
+	os << "<PPointData Vectors=\"field\" Scalars=\"p, vorticity, stream\">"
+		<< std::endl;
+	os
+		<< "<PDataArray type=\"Float64\" NumberOfComponents=\"3\" Name=\"field\" format=\"ascii\"/>"
+		<< std::endl;
+	os << "<PDataArray type=\"Float64\" Name=\"p\" format=\"ascii\"/>"
+		<< std::endl;
+	os << "<PDataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\"/>"
+		<< std::endl;
+	os << "<PDataArray type=\"Float64\" Name=\"stream\" format=\"ascii\"/>"
+		<< std::endl;
+	os << "</PPointData>" << std::endl;
+
+	os << "</PRectilinearGrid>" << std::endl;
+	os << "</VTKFile>" << std::endl;
+}
+
+void IO::writeVTKSlaveFile(const Index & griddimension,
+	GridFunction& u, GridFunction& v,
+	GridFunction& p, const Point& delta, int step,
+	int &stencilwidth, Communication &comm,
+	SimParams sim_params)
+{
+	int iMax = griddimension[0]; // s.iLocalMax - 1;
+	int jMax = griddimension[1]; // s.jLocalMax - 1;
+
+	Real deltaX = delta[0];
+	Real deltaY = delta[1];
+
+	int rank = comm.getRank();
+
+	std::string filename;
+	filename.append("./");
+	filename.append(output);
+	filename.append("/");
+
+	// Test if the directory exits, if not create it.
+	std::filebuf test_dir;
+	test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
+
+	if (!test_dir.is_open())
+	{
+		// Directory doesn't exist.
+		#if defined(_WIN64)
+				CreateDirectory(filename.c_str(), NULL);
+		#elif defined(_WIN32)
+				CreateDirectory(filename.c_str(), NULL);
+		#elif defined(__linux)
+				mkdir(filename.c_str(), 0700);
+		#endif
+	}
+
+	filename.append("field_");
+	filename.append(std::to_string(step));
+	filename.append("_processor_");
+	filename.append(std::to_string(rank));
+	filename.append(".vtr");
+
+	std::filebuf fb;
+	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
+	std::ostream os(&fb);
+
+	int coords[2];
+	comm.getOwnCoords(coords);
+
+	int x = coords[0];
+	int y = coords[1];
+
+	int x1 = x * iMax - stencilwidth;
+	int x2 = (x + 1) * iMax + stencilwidth - 1;
+	int x3 = y * jMax - stencilwidth;
+	int x4 = (y + 1) * jMax + stencilwidth - 1;
+
+	os << "<?xml version=\"1.0\"?>" << std::endl;
+	os << "<VTKFile type=\"RectilinearGrid\">" << std::endl;
+	// whole extent = whole extent in master
+	// os << "<RectilinearGrid WholeExtent=\"0 " << s.iMax - 1 << " 0 "
+	// 		<< s.jMax - 1 << " 0 0\" GhostLevel=\"" << stencilwidth << "\">"
+	// 		<< std::endl;
+
+	// whole extent = piece extent in slave
+	os << "<RectilinearGrid WholeExtent=\"" << x1 << " " << x2 << " " << x3 << " "
+		<< x4 << " 0 0\" GhostLevel=\"" << stencilwidth << "\">"
+		<< std::endl;
+
+
+	os << "<Piece Extent=\"" << x1 << " " << x2 << " " << x3 << " " << x4
+		<< " 0 0\">" << std::endl;
+
+	os << "<Coordinates>" << std::endl;
+
+	os << "<DataArray type=\"Float64\" format=\"ascii\">" << std::endl;
+
+	Real iOffset, jOffset;
+
+	int iStart = x1 + stencilwidth;
+	int jStart = x3 + stencilwidth;
+	if (iStart == 0)
+	{
+		iOffset = 0.;
+	}
+	else
+	{
+		iOffset = (sim_params.xLength / sim_params.iMax) * iStart;
+	}
+
+	if (jStart == 0)
+	{
+		jOffset = 0.;
+	}
+	{
+		jOffset = (sim_params.yLength / sim_params.jMax) * jStart;
+	}
+
+	for (int i = 0; i <= iMax + 1; i++)
+	{
+		os << std::scientific << i * deltaX + iOffset << " ";
+	}
+	os << std::endl;
+	os << "</DataArray>" << std::endl;
+
+	os << "<DataArray type=\"Float64\" format=\"ascii\">" << std::endl;
+	for (int j = 0; j <= jMax + 1; j++)
+	{
+		os << std::scientific << j * deltaY + jOffset << " ";
+	}
+	os << std::endl;
+	os << "</DataArray>" << std::endl;
+
+	os << "<DataArray type=\"Float64\" format=\"ascii\">0 0</DataArray>"
+		<< std::endl;
+
+	os << "</Coordinates>" << std::endl;
+
+	os << "<PointData Vectors=\"field\" Scalars=\"p, vorticity, stream\">"
+		<< std::endl;
+	os
+		<< "<DataArray Name=\"field\" NumberOfComponents=\"3\" type=\"Float64\" format=\"ascii\">"
+		<< std::endl;
+	for (int j = 0; j <= jMax + 1; j++)
+	{
+		for (int i = 0; i <= iMax + 1; ++i)
+		{
+			os << std::scientific << u(i,j) << " " << v(i,j) << " " << 0.
+				<< " ";
+		}
+		os << std::endl;
+	}
+	os << "</DataArray>" << std::endl;
+
+	os << "<DataArray type=\"Float64\" Name=\"p\" format=\"ascii\">"
+		<< std::endl;
+	for (int j = 1; j <= jMax + 1; j++)
+	{
+		for (int i = 1; i <= iMax + 2; i++)
+		{
+			os << std::scientific << (p(i,j) + p(i,j + 1)) / 2. << " ";
+		}
+		os << std::endl;
+	}
+
+	// print last line of pressure:
+	for (int i = 1; i <= iMax + 2; i++)
+	{
+		os << std::scientific << p(i,jMax + 2);
+	}
+	os << "</DataArray>" << std::endl;
+
+	os << "<DataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\">"
+		<< std::endl;
+	for (int i = 0; i <= iMax + 1; i++)
+	{
+		os << std::scientific << 0.0 << " ";
+	}
+	os << std::endl;
+
+	for (int j = 1; j <= jMax; j++)
+	{
+		os << std::scientific << 0.0 << " ";
+		for (int i = 1; i <= iMax; i++)
+		{
+			Real zeta = (u(i,j + 1) - u(i,j)) / delta[1]
+				- (v(i + 1,j) - v(i,j)) / delta[0];
+			os << std::scientific << zeta << " ";
+		}
+		os << std::scientific << 0.0 << std::endl;
+	}
+	// we need one additional line of vorticity...
+	for (int i = 0; i <= jMax + 1; i++)
+	{
+		os << std::scientific << 0.0 << " ";
+	}
+	os << std::endl;
+	os << "</DataArray>" << std::endl;
+
+	os << "<DataArray type=\"Float64\" Name=\"stream\" format=\"ascii\">"
+		<< std::endl;
+	Dimension stream_dim(iMax + 2, jMax + 2);
+	GridFunction stream(stream_dim);
+
+	for (int i = 1; i <= iMax + 1; i++)
+	{
+		for (int j = 1; j <= jMax + 1; j++)
+		{
+			stream(i,j) = stream(i,j - 1)
+				+ u(i,j) * delta[1];
+		}
+	}
+
+	// we need one initial line of stream...
+	for (int i = 0; i <= jMax + 1; i++)
+	{
+		os << std::scientific << 0.0 << " ";
+	}
+	os << std::endl;
+	for (int j = 1; j <= jMax + 1; j++)
+	{
+		os << std::scientific << 0.0 << " ";
+		for (int i = 1; i <= iMax + 1; i++)
+		{
+			os << std::scientific << stream(i,j) << " ";
+		}
+		os << std::endl;
+	}
+
+	os << "</DataArray>" << std::endl;
+	os << "</PointData>" << std::endl;
+	os << "</Piece>" << std::endl;
+
+	os << "</RectilinearGrid>" << std::endl;
+	os << "</VTKFile>" << std::endl;
+}
+
 void
 IO::writeVTKFile (const Index & griddimension, GridFunction & u,
 		  GridFunction & v, GridFunction & p,
