@@ -105,7 +105,10 @@ int main(int argc, char** argv)
 	int it = 0, step=0;
 
 	/* write initial state of velocities and pressure */
-	io.writeVTKFile(domain, step);
+	int one = 1;
+	io.writeVTKSlaveFile(domain,step,one,communication,simparam);
+	if(communication.getRank() == 0)
+		io.writeVTKMasterFile(global_dim,step,one,communication);
 	step++;
 	Real nextWrite = 0.0;
 
@@ -176,9 +179,10 @@ int main(int argc, char** argv)
 		nextWrite += dt;
 		if(nextWrite > simparam.deltaVec)
 		{
+			nextWrite = 0;
+
 			//io.writeVTKFile(
 			//	domain, step);
-			//nextWrite = 0;
 
 			int dummy_stencil_width = 1;
 

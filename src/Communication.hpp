@@ -72,7 +72,7 @@ public:
 	Domain::Boundary getBoundaryCompetence() const 
 	{ 
 		return Domain::Boundary
-			(m_upRank>=0, m_downRank>=0, m_leftRank>=0, m_rightRank>=0); 
+			(m_upRank<0, m_downRank<0, m_leftRank<0, m_rightRank<0); 
 	}
 
 	// this is the equivalent to getOwnCoords

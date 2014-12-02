@@ -14,7 +14,8 @@ namespace Solver
 			Dimension inner_begin, Dimension inner_end,
 			Dimension globalDims)
 	{
-		return sqrt( computeSquaredResidual(p, rhs, delta, inner_begin, inner_end, globalDims) );
+		return 
+			sqrt( computeSquaredResidual(p, rhs, delta, inner_begin, inner_end, globalDims) );
 	}
 
 	Real computeSquaredResidual(

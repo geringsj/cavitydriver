@@ -120,9 +120,10 @@ Real Communication::getGlobalResidual(Real mySubResidual)
 
 bool Communication::checkGlobalFinishSOR(bool myLoopCondition)
 {
-	MPI_Allreduce(MPI_IN_PLACE, &myLoopCondition, 1, /*TODO switch?*/MPI_CXX_BOOL, 
-			MPI_LAND, MPI_COMM_WORLD);
-	return myLoopCondition;
+	bool ret;
+	MPI_Allreduce(&myLoopCondition /*MPI_IN_PLACE*/, /*&myLoopCondition*/&ret, 1, /*TODO switch?*/MPI_CXX_BOOL, 
+			MPI_LOR, MPI_COMM_WORLD);
+	return ret;//myLoopCondition;
 }
 
 Delta Communication::getGlobalMaxVelocities(Delta myMaxValues)
