@@ -275,6 +275,6 @@ Index Communication::getProcsGridPosition()
 
 void Communication::getRankByCoords(int* coords, int& rank)
 {
-	rank = (int)floor(coords[0] / (m_globalDomain_dim.i - 1) * m_procsGrid_dim.i) * m_procsGrid_dim.j +
-		(int)floor(coords[1] / (m_globalDomain_dim.j - 1) * m_procsGrid_dim.j);
+	rank = (int)floor(coords[0] / (Real)(m_globalDomain_dim.i) * m_procsGrid_dim.i) * m_procsGrid_dim.j +
+		(int)floor(coords[1] / (Real)(m_globalDomain_dim.j) * m_procsGrid_dim.j);
 }
