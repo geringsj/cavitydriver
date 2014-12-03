@@ -14,6 +14,8 @@
 class Communication
 {
 private:
+	void* mycom;
+
 	int m_numProcs;
 
 	Dimension m_procsGrid_dim;
@@ -77,6 +79,7 @@ public:
 
 	// this is the equivalent to getOwnCoords
 	Index getProcsGridPosition();
+	Dimension getProcsGridDim() const { return m_procsGrid_dim; }
 	int getRank() { return m_myRank; }
 	void getRankByCoords(int* coords, int& rank);
 };

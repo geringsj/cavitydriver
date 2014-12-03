@@ -395,16 +395,11 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 
 	// iterate the dimensions, calculating the rank of the specific coords and the respective variables...
 
-	iMax = comm.getLocalDimensions()[0];// -1; // s.iLocalMax - 1; // w.r.t. inner of P
-	jMax = comm.getLocalDimensions()[1];// -1; // s.jLocalMax - 1; // w.r.t. inner of P
-	/**
-	 * TODO:
-	 * Check if we really want to loop over all grid positions, or
-	 * just over the amount of threads.
-	 */
-	for (int x = 0; x < griddimension.i; x++)
+	iMax = comm.getLocalDimensions()[0]-1; // s.iLocalMax - 1; // w.r.t. inner of P
+	jMax = comm.getLocalDimensions()[1]-1; // s.jLocalMax - 1; // w.r.t. inner of P
+	for (int x = 0; x < comm.getProcsGridDim().i; x++)
 	{
-		for (int y = 0; y < griddimension.j; y++)
+		for (int y = 0; y < comm.getProcsGridDim().j; y++)
 		{
 			/**
 			 * TODO:
@@ -415,9 +410,10 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 			Dimension myOffset;
 			Dimension myDomain;
 			// This is the implementation if we loop over all grid positions.
-			int curRank; // = x * griddimension.j + y;
-			int coords[2] = { x, y };
-			comm.getRankByCoords(coords, curRank);
+			int curRank = x * griddimension.j + y;
+			//int coords[2] = { x, y };
+			//comm.getRankByCoords(coords, curRank);
+
 			// iMax is equal to x_procs
 			// jMax is equal to y_procs
 			myPosition.i = curRank / jMax; 
@@ -448,6 +444,7 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 			//int x2 = (x + 1) * iMax + stencilwidth - 1;
 			//int x3 = y * jMax - stencilwidth;
 			//int x4 = (y + 1) * jMax + stencilwidth - 1;
+			/* here, write extends of sub-domain of every process Omega_{i,j} */
 
 			os << "<Piece Extent=\"" << x1 << " " << x2 << " " << x3 << " "
 				<< x4 << " 0 0\" Source=\"field_" << std::to_string(step) << "_processor_"

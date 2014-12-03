@@ -24,7 +24,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 		m_p_rhs(Dimension(dimension[0]+2,dimension[1]+2)),
 		m_velocities(dimension),
 		m_preliminary_velocities_FGH(dimension),
-		m_boundary(bndry),
+		m_boundary(bndry.Up, bndry.Down, bndry.Left, bndry.Right),
 		m_force_gx(in_gx), m_force_gy(in_gy), m_force_gz(in_gz)
 {
 	/* set indices for end of inner of grids u, v, w and p individually */
@@ -32,7 +32,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	 * is border of the grid */
 	for(uint d=0; d<DIMENSIONS; d++)
 		for(uint e=0; e<DIMENSIONS; e++)
-			m_inner_end[d][e] = dimension[e] + ((e==d)?(-1*(int)bndry[d]):(0)); 
+			m_inner_end[d][e] = dimension[e] + ((e==d)?(-bndry[d]):(0)); 
 
 	/* the pressure is fourth entry of the array and has symmetric dimensions */
 	m_inner_end[3] = dimension; 
