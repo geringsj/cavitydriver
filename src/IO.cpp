@@ -587,11 +587,27 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	//	}
 	//	os << std::endl;
 	//}
-	for (int j = 0; j < jMax + 2; j++)
+	Real u_inter, v_inter;
+	//TODO: check border conditions
+	for (int j = 1; j < jMax + 3; j++)
 	{
-		for (int i = 0; i < iMax + 2; i++)
+		for (int i = 1; i < iMax + 3; i++)
 		{
-			os << std::scientific << 0.0 << " " << 0.0 << " " << 0. << " ";
+			//os << std::scientific << domain.u()(i, j) << " " << domain.v()(i, j) << " " << 0. << " ";
+			
+			if (i < iMax + 2)
+				u_inter = (domain.u()(i, j) + domain.u()(i - 1, j)) / 2.0;
+			else
+				u_inter = (domain.u()(i - 1, j) + domain.u()(i - 1, j)) / 2.0;
+			if (j < jMax + 2)
+				v_inter = (domain.v()(i, j) + domain.v()(i, j - 1)) / 2.0;
+			else
+				v_inter = (domain.v()(i, j - 1) + domain.v()(i, j - 1)) / 2.0;
+
+			os << std::scientific <<
+				u_inter << " " <<
+				v_inter << " " <<
+				0.0 << std::endl;
 		}
 		os << std::endl;
 	}
