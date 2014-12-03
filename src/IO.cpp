@@ -578,15 +578,7 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	os
 		<< "<DataArray Name=\"field\" NumberOfComponents=\"3\" type=\"Float64\" format=\"ascii\">"
 		<< std::endl;
-	//for (int j = 0; j <= jMax + 1; j++)
-	//{
-	//	for (int i = 0; i <= iMax + 1; ++i)
-	//	{
-	//		os << std::scientific << domain.u()(i,j) << " " << domain.v()(i,j) << " " << 0.
-	//			<< " ";
-	//	}
-	//	os << std::endl;
-	//}
+
 	Real u_inter, v_inter;
 	//TODO: check border conditions
 	for (int j = 1; j < jMax + 3; j++)
@@ -615,14 +607,7 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 
 	os << "<DataArray type=\"Float64\" Name=\"p\" format=\"ascii\">"
 		<< std::endl;
-	//for (int j = 1; j <= jMax + 1; j++)
-	//{
-	//	for (int i = 1; i <= iMax + 2; i++)
-	//	{
-	//		os << std::scientific << (domain.p()(i,j) + domain.p()(i,j + 1)) / 2. << " ";
-	//	}
-	//	os << std::endl;
-	//}
+	
 	for (int j = 0; j < jMax + 2; j++)
 	{
 		for (int i = 0; i < iMax + 2; i++)
@@ -632,87 +617,66 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 		os << std::endl;
 	}
 
-	// print last line of pressure:
-	//for (int i = 1; i <= iMax + 2; i++)
-	//{
-	//	os << std::scientific << domain.p()(i,jMax + 2);
-	//}
 	os << "</DataArray>" << std::endl;
 
 	os << "<DataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\">"
 		<< std::endl;
-	//for (int i = 0; i <= iMax + 1; i++)
-	//{
-	//	os << std::scientific << 0.0 << " ";
-	//}
-	//os << std::endl;
-	//
-	//for (int j = 1; j <= jMax; j++)
-	//{
-	//	os << std::scientific << 0.0 << " ";
-	//	for (int i = 1; i <= iMax; i++)
-	//	{
-	//		Real zeta = (domain.u()(i, j + 1) - domain.u()(i, j)) / deltaY
-	//			- (domain.v()(i + 1, j) - domain.v()(i, j)) / deltaX;
-	//		os << std::scientific << zeta << " ";
-	//	}
-	//	os << std::scientific << 0.0 << std::endl;
-	//}
-	//// we need one additional line of vorticity...
-	//for (int i = 0; i <= jMax + 1; i++)
-	//{
-	//	os << std::scientific << 0.0 << " ";
-	//}
-	//os << std::endl;
 
-	for (int j = 0; j < jMax + 2; j++)
+	for (int i = 0; i < iMax + 2; i++)
 	{
-		for (int i = 0; i < iMax + 2; i++)
-		{
-			os << std::scientific << domain.p()(i, j) << " ";
-		}
-		os << std::endl;
+		os << std::scientific << 0.0 << " ";
 	}
+	os << std::endl;
+	for (int j = 1; j < jMax+1; j++)
+	{
+		os << std::scientific << 0.0 << " ";
+		for (int i = 1; i < iMax+1; i++)
+		{
+			Real zeta = (domain.u()(i, j + 1) - domain.u()(i, j)) / deltaY
+				- (domain.v()(i + 1, j) - domain.v()(i, j)) / deltaX;
+			os << std::scientific << zeta << " ";
+		}
+		os << std::scientific << 0.0 << std::endl;
+	}
+	// we need one additional line of vorticity...
+	for (int i = 0; i < iMax + 2; i++)
+	{
+		os << std::scientific << 0.0 << " ";
+	}
+	os << std::endl;
+
 	os << "</DataArray>" << std::endl;
 
 	os << "<DataArray type=\"Float64\" Name=\"stream\" format=\"ascii\">"
 		<< std::endl;
-	//Dimension stream_dim(iMax + 2, jMax + 2);
-	//GridFunction stream(stream_dim);
-	//
-	//for (int i = 1; i <= iMax + 1; i++)
-	//{
-	//	for (int j = 1; j <= jMax + 1; j++)
-	//	{
-	//		stream(i,j) = stream(i,j - 1)
-	//			+ domain.u()(i, j) * deltaY;
-	//	}
-	//}
-	//
-	//// we need one initial line of stream...
-	//for (int i = 0; i <= jMax + 1; i++)
-	//{
-	//	os << std::scientific << 0.0 << " ";
-	//}
-	//os << std::endl;
-	//for (int j = 1; j <= jMax + 1; j++)
-	//{
-	//	os << std::scientific << 0.0 << " ";
-	//	for (int i = 1; i <= iMax + 1; i++)
-	//	{
-	//		os << std::scientific << stream(i,j) << " ";
-	//	}
-	//	os << std::endl;
-	//}
-	for (int j = 0; j < jMax + 2; j++)
+
+	Dimension stream_dim(iMax + 2, jMax + 2);
+	GridFunction stream(stream_dim);
+
+	// we need one initial line of stream...
+	for (int i = 0; i < jMax + 2; i++)
+	{
+		stream(i, 0) = 0.0;
+	}
+	for (int j = 1; j < jMax + 2; j++)
 	{
 		for (int i = 0; i < iMax + 2; i++)
 		{
-			os << std::scientific << 0.0 << " ";
+			stream(i, j) = stream(i, j - 1)
+				+ domain.u()(i, j) * deltaY;
+		}
+	}
+	os << std::endl;
+	for (int j = 0; j < jMax + 2; j++)
+	{
+		//os << std::scientific << 0.0 << " ";
+		for (int i = 0; i < iMax + 2; i++)
+		{
+			os << std::scientific << stream(i, j) << " ";
 		}
 		os << std::endl;
 	}
-
+	
 	os << "</DataArray>" << std::endl;
 	os << "</PointData>" << std::endl;
 	os << "</Piece>" << std::endl;
