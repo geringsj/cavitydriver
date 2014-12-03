@@ -91,7 +91,7 @@ Communication::Communication(Dimension globalDomainDim)
 			m_procsGrid_myPosition.i * x_pcells ,
 			m_procsGrid_myPosition.j * y_pcells);
 
-	m_myDomain_dim = Dimension(
+	m_myDomain_dim = Dimension( /* TODO probably wrong */
 			x_pcells + ((m_procsGrid_myPosition.i < x_procs-1) ?
 				(0) : (m_globalDomain_dim.i % x_procs)) ,
 			y_pcells + ((m_procsGrid_myPosition.j < y_procs-1) ?
