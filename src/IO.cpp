@@ -385,7 +385,7 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 	os << "<?xml version=\"1.0\"?>" << std::endl;
 	os << "<VTKFile type=\"PRectilinearGrid\">" << std::endl;
 	os << "<PRectilinearGrid WholeExtent=\"0 " << (iMax - 1) << " 0 "
-		<< (jMax - 1) << " 0 0\" GhostLevel=\"" << stencilwidth << "\">"
+		<< (jMax - 1) << " 0 0\" GhostLevel=\"" << 1 << "\">"
 		<< std::endl;
 	os << "<PCoordinates>" << std::endl;
 	os << "<PDataArray type=\"Float64\"/>" << std::endl;
@@ -395,8 +395,8 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 
 	// iterate the dimensions, calculating the rank of the specific coords and the respective variables...
 
-	iMax = comm.getLocalDimensions()[0]-1; // s.iLocalMax - 1; // w.r.t. inner of P
-	jMax = comm.getLocalDimensions()[1]-1; // s.jLocalMax - 1; // w.r.t. inner of P
+	iMax = comm.getLocalDimensions()[0]; // s.iLocalMax - 1; // w.r.t. inner of P
+	jMax = comm.getLocalDimensions()[1]; // s.jLocalMax - 1; // w.r.t. inner of P
 	for (int x = 0; x < comm.getProcsGridDim().i; x++)
 	{
 		for (int y = 0; y < comm.getProcsGridDim().j; y++)
@@ -406,36 +406,15 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 			 * Its very late, i'm tired and it's cold + some stuff about natives trying to surround me...
 			 * So please check what the hell i did here.
 			 */
-			Dimension myPosition;
 			Dimension myOffset;
-			Dimension myDomain;
-			// This is the implementation if we loop over all grid positions.
-			int curRank = x * griddimension.j + y;
-			//int coords[2] = { x, y };
-			//comm.getRankByCoords(coords, curRank);
+			int curRank = x * comm.getProcsGridDim().j + y; 
 
-			// iMax is equal to x_procs
-			// jMax is equal to y_procs
-			myPosition.i = curRank / jMax; 
-			myPosition.j = curRank % jMax;
-
-			int x_pcells = griddimension.i / iMax;
-			int y_pcells = griddimension.j / jMax;
-
-			myOffset = Dimension(
-				myPosition.i * x_pcells,
-				myPosition.j * y_pcells);
-
-			myDomain = Dimension(
-				x_pcells + ((myPosition.i < iMax - 1) ?
-				(0) : (griddimension.i % iMax)),
-				y_pcells + ((myPosition.j < jMax - 1) ?
-				(0) : (griddimension.j % jMax)));
-
-			int x1 = myOffset.i;
-			int x3 = myOffset.j;
-			int x2 = myOffset.i + myDomain.i;
-			int x4 = myOffset.j + myDomain.j;
+			myOffset = Dimension(x * iMax, y * jMax);
+			/* here, write extends of sub-domain of every process Omega_{i,j} */
+			int x1 = myOffset.i - 1;
+			int x3 = myOffset.j - 1;
+			int x2 = myOffset.i + iMax;
+			int x4 = myOffset.j + jMax;
 
 			//int curRank;
 			//int coords[2] = { x, y };
@@ -444,7 +423,6 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 			//int x2 = (x + 1) * iMax + stencilwidth - 1;
 			//int x3 = y * jMax - stencilwidth;
 			//int x4 = (y + 1) * jMax + stencilwidth - 1;
-			/* here, write extends of sub-domain of every process Omega_{i,j} */
 
 			os << "<Piece Extent=\"" << x1 << " " << x2 << " " << x3 << " "
 				<< x4 << " 0 0\" Source=\"field_" << std::to_string(step) << "_processor_"
@@ -473,8 +451,8 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	Communication &comm, SimParams sim_params)
 {
 	int stencilwidth = 0;
-	int iMax = comm.getLocalDimensions()[0] - 1; // s.iLocalMax - 1;
-	int jMax = comm.getLocalDimensions()[1] - 1; // s.jLocalMax - 1;
+	int iMax = comm.getLocalDimensions()[0]; // s.iLocalMax - 1;
+	int jMax = comm.getLocalDimensions()[1]; // s.jLocalMax - 1;
 
 	Real deltaX = domain.getDelta()[0];
 	Real deltaY = domain.getDelta()[1];
@@ -518,12 +496,12 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	 * Its very late, i'm tired and it's cold + some stuff about natives trying to surround me...
 	 * So please check what the hell i did here.
 	 */
-	Dimension myOffset = Dimension(coords[0] * (iMax + 1), coords[1] * (jMax + 1));
+	Dimension myOffset = Dimension(coords[0] * iMax, coords[1] * jMax);
 
-	int x1 = myOffset.i;
-	int x3 = myOffset.j;
-	int x2 = myOffset.i + comm.getLocalDimensions().i;
-	int x4 = myOffset.j + comm.getLocalDimensions().j;
+	int x1 = myOffset.i - 1;
+	int x3 = myOffset.j - 1;
+	int x2 = myOffset.i + iMax;
+	int x4 = myOffset.j + jMax;
 
 	//int x = coords[0];
 	//int y = coords[1];
@@ -542,7 +520,7 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 
 	// whole extent = piece extent in slave
 	os << "<RectilinearGrid WholeExtent=\"" << x1 << " " << x2 << " " << x3 << " "
-		<< x4 << " 0 0\" GhostLevel=\"" << stencilwidth << "\">"
+		<< x4 << " 0 0\" GhostLevel=\"" << 1 << "\">"
 		<< std::endl;
 
 
@@ -555,8 +533,8 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 
 	Real iOffset, jOffset;
 
-	int iStart = x1 + stencilwidth;
-	int jStart = x3 + stencilwidth;
+	int iStart = x1 + 1; //TODO: Think hard. stencelwidth was here instead of 1
+	int jStart = x3 + 1; //TODO: Think hard. stencelwidth was here instead of 1
 	if (iStart == 0)
 	{
 		iOffset = 0.;
@@ -575,7 +553,7 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 		jOffset = (sim_params.yLength / sim_params.jMax) * jStart;
 	}
 
-	for (int i = 0; i <= iMax + 1; i++)
+	for (int i = 0; i <= iMax; i++) //TODO: Think hard. iMax+1 was here instead of iMax
 	{
 		os << std::scientific << i * deltaX + iOffset << " ";
 	}
@@ -583,7 +561,7 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	os << "</DataArray>" << std::endl;
 
 	os << "<DataArray type=\"Float64\" format=\"ascii\">" << std::endl;
-	for (int j = 0; j <= jMax + 1; j++)
+	for (int j = 0; j <= jMax; j++) //TODO: Think hard. jMax+1 was here instead of jMax
 	{
 		os << std::scientific << j * deltaY + jOffset << " ";
 	}
@@ -600,12 +578,20 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	os
 		<< "<DataArray Name=\"field\" NumberOfComponents=\"3\" type=\"Float64\" format=\"ascii\">"
 		<< std::endl;
-	for (int j = 0; j <= jMax + 1; j++)
+	//for (int j = 0; j <= jMax + 1; j++)
+	//{
+	//	for (int i = 0; i <= iMax + 1; ++i)
+	//	{
+	//		os << std::scientific << domain.u()(i,j) << " " << domain.v()(i,j) << " " << 0.
+	//			<< " ";
+	//	}
+	//	os << std::endl;
+	//}
+	for (int j = 0; j < jMax + 2; j++)
 	{
-		for (int i = 0; i <= iMax + 1; ++i)
+		for (int i = 0; i < iMax + 2; i++)
 		{
-			os << std::scientific << domain.u()(i,j) << " " << domain.v()(i,j) << " " << 0.
-				<< " ";
+			os << std::scientific << 0.0 << " " << 0.0 << " " << 0. << " ";
 		}
 		os << std::endl;
 	}
@@ -613,75 +599,100 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 
 	os << "<DataArray type=\"Float64\" Name=\"p\" format=\"ascii\">"
 		<< std::endl;
-	for (int j = 1; j <= jMax + 1; j++)
+	//for (int j = 1; j <= jMax + 1; j++)
+	//{
+	//	for (int i = 1; i <= iMax + 2; i++)
+	//	{
+	//		os << std::scientific << (domain.p()(i,j) + domain.p()(i,j + 1)) / 2. << " ";
+	//	}
+	//	os << std::endl;
+	//}
+	for (int j = 0; j < jMax + 2; j++)
 	{
-		for (int i = 1; i <= iMax + 2; i++)
+		for (int i = 0; i < iMax + 2; i++)
 		{
-			os << std::scientific << (domain.p()(i,j) + domain.p()(i,j + 1)) / 2. << " ";
+			os << std::scientific << domain.p()(i, j) << " ";
 		}
 		os << std::endl;
 	}
 
 	// print last line of pressure:
-	for (int i = 1; i <= iMax + 2; i++)
-	{
-		os << std::scientific << domain.p()(i,jMax + 2);
-	}
+	//for (int i = 1; i <= iMax + 2; i++)
+	//{
+	//	os << std::scientific << domain.p()(i,jMax + 2);
+	//}
 	os << "</DataArray>" << std::endl;
 
 	os << "<DataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\">"
 		<< std::endl;
-	for (int i = 0; i <= iMax + 1; i++)
-	{
-		os << std::scientific << 0.0 << " ";
-	}
-	os << std::endl;
+	//for (int i = 0; i <= iMax + 1; i++)
+	//{
+	//	os << std::scientific << 0.0 << " ";
+	//}
+	//os << std::endl;
+	//
+	//for (int j = 1; j <= jMax; j++)
+	//{
+	//	os << std::scientific << 0.0 << " ";
+	//	for (int i = 1; i <= iMax; i++)
+	//	{
+	//		Real zeta = (domain.u()(i, j + 1) - domain.u()(i, j)) / deltaY
+	//			- (domain.v()(i + 1, j) - domain.v()(i, j)) / deltaX;
+	//		os << std::scientific << zeta << " ";
+	//	}
+	//	os << std::scientific << 0.0 << std::endl;
+	//}
+	//// we need one additional line of vorticity...
+	//for (int i = 0; i <= jMax + 1; i++)
+	//{
+	//	os << std::scientific << 0.0 << " ";
+	//}
+	//os << std::endl;
 
-	for (int j = 1; j <= jMax; j++)
+	for (int j = 0; j < jMax + 2; j++)
 	{
-		os << std::scientific << 0.0 << " ";
-		for (int i = 1; i <= iMax; i++)
+		for (int i = 0; i < iMax + 2; i++)
 		{
-			Real zeta = (domain.u()(i, j + 1) - domain.u()(i, j)) / deltaY
-				- (domain.v()(i + 1, j) - domain.v()(i, j)) / deltaX;
-			os << std::scientific << zeta << " ";
+			os << std::scientific << domain.p()(i, j) << " ";
 		}
-		os << std::scientific << 0.0 << std::endl;
+		os << std::endl;
 	}
-	// we need one additional line of vorticity...
-	for (int i = 0; i <= jMax + 1; i++)
-	{
-		os << std::scientific << 0.0 << " ";
-	}
-	os << std::endl;
 	os << "</DataArray>" << std::endl;
 
 	os << "<DataArray type=\"Float64\" Name=\"stream\" format=\"ascii\">"
 		<< std::endl;
-	Dimension stream_dim(iMax + 2, jMax + 2);
-	GridFunction stream(stream_dim);
-
-	for (int i = 1; i <= iMax + 1; i++)
+	//Dimension stream_dim(iMax + 2, jMax + 2);
+	//GridFunction stream(stream_dim);
+	//
+	//for (int i = 1; i <= iMax + 1; i++)
+	//{
+	//	for (int j = 1; j <= jMax + 1; j++)
+	//	{
+	//		stream(i,j) = stream(i,j - 1)
+	//			+ domain.u()(i, j) * deltaY;
+	//	}
+	//}
+	//
+	//// we need one initial line of stream...
+	//for (int i = 0; i <= jMax + 1; i++)
+	//{
+	//	os << std::scientific << 0.0 << " ";
+	//}
+	//os << std::endl;
+	//for (int j = 1; j <= jMax + 1; j++)
+	//{
+	//	os << std::scientific << 0.0 << " ";
+	//	for (int i = 1; i <= iMax + 1; i++)
+	//	{
+	//		os << std::scientific << stream(i,j) << " ";
+	//	}
+	//	os << std::endl;
+	//}
+	for (int j = 0; j < jMax + 2; j++)
 	{
-		for (int j = 1; j <= jMax + 1; j++)
+		for (int i = 0; i < iMax + 2; i++)
 		{
-			stream(i,j) = stream(i,j - 1)
-				+ domain.u()(i, j) * deltaY;
-		}
-	}
-
-	// we need one initial line of stream...
-	for (int i = 0; i <= jMax + 1; i++)
-	{
-		os << std::scientific << 0.0 << " ";
-	}
-	os << std::endl;
-	for (int j = 1; j <= jMax + 1; j++)
-	{
-		os << std::scientific << 0.0 << " ";
-		for (int i = 1; i <= iMax + 1; i++)
-		{
-			os << std::scientific << stream(i,j) << " ";
+			os << std::scientific << 0.0 << " ";
 		}
 		os << std::endl;
 	}
