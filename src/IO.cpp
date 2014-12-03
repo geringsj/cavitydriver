@@ -395,19 +395,59 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 
 	// iterate the dimensions, calculating the rank of the specific coords and the respective variables...
 
-	iMax = comm.getLocalDimensions()[0]-1; // s.iLocalMax - 1; // w.r.t. inner of P
-	jMax = comm.getLocalDimensions()[1]-1; // s.jLocalMax - 1; // w.r.t. inner of P
+	iMax = comm.getLocalDimensions()[0];// -1; // s.iLocalMax - 1; // w.r.t. inner of P
+	jMax = comm.getLocalDimensions()[1];// -1; // s.jLocalMax - 1; // w.r.t. inner of P
+	/**
+	 * TODO:
+	 * Check if we really want to loop over all grid positions, or
+	 * just over the amount of threads.
+	 */
 	for (int x = 0; x < griddimension.i; x++)
 	{
 		for (int y = 0; y < griddimension.j; y++)
 		{
-			int curRank;
+			/**
+			 * TODO:
+			 * Its very late, i'm tired and it's cold + some stuff about natives trying to surround me...
+			 * So please check what the hell i did here.
+			 */
+			Dimension myPosition;
+			Dimension myOffset;
+			Dimension myDomain;
+			// This is the implementation if we loop over all grid positions.
+			int curRank; // = x * griddimension.j + y;
 			int coords[2] = { x, y };
 			comm.getRankByCoords(coords, curRank);
-			int x1 = x * iMax - stencilwidth;
-			int x2 = (x + 1) * iMax + stencilwidth - 1;
-			int x3 = y * jMax - stencilwidth;
-			int x4 = (y + 1) * jMax + stencilwidth - 1;
+			// iMax is equal to x_procs
+			// jMax is equal to y_procs
+			myPosition.i = curRank / jMax; 
+			myPosition.j = curRank % jMax;
+
+			int x_pcells = griddimension.i / iMax;
+			int y_pcells = griddimension.j / jMax;
+
+			myOffset = Dimension(
+				myPosition.i * x_pcells,
+				myPosition.j * y_pcells);
+
+			myDomain = Dimension(
+				x_pcells + ((myPosition.i < iMax - 1) ?
+				(0) : (griddimension.i % iMax)),
+				y_pcells + ((myPosition.j < jMax - 1) ?
+				(0) : (griddimension.j % jMax)));
+
+			int x1 = myOffset.i;
+			int x3 = myOffset.j;
+			int x2 = myOffset.i + myDomain.i;
+			int x4 = myOffset.j + myDomain.j;
+
+			//int curRank;
+			//int coords[2] = { x, y };
+			//comm.getRankByCoords(coords, curRank);
+			//int x1 = x * iMax - stencilwidth;
+			//int x2 = (x + 1) * iMax + stencilwidth - 1;
+			//int x3 = y * jMax - stencilwidth;
+			//int x4 = (y + 1) * jMax + stencilwidth - 1;
 
 			os << "<Piece Extent=\"" << x1 << " " << x2 << " " << x3 << " "
 				<< x4 << " 0 0\" Source=\"field_" << std::to_string(step) << "_processor_"
@@ -475,16 +515,26 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
 	std::ostream os(&fb);
 
-	//int coords[2];
-	//comm.getOwnCoords(coords); //TODO obtain this information via getProcsGridPosition and us an Index here
 	Index coords = comm.getProcsGridPosition();
-	int x = coords[0];
-	int y = coords[1];
+	/**
+	 * TODO:
+	 * Its very late, i'm tired and it's cold + some stuff about natives trying to surround me...
+	 * So please check what the hell i did here.
+	 */
+	Dimension myOffset = Dimension(coords[0] * (iMax + 1), coords[1] * (jMax + 1));
 
-	int x1 = x * iMax - stencilwidth;
-	int x2 = (x + 1) * iMax + stencilwidth - 1;
-	int x3 = y * jMax - stencilwidth;
-	int x4 = (y + 1) * jMax + stencilwidth - 1;
+	int x1 = myOffset.i;
+	int x3 = myOffset.j;
+	int x2 = myOffset.i + comm.getLocalDimensions().i;
+	int x4 = myOffset.j + comm.getLocalDimensions().j;
+
+	//int x = coords[0];
+	//int y = coords[1];
+	//
+	//int x1 = x * iMax - stencilwidth;
+	//int x2 = (x + 1) * iMax + stencilwidth - 1;
+	//int x3 = y * jMax - stencilwidth;
+	//int x4 = (y + 1) * jMax + stencilwidth - 1;
 
 	os << "<?xml version=\"1.0\"?>" << std::endl;
 	os << "<VTKFile type=\"RectilinearGrid\">" << std::endl;
@@ -523,6 +573,7 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	{
 		jOffset = 0.;
 	}
+	else
 	{
 		jOffset = (sim_params.yLength / sim_params.jMax) * jStart;
 	}
