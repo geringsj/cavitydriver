@@ -5,8 +5,8 @@ yLength=1.0
 iMax=64
 jMax=64
 
-iMax=3
-jMax=3
+iMax=4
+jMax=4
 
 tEnd=20.0
 deltaT=0.2

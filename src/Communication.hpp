@@ -41,6 +41,7 @@ private:
 	void sendBufferTo(int count, int dest, int tag=0);
 	void recvBufferFrom(int source, int tag=0);
 
+	//public:
 	void exchangeGridBoundaryValues(
 			GridFunction& gf,
 			Index ibegin, 
@@ -82,6 +83,7 @@ public:
 	Dimension getProcsGridDim() const { return m_procsGrid_dim; }
 	int getRank() { return m_myRank; }
 	void getRankByCoords(int* coords, int& rank);
+	Index getOwnOffsetToGlobalDomain() const { return m_myOffsetToGlobalDomain; }
 };
 
 

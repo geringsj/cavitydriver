@@ -42,6 +42,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		Dimension max(m_inner_end[d][0]+1, m_inner_end[d][1]+1, m_inner_end[d][2]+1);
+		/* TODO max will be dangerous at some point when dealing with multiple domains */
 		if(d==0)
 			m_borderfunc_u = std::bind(in_u,std::placeholders::_1, std::ref(u()), max);
 		if(d==1)

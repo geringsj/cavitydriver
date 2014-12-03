@@ -102,7 +102,6 @@ int main(int argc, char** argv)
 			domain.getEndInnerDomainU().i, domain.getEndInnerDomainU().j,
 			domain.getEndInnerDomainV().i, domain.getEndInnerDomainV().j,
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
-	communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
@@ -140,13 +139,13 @@ int main(int argc, char** argv)
 		if(communication.getRank() == 0)
 			log_info("-- dt=%f | t/tmax=%f", dt, t / simparam.tEnd);
 
-		communication.exchangeGridBoundaryValues(domain, Communication::Handle::Velocities);
 		domain.setVelocitiesBoundaries();
+		communication.exchangeGridBoundaryValues(domain, Communication::Handle::Velocities);
 
 		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
 
-		communication.exchangeGridBoundaryValues(domain, Communication::Handle::PreliminaryVelocities);
 		domain.setPreliminaryVelocitiesBoundaries();
+		communication.exchangeGridBoundaryValues(domain, Communication::Handle::PreliminaryVelocities);
 
 		Computation::computeRighthandSide(domain, dt);
 
