@@ -60,16 +60,10 @@ int main(int argc, char** argv)
 
 	/* This is just for testing, delete it if we are done with testing. */
 	Communication communication = Communication(global_dim);
-	if(!communication.getProcessValid())
-	{
-		log_info("I am a useless process. Bye.");
-		return 0;
-	}
-	else
-	{
-		log_info("I am a good process. Yaay.");
-		//return 0;
-	}
+	//if(!communication.getProcessValid())
+	//	log_info("I am a useless process. ");
+	//else
+	//	log_info("I am a good process. Yaay.");
 
 	Dimension local_dim = communication.getLocalDimensions();
 
@@ -102,8 +96,11 @@ int main(int argc, char** argv)
 			((communication.getBoundaryCompetence().Left) ?
 			("Left") : (""))
 			);
-
-	log_info("My Domain starts at Color: %s", 
+	log_info("process %i has end indices: p=(%i,%i), u=(%i,%i), v=(%i,%i), firstColor=%s",
+			communication.getRank(),
+			domain.getEndInnerDomainP().i, domain.getEndInnerDomainP().j,
+			domain.getEndInnerDomainU().i, domain.getEndInnerDomainU().j,
+			domain.getEndInnerDomainV().i, domain.getEndInnerDomainV().j,
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
 	communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
 
@@ -128,7 +125,8 @@ int main(int argc, char** argv)
 	{
 		t_frame_start = std::chrono::steady_clock::now();
 
-		log_info("- Round %i", step);
+		if(communication.getRank() == 0)
+			log_info("- Round %i", step);
 
 		/* the magic starts here */
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
@@ -139,7 +137,8 @@ int main(int argc, char** argv)
 		dt = Computation::computeTimestepFromMaxVelocities
 			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
 		t += dt;
-		log_info("-- dt=%f | t/tmax=%f", dt, t / simparam.tEnd);
+		if(communication.getRank() == 0)
+			log_info("-- dt=%f | t/tmax=%f", dt, t / simparam.tEnd);
 
 		communication.exchangeGridBoundaryValues(domain, Communication::Handle::Velocities);
 		domain.setVelocitiesBoundaries();
@@ -181,8 +180,9 @@ int main(int argc, char** argv)
 		t_sor_avg += time_span.count();
 		//log_info("SOR solver time: %f seconds",time_span.count());
 
-		log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
-					it, simparam.iterMax, res, simparam.eps);
+		if(communication.getRank() == 0)
+			log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
+						it, simparam.iterMax, res, simparam.eps);
 		it = 0;
 
 		Computation::computeNewVelocities(domain, dt);

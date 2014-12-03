@@ -14,6 +14,8 @@
 class Communication
 {
 private:
+	void* mycom;
+
 	int m_numProcs;
 
 	Dimension m_procsGrid_dim;

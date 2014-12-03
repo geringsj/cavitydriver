@@ -17,7 +17,8 @@ Communication::Communication(Dimension globalDomainDim)
 
 	MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &m_myRank);
-	log_info("number of tasks=%i - my rank=%i", m_numProcs, m_myRank);
+	if(m_myRank==0)
+		log_info("number of tasks=%i - my rank=%i", m_numProcs, m_myRank);
 
 	/* set mpi cartesian grid with dimension infos */
 	m_globalDomain_dim = globalDomainDim;
@@ -42,9 +43,33 @@ Communication::Communication(Dimension globalDomainDim)
 	{
 		log_info("process %i has no place in grid (at position [%i,%i])", 
 				m_myRank, m_procsGrid_myPosition.i, m_procsGrid_myPosition.j);
-		m_myRank = -1;
+		//m_myRank = -1;
 		/* return; ? */
 	}
+
+	/* make a new MPI communication domain for processes we actually will use, 
+	 * let the rest finalize out. */
+	mycom = new MPI_Comm;
+	*(MPI_Comm*)mycom = MPI_COMM_WORLD;
+	if(m_numProcs > x_procs*y_procs)
+	{
+		/* the following is taken from: 
+		 * http://stackoverflow.com/questions/13774968/mpi-kill-unwanted-processes */
+		MPI_Group world_group;
+		MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+		MPI_Group new_group;
+		int ranges[3] = { x_procs*y_procs, m_numProcs-1, 1 };
+		MPI_Group_range_excl(world_group, 1, &ranges, &new_group);
+		/* create new communicator for non-dead processes */
+		MPI_Comm_create(MPI_COMM_WORLD, new_group, (MPI_Comm*)mycom);
+		if (*(MPI_Comm*)mycom == MPI_COMM_NULL)
+		{
+		   log_info("Bye bye cruel world. (%i)", m_myRank);
+		   MPI_Finalize();
+		   exit(0);
+		}
+	}
+
 
 	/* compute direct neighbours */
 	m_downRank = (m_procsGrid_myPosition.j-1 >= 0) 
@@ -96,25 +121,26 @@ Communication::~Communication()
 {
 	delete[] m_recvBuffer;
 	delete[] m_sendBuffer;
+	delete (MPI_Comm*)mycom;
 	MPI_Finalize();
 }
 
 void Communication::sendBufferTo(int count, int dest, int tag)
 {
 	MPI_Send(m_sendBuffer, count, 
-			/*TODO switch?*/MPI_DOUBLE, dest, tag, MPI_COMM_WORLD);
+			/*TODO switch?*/MPI_DOUBLE, dest, tag, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
 }
 
 void Communication::recvBufferFrom(int source, int tag)
 {
 	MPI_Recv(m_recvBuffer, m_bufferSize, 
-			/*TODO switch?*/MPI_DOUBLE, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			/*TODO switch?*/MPI_DOUBLE, source, tag, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom, MPI_STATUS_IGNORE);
 }
 
 Real Communication::getGlobalResidual(Real mySubResidual)
 {
 	MPI_Allreduce(&mySubResidual, m_recvBuffer, 1, /*TODO switch?*/MPI_DOUBLE, 
-			MPI_SUM, MPI_COMM_WORLD);
+			MPI_SUM, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
 	return sqrt(m_recvBuffer[0]);
 }
 
@@ -122,7 +148,7 @@ bool Communication::checkGlobalFinishSOR(bool myLoopCondition)
 {
 	bool ret;
 	MPI_Allreduce(&myLoopCondition /*MPI_IN_PLACE*/, /*&myLoopCondition*/&ret, 1, /*TODO switch?*/MPI_C_BOOL, 
-			MPI_LOR, MPI_COMM_WORLD);
+			MPI_LOR, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
 	return ret;//myLoopCondition;
 }
 
@@ -133,7 +159,7 @@ Delta Communication::getGlobalMaxVelocities(Delta myMaxValues)
 	m_sendBuffer[2] = myMaxValues.z;
 
 	MPI_Allreduce(m_sendBuffer, m_recvBuffer, 3, /*TODO switch?*/MPI_DOUBLE, 
-			MPI_MAX, MPI_COMM_WORLD);
+			MPI_MAX, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
 
 	myMaxValues.x = m_recvBuffer[0];
 	myMaxValues.y = m_recvBuffer[1];
