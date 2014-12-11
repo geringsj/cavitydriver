@@ -113,14 +113,14 @@ public:
 	/* TODO: document for doxygen and move implementation into .cpp ?
 	 * on the other hand: explaining multiple simple similiar functions is stupid, 
 	 * better have the user see what is done? */
-	Dimension getDimension() { return m_dimension; }
-	Dimension getBeginInnerDomains() { return m_inner_begin; }
+	Dimension getDimension() const { return m_dimension; }
+	Dimension getBeginInnerDomains() const { return m_inner_begin; }
 	Dimension* getEndInnerDomain() { return m_inner_end; }
-	Dimension getEndInnerDomainU() { return m_inner_end[0]; }
-	Dimension getEndInnerDomainV() { return m_inner_end[1]; }
-	Dimension getEndInnerDomainW() { return m_inner_end[2]; }
-	Dimension getEndInnerDomainP() { return m_inner_end[3]; }
-	Point getDelta() { return m_delta; }
+	Dimension getEndInnerDomainU() const { return m_inner_end[0]; }
+	Dimension getEndInnerDomainV() const { return m_inner_end[1]; }
+	Dimension getEndInnerDomainW() const { return m_inner_end[2]; }
+	Dimension getEndInnerDomainP() const { return m_inner_end[3]; }
+	Point getDelta() const { return m_delta; }
 
 	Grid3D& getVelocity() { return m_velocities; }
 	Grid3D& getPreliminaryVelocity() { return m_preliminary_velocities_FGH; }
@@ -134,7 +134,7 @@ public:
 	GridFunction& H() { return m_preliminary_velocities_FGH.m_w ; }
 	GridFunction& rhs() { return m_p_rhs; }
 
-	Real g(int dim) 
+	Real g(int dim) const
 	{ if(dim == 0) return gx(); if(dim == 1) return gy(); return gz(); }
 
 	Real gx() const { return m_force_gx; }

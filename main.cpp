@@ -1,10 +1,10 @@
-#include "src/IO.hpp"
+
+#include "src/VTKOutput.hpp"
+#include "SimulationParameters.hpp"
 #include "src/Domain.hpp"
 #include "src/Computation.hpp"
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
-
-/* communication test */
 #include "src/Communication.hpp"
 
 #define _USE_MATH_DEFINES
@@ -12,7 +12,8 @@
 
 #include <chrono>
 
-Real u_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
+Real u_bounds(Index index, GridFunction& gf, Dimension dim, 
+		SimulationParameters& simparam)
 {
 	Real value = simparam.ui;
 	if (index.i == 0) value = 0.0;
@@ -22,7 +23,8 @@ Real u_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
 	return value;
 }
 
-Real v_bounds(Index index, GridFunction& gf, Dimension dim, SimParams& simparam)
+Real v_bounds(Index index, GridFunction& gf, Dimension dim, 
+		SimulationParameters& simparam)
 {
 	Real value = simparam.vi;
 	if (index.i == 0) value = -gf(index.i+1, index.j);
@@ -38,6 +40,8 @@ void mainLoop()
 
 int main(int argc, char** argv)
 {
+	argc = argc*(**argv); // just to get rid of some warnings */
+
 	/* time measurement variables */
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
 	std::chrono::steady_clock::time_point t_sor_start, t_sor_end;
@@ -45,9 +49,8 @@ int main(int argc, char** argv)
 	double t_sor_avg = 0.0;
 	double t_frame_avg = 0.0;
 
-	/* init IO/parameters */
-	IO io(argc, argv);
-	SimParams simparam = io.readInputfile();
+	/* init simulation parameters */
+	SimulationParameters simparam("inputvals");
 
 	/* init problem dimensions and grid spacing delta */
 	Dimension global_dim;
@@ -60,8 +63,6 @@ int main(int argc, char** argv)
 	/* init communication of processes */
 	Communication communication = Communication(global_dim);
 	Dimension local_dim = communication.getLocalDimensions();
-	if(communication.getRank() == 0)
-		io.checkOutputDir();
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(local_dim, delta,
@@ -105,15 +106,13 @@ int main(int argc, char** argv)
 	if (simparam.xLength == simparam.yLength) 
 		simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
 
-	Real t = 0.0, dt = simparam.deltaT, res;
+	Real t = 0.0, dt, res;
 	int it = 0, step=0;
 
 	/* write initial state of velocities and pressure */
-	if(communication.getRank() == 0)
-		io.writeVTKMasterFile(communication, step);
-	io.writeVTKSlaveFile(domain, communication, step);
-	step++;
-	Real nextWrite = 0.0;
+	VTKOutput vtkoutput(domain, "out", communication);
+	vtkoutput.writeVTKFileParallel();
+	Real nextVTKWrite = 0.0;
 
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
 
@@ -184,17 +183,14 @@ int main(int argc, char** argv)
 
 		Computation::computeNewVelocities(domain, dt);
 
-		nextWrite += dt;
-		if(nextWrite > simparam.deltaVec)
+		nextVTKWrite += dt;
+		if(nextVTKWrite > simparam.deltaVec)
 		{
-			nextWrite = 0;
+			nextVTKWrite = 0.0;
 
-			//io.writeVTKFile(domain, step);
-			/* write all slave files */
-			io.writeVTKSlaveFile(domain, communication, step);
-			/* only rank 0 writes a master file */
-			if(communication.getRank() == 0)
-				io.writeVTKMasterFile(communication, step);
+			//vtkoutput.writeVTKFile();
+
+			vtkoutput.writeVTKFileParallel();
 		}
 		step++;
 

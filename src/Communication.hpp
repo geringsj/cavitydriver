@@ -67,18 +67,16 @@ public:
 
 	bool checkGlobalFinishSOR(bool myLoopCondition);
 
-	bool getProcessValid() const { return m_myRank>=0; }
-	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
 
 	Domain::Boundary getBoundaryCompetence() const 
 	{ return Domain::Boundary(m_upRank<0, m_downRank<0, m_leftRank<0, m_rightRank<0); }
 
 	int getRank() const { return m_myRank; }
-	Index getProcsGridPosition() const { return m_procsGrid_myPosition; }
 	Dimension getProcsGridDim() const { return m_procsGrid_dim; }
 	Index getOwnOffsetToGlobalDomain() const { return m_myOffsetToGlobalDomain; }
 	Dimension getGlobalDimensions() const { return m_globalDomain_dim; }
+	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 };
 
 

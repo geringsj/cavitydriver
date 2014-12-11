@@ -56,6 +56,7 @@ Real GridFunction::operator()(const int& i, const int& j) const {
 //	return this->grid[i * dimension.j * dimension.k + j * dimension.k + k];
 //}
 
+#include <iostream>
 void GridFunction::printSTDOUT()
 {
 	Index SI(0,0), EI(this->dimension.i-1,this->dimension.j-1);
