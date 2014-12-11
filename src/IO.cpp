@@ -234,122 +234,11 @@ SimParams IO::readInputfile()
 	return simparam;
 }
 
-
-#define Element(field,ic) ((field)((ic)[0],(ic)[1]))
-
-Real
-  IO::interpolateVelocityU (Real x, Real y, GridFunction & u,
-			    const Point & delta)
-{
-
-  Real deltaX = delta[0];
-  Real deltaY = delta[1];
-
-  Index index;
-
-  // Computation of u(x,y)
-  index[0] = ((int) (x / deltaX)) + 1;
-  index[1] = ((int) ((y + (deltaY / 2)) / deltaY)) + 1;
-
-  // The coordinates of the cell corners
-
-  Real x1 = (index[0] - 1) * deltaX;
-  Real x2 = index[0] * deltaX;
-  Real y1 = ((index[1] - 1) - 0.5) * deltaY;
-  Real y2 = (index[1] - 0.5) * deltaY;
-
-  Index offset;
-
-  offset[0] = index[0] - 1;
-  offset[1] = index[1] - 1;
-
-  Real u1 = Element(u, offset);	// datafields->u->getField ()[i - 1][j - 1];
-
-  offset[0] = index[0];
-  offset[1] = index[1] - 1;
-
-  Real u2 = Element(u, offset);	//datafields->u->getField ()[i][j - 1];
-
-  offset[0] = index[0] - 1;
-  offset[1] = index[1];
-
-  Real u3 = Element(u, offset);	//datafields->u->getField ()[i - 1][j];
-  Real u4 = Element(u, index);
-
-  Real
-    uInterploated =
-    (1.0 / (deltaX * deltaY)) * ((x2 - x) * (y2 - y) *
-				 u1 + (x - x1) * (y2 -
-						  y) *
-				 u2 + (x2 - x) * (y -
-						  y1) *
-				 u3 + (x - x1) * (y - y1) * u4);
-
-  return uInterploated;
-  //return 0.0;
-}
-
-
-Real
-  IO::interpolateVelocityV (Real x, Real y, GridFunction & v,
-			    const Point & delta)
-{
-  Real deltaX = delta[0];
-  Real deltaY = delta[1];
-
-  // Computation of v(x,y)
-  Index index;
-  index[0] = ((int) ((x + (deltaX / 2)) / deltaX)) + 1;
-  index[1] = ((int) (y / deltaY)) + 1;
-
-  // The coordinates of the cell corners
-
-  Real x1 = ((index[0] - 1) - 0.5) * deltaX;
-  Real x2 = (index[0] - 0.5) * deltaX;
-  Real y1 = (index[1] - 1) * deltaY;
-  Real y2 = index[1] * deltaY;
-
-  Index offset;
-
-  offset[0] = index[0] - 1;
-  offset[1] = index[1] - 1;
-
-  Real v1 = Element (v, offset);	//datafields->v->getField ()[i - 1][j - 1];
-
-  offset[0] = index[0];
-  offset[1] = index[1] - 1;
-
-  Real v2 = Element (v, offset);	//datafields->v->getField ()[i][j - 1];
-
-  offset[0] = index[0] - 1;
-  offset[1] = index[1];
-
-  Real v3 = Element (v, offset);	//datafields->v->getField ()[i - 1][j];
-
-
-  Real v4 = Element (v, index);	//datafields->v->getField ()[i][j];
-
-  Real
-    vInterpolated =
-    (1.0 / (deltaX * deltaY)) * ((x2 - x) * (y2 - y) *
-				 v1 + (x - x1) * (y2 -
-						  y) *
-				 v2 + (x2 - x) * (y -
-						  y1) *
-				 v3 + (x - x1) * (y - y1) * v4);
-  return vInterpolated;
-  //return 0.0;
-}
-
 #if defined(__linux)
 	#include "sys/stat.h"
 #endif
-
-void IO::writeVTKMasterFile(const Index & griddimension, 
-	int step, Communication &comm)
+void IO::checkOutputDir()
 {
-	int stencilwidth = 0;
-
 	std::string filename;
 	filename.append("./");
 	filename.append(output);
@@ -358,7 +247,6 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 	// Test if the directory exits, if not create it.
 	std::filebuf test_dir;
 	test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
-
 	if (!test_dir.is_open())
 	{
 		// Directory doesn't exist.
@@ -370,7 +258,14 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 			mkdir(filename.c_str(), 0700);
 		#endif
 	}
+}
 
+void IO::writeVTKMasterFile(Communication& comm, int step)
+{
+	std::string filename;
+	filename.append("./");
+	filename.append(output);
+	filename.append("/");
 	filename.append("field_");
 	filename.append(std::to_string(step));
 	filename.append(".pvtr");
@@ -379,137 +274,142 @@ void IO::writeVTKMasterFile(const Index & griddimension,
 	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
 	std::ostream os(&fb);
 
-	// iLocalMax & jLocalMax are the size of the area..
-	int iMax = griddimension.i; 
-	int jMax = griddimension.j; 
+	/* all these values are inclusive. like in 'for(int i=min; i <= max; i++)' */
+	/* also these values should start and end at the INNER of the domain.
+	 * when/if needed, the offset for boundaries will be added as -1/+1 */
+	int xGlobMin = 1; 
+	int xGlobMax = comm.getGlobalDimensions().i; 
+	int yGlobMin = 1; 
+	int yGlobMax = comm.getGlobalDimensions().j; 
+
 	os << "<?xml version=\"1.0\"?>" << std::endl;
 	os << "<VTKFile type=\"PRectilinearGrid\">" << std::endl;
-	os << "<PRectilinearGrid WholeExtent=\"0 " << (iMax - 1) << " 0 "
-		<< (jMax - 1) << " 0 0\" GhostLevel=\"" << 1 << "\">"
-		<< std::endl;
+	/* extends */
+	os << "<PRectilinearGrid WholeExtent=\""
+		<< xGlobMin <<" "<< xGlobMax << " " 
+		<< yGlobMin <<" "<< yGlobMax 
+		<< " 0 0\" GhostLevel=\"" << 0 << "\">"<< std::endl;
 	os << "<PCoordinates>" << std::endl;
 	os << "<PDataArray type=\"Float64\"/>" << std::endl;
 	os << "<PDataArray type=\"Float64\"/>" << std::endl;
 	os << "<PDataArray type=\"Float64\"/>" << std::endl;
 	os << "</PCoordinates>" << std::endl;
 
-	// iterate the dimensions, calculating the rank of the specific coords and the respective variables...
+	/* iterate the local domains and write out their extents */
+	/* the following Locl variables are analogous to the above "Glob" ones, 
+	 * but for the local domain of the process "localProcRank" */
+	int xLoclbMin, xLoclbMax, yLoclbMin, yLoclbMax; 
+	int localProcRank;
 
-	iMax = comm.getLocalDimensions()[0]; // s.iLocalMax - 1; // w.r.t. inner of P
-	jMax = comm.getLocalDimensions()[1]; // s.jLocalMax - 1; // w.r.t. inner of P
+	/* loop through all processes */
 	for (int x = 0; x < comm.getProcsGridDim().i; x++)
 	{
 		for (int y = 0; y < comm.getProcsGridDim().j; y++)
 		{
-			/**
-			 * TODO:
-			 * Its very late, i'm tired and it's cold + some stuff about natives trying to surround me...
-			 * So please check what the hell i did here.
-			 */
-			Dimension myOffset;
-			int curRank = x * comm.getProcsGridDim().j + y; 
+			/* compute 'local' process rank and its dimensions from position in 
+			 * grid of processes */
+			localProcRank = x * comm.getProcsGridDim().j + y; 
 
-			myOffset = Dimension(x * iMax, y * jMax);
+			Index expctdCellsPerDim(
+				 (comm.getGlobalDimensions().i / comm.getProcsGridDim().i) ,
+				 (comm.getGlobalDimensions().j / comm.getProcsGridDim().j) );
+
+			Dimension localOffsetToGlobalDomain(
+				 expctdCellsPerDim.i * x ,
+				 expctdCellsPerDim.j * y );
+
+			Dimension localDomainDim(
+			/* last process in x/y dimensions gets the rest of cells in that direction,
+			 * that is why the following computation looks ugly */
+				 expctdCellsPerDim.i 
+				 	+ ( (x < comm.getProcsGridDim().i-1)
+					?(0):(comm.getGlobalDimensions().i % comm.getProcsGridDim().i)) ,
+				 expctdCellsPerDim.j 
+				 	+ ( (y < comm.getProcsGridDim().j-1)
+					?(0):(comm.getGlobalDimensions().j % comm.getProcsGridDim().j)) );
+
 			/* here, write extends of sub-domain of every process Omega_{i,j} */
-			int x1 = myOffset.i - 1;
-			int x3 = myOffset.j - 1;
-			int x2 = myOffset.i + iMax;
-			int x4 = myOffset.j + jMax;
+			/* for a consistent visualization ParaView wants 
+			 * the subdomains to overlapp, this is why we extend the inner by 
+			 * one in all directions. so we later need to write out the boundary too.
+			 * because we will later write everything with respect to the pressure
+			 * (which sits in the center of each cell), this will work out. 
+			 * (we will need to interpolate velocities accordingly) */
+			xLoclbMin = localOffsetToGlobalDomain.i + xGlobMin;
+			xLoclbMax = xLoclbMin + localDomainDim.i -1; 
+			/* 'localDomainDim.i-1'
+			 * because we want to go from first cell of domain to last, but not too far */
+			yLoclbMin = localOffsetToGlobalDomain.j + yGlobMin;
+			yLoclbMax = yLoclbMin + localDomainDim.j -1;
 
-			//int curRank;
-			//int coords[2] = { x, y };
-			//comm.getRankByCoords(coords, curRank);
-			//int x1 = x * iMax - stencilwidth;
-			//int x2 = (x + 1) * iMax + stencilwidth - 1;
-			//int x3 = y * jMax - stencilwidth;
-			//int x4 = (y + 1) * jMax + stencilwidth - 1;
+			/* walk _on_ the boundary of domain of current process */
+			xLoclbMin += -1;
+			xLoclbMax += +1; 
+			yLoclbMin += -1;
+			yLoclbMax += +1;
 
-			os << "<Piece Extent=\"" << x1 << " " << x2 << " " << x3 << " "
-				<< x4 << " 0 0\" Source=\"field_" << std::to_string(step) << "_processor_"
-				<< curRank << ".vtr\"/>" << std::endl;
+			/* write extent of Domain of current process, 
+			 * with respect to global Domain */
+			os << "<Piece Extent=\"" 
+				<< xLoclbMin << " " << xLoclbMax << " " 
+				<< yLoclbMin << " " << yLoclbMax << " 0 0\" Source=\"field_" 
+				<< std::to_string(step) << "_processor_"
+				<< localProcRank << ".vtr\"/>" << std::endl;
 		}
 	}
 
-	os << "<PPointData Vectors=\"field\" Scalars=\"p, vorticity, stream\">"
-		<< std::endl;
-	os
-		<< "<PDataArray type=\"Float64\" NumberOfComponents=\"3\" Name=\"field\" format=\"ascii\"/>"
-		<< std::endl;
-	os << "<PDataArray type=\"Float64\" Name=\"p\" format=\"ascii\"/>"
-		<< std::endl;
-	os << "<PDataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\"/>"
-		<< std::endl;
-	os << "<PDataArray type=\"Float64\" Name=\"stream\" format=\"ascii\"/>"
-		<< std::endl;
-	os << "</PPointData>" << std::endl;
+	/* standard fields: */
+	os << "<PPointData Vectors=\"field\" Scalars=\"p\">"<< std::endl; // , vorticity, stream
+	os << "<PDataArray type=\"Float64\" NumberOfComponents=\"3\" Name=\"field\" format=\"ascii\"/>"<< std::endl;
+	os << "<PDataArray type=\"Float64\" Name=\"p\" format=\"ascii\"/>"<< std::endl;
 
+	/* new fields: vorticity and stream */
+	//os << "<PDataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\"/>"<< std::endl;
+	//os << "<PDataArray type=\"Float64\" Name=\"stream\" format=\"ascii\"/>"<< std::endl;
+
+	os << "</PPointData>" << std::endl;
 	os << "</PRectilinearGrid>" << std::endl;
 	os << "</VTKFile>" << std::endl;
 }
 
-void IO::writeVTKSlaveFile(Domain& domain, int step,
-	Communication &comm, SimParams sim_params)
+void IO::writeVTKSlaveFile(Domain& domain, Communication& comm, int step)
 {
-	int stencilwidth = 0;
-	int iMax = comm.getLocalDimensions()[0]; // s.iLocalMax - 1;
-	int jMax = comm.getLocalDimensions()[1]; // s.jLocalMax - 1;
 
-	Real deltaX = domain.getDelta()[0];
-	Real deltaY = domain.getDelta()[1];
-
-	int rank = comm.getRank();
+	Real cellDeltaX = domain.getDelta().x;
+	Real cellDeltaY = domain.getDelta().y;
+	int localProcRank = comm.getRank();
 
 	std::string filename;
 	filename.append("./");
 	filename.append(output);
 	filename.append("/");
 
-	// Test if the directory exits, if not create it.
-	std::filebuf test_dir;
-	test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
-
-	if (!test_dir.is_open())
-	{
-		// Directory doesn't exist.
-		#if defined(_WIN64)
-				CreateDirectory(filename.c_str(), NULL);
-		#elif defined(_WIN32)
-				CreateDirectory(filename.c_str(), NULL);
-		#elif defined(__linux)
-				mkdir(filename.c_str(), 0700);
-		#endif
-	}
-
 	filename.append("field_");
 	filename.append(std::to_string(step));
 	filename.append("_processor_");
-	filename.append(std::to_string(rank));
+	filename.append(std::to_string(localProcRank));
 	filename.append(".vtr");
 
 	std::filebuf fb;
 	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
 	std::ostream os(&fb);
 
-	Index coords = comm.getProcsGridPosition();
-	/**
-	 * TODO:
-	 * Its very late, i'm tired and it's cold + some stuff about natives trying to surround me...
-	 * So please check what the hell i did here.
-	 */
-	Dimension myOffset = Dimension(coords[0] * iMax, coords[1] * jMax);
+	int xGlobMin = 1; 
+	//int xGlobMax = comm.getGlobalDimensions().i; 
+	int yGlobMin = 1; 
+	//int yGlobMax = comm.getGlobalDimensions().j; 
 
-	int x1 = myOffset.i - 1;
-	int x3 = myOffset.j - 1;
-	int x2 = myOffset.i + iMax;
-	int x4 = myOffset.j + jMax;
-
-	//int x = coords[0];
-	//int y = coords[1];
-	//
-	//int x1 = x * iMax - stencilwidth;
-	//int x2 = (x + 1) * iMax + stencilwidth - 1;
-	//int x3 = y * jMax - stencilwidth;
-	//int x4 = (y + 1) * jMax + stencilwidth - 1;
+	int xLoclbMin, xLoclbMax, yLoclbMin, yLoclbMax; 
+	/* set the four indices like in WriteVTKMasterFile */
+	xLoclbMin = comm.getOwnOffsetToGlobalDomain().i + xGlobMin;
+	xLoclbMax = xLoclbMin + domain.getDimension().i -1; 
+	yLoclbMin = comm.getOwnOffsetToGlobalDomain().j + yGlobMin;
+	yLoclbMax = yLoclbMin + domain.getDimension().j -1;
+	/* walk _on_ the boundary of domain of current process */
+	xLoclbMin += -1;
+	xLoclbMax += +1; 
+	yLoclbMin += -1;
+	yLoclbMax += +1;
 
 	os << "<?xml version=\"1.0\"?>" << std::endl;
 	os << "<VTKFile type=\"RectilinearGrid\">" << std::endl;
@@ -519,82 +419,65 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	// 		<< std::endl;
 
 	// whole extent = piece extent in slave
-	os << "<RectilinearGrid WholeExtent=\"" << x1 << " " << x2 << " " << x3 << " "
-		<< x4 << " 0 0\" GhostLevel=\"" << 1 << "\">"
-		<< std::endl;
+	os << "<RectilinearGrid WholeExtent=\"" 
+		<< xLoclbMin << " " << xLoclbMax << " " 
+		<< yLoclbMin << " " << yLoclbMax
+		<< " 0 0\" GhostLevel=\"" << 1 << "\">" << std::endl;
 
-
-	os << "<Piece Extent=\"" << x1 << " " << x2 << " " << x3 << " " << x4
+	os << "<Piece Extent=\"" 
+		<< xLoclbMin << " " << xLoclbMax << " " 
+		<< yLoclbMin << " " << yLoclbMax
 		<< " 0 0\">" << std::endl;
 
 	os << "<Coordinates>" << std::endl;
-
 	os << "<DataArray type=\"Float64\" format=\"ascii\">" << std::endl;
 
-	Real iOffset, jOffset;
+	/* now we write the coordinates of the grid points in x and y direction */
+	for (int i = xLoclbMin-1; i <= xLoclbMax+1; i++)
+		os << std::scientific << i * cellDeltaX << " ";
 
-	int iStart = x1 + 1; //TODO: Think hard. stencelwidth was here instead of 1
-	int jStart = x3 + 1; //TODO: Think hard. stencelwidth was here instead of 1
-	if (iStart == 0)
-	{
-		iOffset = 0.;
-	}
-	else
-	{
-		iOffset = (sim_params.xLength / sim_params.iMax) * iStart;
-	}
-
-	if (jStart == 0)
-	{
-		jOffset = 0.;
-	}
-	else
-	{
-		jOffset = (sim_params.yLength / sim_params.jMax) * jStart;
-	}
-
-	for (int i = 0; i <= iMax; i++) //TODO: Think hard. iMax+1 was here instead of iMax
-	{
-		os << std::scientific << i * deltaX + iOffset << " ";
-	}
 	os << std::endl;
 	os << "</DataArray>" << std::endl;
 
 	os << "<DataArray type=\"Float64\" format=\"ascii\">" << std::endl;
-	for (int j = 0; j <= jMax; j++) //TODO: Think hard. jMax+1 was here instead of jMax
+	for (int j = yLoclbMin-1; j <= yLoclbMax+1; j++)
 	{
-		os << std::scientific << j * deltaY + jOffset << " ";
+		os << std::scientific << j * cellDeltaY << " ";
 	}
 	os << std::endl;
 	os << "</DataArray>" << std::endl;
 
-	os << "<DataArray type=\"Float64\" format=\"ascii\">0 0</DataArray>"
-		<< std::endl;
-
+	os << "<DataArray type=\"Float64\" format=\"ascii\">0 0</DataArray>" << std::endl;
 	os << "</Coordinates>" << std::endl;
 
-	os << "<PointData Vectors=\"field\" Scalars=\"p, vorticity, stream\">"
-		<< std::endl;
-	os
-		<< "<DataArray Name=\"field\" NumberOfComponents=\"3\" type=\"Float64\" format=\"ascii\">"
-		<< std::endl;
+	os << "<PointData Vectors=\"field\" Scalars=\"p\">" << std::endl; // , vorticity, stream
+	os << "<DataArray Name=\"field\" NumberOfComponents=\"3\" type=\"Float64\" format=\"ascii\">" << std::endl;
 
+	/* write grid values with boundaries.
+	 * interpolate u and v to be at p position of cell.
+	 * we have to make up values on the boundary just to satisfy overlapping
+	 * conditions of sub domains in the VTK file. */
 	Real u_inter, v_inter;
-	//TODO: check border conditions
-	for (int j = 1; j < jMax + 3; j++)
+	for (int j = 1 -1; j <= domain.getEndInnerDomainP().i +1; j++)
 	{
-		for (int i = 1; i < iMax + 3; i++)
+		for (int i = 1 -1; i <= domain.getEndInnerDomainP().j +1; i++)
 		{
-			//os << std::scientific << domain.u()(i, j) << " " << domain.v()(i, j) << " " << 0. << " ";
-			
-			if (i < iMax + 2)
-				u_inter = (domain.u()(i, j) + domain.u()(i - 1, j)) / 2.0;
-			else
+			if(i == 0)
+				u_inter = (domain.u()(i, j) + domain.u()(i , j)) / 2.0;
+			else 
+			if(i == domain.getEndInnerDomainP().i+1)
 				u_inter = (domain.u()(i - 1, j) + domain.u()(i - 1, j)) / 2.0;
-			if (j < jMax + 2)
-				v_inter = (domain.v()(i, j) + domain.v()(i, j - 1)) / 2.0;
 			else
+				u_inter = (domain.u()(i, j) + domain.u()(i - 1, j)) / 2.0;
+
+
+			if(j == 0 )
+				v_inter = (domain.v()(i, j) + domain.v()(i, j)) / 2.0;
+			else
+			if(j == domain.getEndInnerDomainP().j +1)
 				v_inter = (domain.v()(i, j - 1) + domain.v()(i, j - 1)) / 2.0;
+			else
+				v_inter = (domain.v()(i, j) + domain.v()(i, j - 1)) / 2.0;
 
 			os << std::scientific <<
 				u_inter << " " <<
@@ -608,9 +491,10 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 	os << "<DataArray type=\"Float64\" Name=\"p\" format=\"ascii\">"
 		<< std::endl;
 	
-	for (int j = 0; j < jMax + 2; j++)
+	/* write out p as it is */
+	for (int j = 1 -1; j <= domain.getEndInnerDomainP().i +1; j++)
 	{
-		for (int i = 0; i < iMax + 2; i++)
+		for (int i = 1 -1; i <= domain.getEndInnerDomainP().j +1; i++)
 		{
 			os << std::scientific << domain.p()(i, j) << " ";
 		}
@@ -619,65 +503,69 @@ void IO::writeVTKSlaveFile(Domain& domain, int step,
 
 	os << "</DataArray>" << std::endl;
 
-	os << "<DataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\">"
-		<< std::endl;
+//	os << "<DataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\">"
+//		<< std::endl;
+//
+//	/* TODO TODO */
+//	for (int i = 0; i < iMax + 2; i++)
+//	for (int j = 1 -1; j <= domain.getEndInnerDomainP().i +1; j++)
+//	{
+//		os << std::scientific << 0.0 << " ";
+//	}
+//	os << std::endl;
+//	for (int j = 1; j < jMax+1; j++)
+//	{
+//		os << std::scientific << 0.0 << " ";
+//		for (int i = 1; i < iMax+1; i++)
+//		{
+//			Real zeta = (domain.u()(i, j + 1) - domain.u()(i, j)) / deltaY
+//				- (domain.v()(i + 1, j) - domain.v()(i, j)) / deltaX;
+//			os << std::scientific << zeta << " ";
+//		}
+//		os << std::scientific << 0.0 << std::endl;
+//	}
+//	// we need one additional line of vorticity...
+//	for (int i = 0; i < iMax + 2; i++)
+//	{
+//		os << std::scientific << 0.0 << " ";
+//	}
+//	os << std::endl;
+//
+//	os << "</DataArray>" << std::endl;
+//
+//	os << "<DataArray type=\"Float64\" Name=\"stream\" format=\"ascii\">"
+//		<< std::endl;
+//
+//	Dimension stream_dim(iMax + 2, jMax + 2);
+//	GridFunction stream(stream_dim);
+//
+//	// we need one initial line of stream...
+//	for (int i = 0; i < jMax + 2; i++)
+//	{
+//		stream(i, 0) = 0.0;
+//	}
+//	for (int j = 1; j < jMax + 2; j++)
+//	{
+//		for (int i = 0; i < iMax + 2; i++)
+//		{
+//			stream(i, j) = stream(i, j - 1)
+//				+ domain.u()(i, j) * deltaY;
+//		}
+//	}
+//	os << std::endl;
+//	for (int j = 0; j < jMax + 2; j++)
+//	{
+//		//os << std::scientific << 0.0 << " ";
+//		for (int i = 0; i < iMax + 2; i++)
+//		{
+//			os << std::scientific << stream(i, j) << " ";
+//		}
+//		os << std::endl;
+//	}
+//	
+//	os << "</DataArray>" << std::endl;
 
-	for (int i = 0; i < iMax + 2; i++)
-	{
-		os << std::scientific << 0.0 << " ";
-	}
-	os << std::endl;
-	for (int j = 1; j < jMax+1; j++)
-	{
-		os << std::scientific << 0.0 << " ";
-		for (int i = 1; i < iMax+1; i++)
-		{
-			Real zeta = (domain.u()(i, j + 1) - domain.u()(i, j)) / deltaY
-				- (domain.v()(i + 1, j) - domain.v()(i, j)) / deltaX;
-			os << std::scientific << zeta << " ";
-		}
-		os << std::scientific << 0.0 << std::endl;
-	}
-	// we need one additional line of vorticity...
-	for (int i = 0; i < iMax + 2; i++)
-	{
-		os << std::scientific << 0.0 << " ";
-	}
-	os << std::endl;
 
-	os << "</DataArray>" << std::endl;
-
-	os << "<DataArray type=\"Float64\" Name=\"stream\" format=\"ascii\">"
-		<< std::endl;
-
-	Dimension stream_dim(iMax + 2, jMax + 2);
-	GridFunction stream(stream_dim);
-
-	// we need one initial line of stream...
-	for (int i = 0; i < jMax + 2; i++)
-	{
-		stream(i, 0) = 0.0;
-	}
-	for (int j = 1; j < jMax + 2; j++)
-	{
-		for (int i = 0; i < iMax + 2; i++)
-		{
-			stream(i, j) = stream(i, j - 1)
-				+ domain.u()(i, j) * deltaY;
-		}
-	}
-	os << std::endl;
-	for (int j = 0; j < jMax + 2; j++)
-	{
-		//os << std::scientific << 0.0 << " ";
-		for (int i = 0; i < iMax + 2; i++)
-		{
-			os << std::scientific << stream(i, j) << " ";
-		}
-		os << std::endl;
-	}
-	
-	os << "</DataArray>" << std::endl;
 	os << "</PointData>" << std::endl;
 	os << "</Piece>" << std::endl;
 

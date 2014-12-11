@@ -48,7 +48,6 @@ int main(int argc, char** argv)
 	/* init IO/parameters */
 	IO io(argc, argv);
 	SimParams simparam = io.readInputfile();
-	//simparam.writeSimParamsToSTDOUT();
 
 	/* init problem dimensions and grid spacing delta */
 	Dimension global_dim;
@@ -58,14 +57,11 @@ int main(int argc, char** argv)
 	delta.x = simparam.xLength / simparam.iMax;
 	delta.y = simparam.yLength / simparam.jMax;
 
-	/* This is just for testing, delete it if we are done with testing. */
+	/* init communication of processes */
 	Communication communication = Communication(global_dim);
-	//if(!communication.getProcessValid())
-	//	log_info("I am a useless process. ");
-	//else
-	//	log_info("I am a good process. Yaay.");
-
 	Dimension local_dim = communication.getLocalDimensions();
+	if(communication.getRank() == 0)
+		io.checkOutputDir();
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(local_dim, delta,
@@ -113,9 +109,9 @@ int main(int argc, char** argv)
 	int it = 0, step=0;
 
 	/* write initial state of velocities and pressure */
-	io.writeVTKSlaveFile(domain,step,communication,simparam);
 	if(communication.getRank() == 0)
-		io.writeVTKMasterFile(global_dim,step,communication);
+		io.writeVTKMasterFile(communication, step);
+	io.writeVTKSlaveFile(domain, communication, step);
 	step++;
 	Real nextWrite = 0.0;
 
@@ -191,15 +187,12 @@ int main(int argc, char** argv)
 		{
 			nextWrite = 0;
 
-			//io.writeVTKFile(
-			//	domain, step);
-
-			// write all slave files
-			io.writeVTKSlaveFile(domain,step,communication,simparam);
-
-			// only rank 0 writes a master file
+			//io.writeVTKFile(domain, step);
+			/* write all slave files */
+			io.writeVTKSlaveFile(domain, communication, step);
+			/* only rank 0 writes a master file */
 			if(communication.getRank() == 0)
-				io.writeVTKMasterFile(global_dim,step,communication);
+				io.writeVTKMasterFile(communication, step);
 		}
 		step++;
 

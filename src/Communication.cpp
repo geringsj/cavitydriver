@@ -1,12 +1,15 @@
 #include "Communication.hpp"
 #include "Debug.hpp"
 
-#include <mpi.h>
+#ifdef WITHMPI
+	#include <mpi.h>
+#endif
 #include <cmath>
 
 
 Communication::Communication(Dimension globalDomainDim)
 {
+#ifdef WITHMPI
 	/* init MPI */
 	int rc = MPI_Init(0, NULL);
 	if (rc != MPI_SUCCESS) 
@@ -17,6 +20,10 @@ Communication::Communication(Dimension globalDomainDim)
 
 	MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &m_myRank);
+#else
+	m_numProcs = 1;
+	m_myRank = 0;
+#endif
 	if(m_myRank==0)
 		log_info("number of tasks=%i - my rank=%i", m_numProcs, m_myRank);
 
@@ -33,7 +40,7 @@ Communication::Communication(Dimension globalDomainDim)
 	m_procsGrid_dim.i = x_procs;
 	m_procsGrid_dim.j = y_procs;
 	if(m_myRank == 0)
-		debug("going for a %ix%i processors grid", x_procs, y_procs);
+		log_info("going for a %ix%i processors grid", x_procs, y_procs);
 	/* column-major order of processes in grid 
 	 * (only because we use this in GridFunction too)*/
 	m_procsGrid_myPosition.i = m_myRank / y_procs;
@@ -49,6 +56,7 @@ Communication::Communication(Dimension globalDomainDim)
 
 	/* make a new MPI communication domain for processes we actually will use, 
 	 * let the rest finalize out. */
+#ifdef WITHMPI
 	mycom = new MPI_Comm;
 	*(MPI_Comm*)mycom = MPI_COMM_WORLD;
 	if(m_numProcs > x_procs*y_procs)
@@ -69,6 +77,9 @@ Communication::Communication(Dimension globalDomainDim)
 		   exit(0);
 		}
 	}
+#else
+	mycom = NULL;
+#endif
 
 	/* compute direct neighbours */
 	m_downRank = (m_procsGrid_myPosition.j-1 >= 0) 
@@ -90,7 +101,7 @@ Communication::Communication(Dimension globalDomainDim)
 			m_procsGrid_myPosition.i * x_pcells ,
 			m_procsGrid_myPosition.j * y_pcells);
 
-	m_myDomain_dim = Dimension( /* TODO probably wrong */
+	m_myDomain_dim = Dimension(
 			x_pcells + ((m_procsGrid_myPosition.i < x_procs-1) ?
 				(0) : (m_globalDomain_dim.i % x_procs)) ,
 			y_pcells + ((m_procsGrid_myPosition.j < y_procs-1) ?
@@ -106,9 +117,14 @@ Communication::Communication(Dimension globalDomainDim)
 	/* set send/recv buffers. the longest side of domain will be buffers size. */
 	m_bufferSize = (m_myDomain_dim.i > m_myDomain_dim.j) 
 		? (m_myDomain_dim.i) : (m_myDomain_dim.j);
-	m_bufferSize = (m_bufferSize > 3) ? (m_bufferSize) : (3); /* TODO also numProcs ?? */
+	m_bufferSize += 3;
+#ifdef WITHMPI
 	m_sendBuffer = new Real[m_bufferSize];
 	m_recvBuffer = new Real[m_bufferSize];
+#else
+	m_sendBuffer = NULL;
+	m_recvBuffer = NULL;
+#endif
 
 	log_info("rank=%i has offset=(%i,%i), mydims=(%i,%i), firstColor=%s, bufferSize=%i",
 			m_myRank, m_myOffsetToGlobalDomain.i, m_myOffsetToGlobalDomain.j,
@@ -118,68 +134,76 @@ Communication::Communication(Dimension globalDomainDim)
 
 Communication::~Communication()
 {
+#ifdef WITHMPI
 	delete[] m_recvBuffer;
 	delete[] m_sendBuffer;
 	delete (MPI_Comm*)mycom;
 	MPI_Finalize();
+#endif
 }
 
 void Communication::sendBufferTo(int count, int dest, int tag)
 {
+#ifdef WITHMPI
 	MPI_Send(m_sendBuffer, count, 
-			/*TODO switch?*/MPI_DOUBLE, dest, tag, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
+			MPI_DOUBLE, dest, tag, *(MPI_Comm*)mycom);
+#else
+	count = count*dest*tag; // this is to get rid of warnings
+#endif
 }
 
 void Communication::recvBufferFrom(int source, int tag)
 {
+#ifdef WITHMPI
 	MPI_Recv(m_recvBuffer, m_bufferSize, 
-			/*TODO switch?*/MPI_DOUBLE, source, tag, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom, MPI_STATUS_IGNORE);
+			MPI_DOUBLE, source, tag, *(MPI_Comm*)mycom, MPI_STATUS_IGNORE);
+#else
+	source = source*tag; // this is to get rid of warnings
+#endif
 }
 
 Real Communication::getGlobalResidual(Real mySubResidual)
 {
-	MPI_Barrier(*(MPI_Comm*)mycom);
-
-	//debug("%i sending res=%f", m_myRank, mySubResidual);
-
-	MPI_Allreduce(&mySubResidual, m_recvBuffer, 1, /*TODO switch?*/MPI_DOUBLE, 
-			MPI_SUM, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
-
-	//debug("%i getting res=%f", m_myRank, sqrt(m_recvBuffer[0]));
+#ifdef WITHMPI
+	MPI_Allreduce(&mySubResidual, m_recvBuffer, 1, MPI_DOUBLE, 
+			MPI_SUM, *(MPI_Comm*)mycom);
 	return sqrt(m_recvBuffer[0]);
+#else
+	return sqrt(mySubResidual);
+#endif
 }
 
 bool Communication::checkGlobalFinishSOR(bool myLoopCondition)
 {
-	MPI_Barrier(*(MPI_Comm*)mycom);
-
-	bool ret;
-	MPI_Allreduce(&myLoopCondition /*MPI_IN_PLACE*/, /*&myLoopCondition*/&ret, 1, /*TODO switch?*/MPI_C_BOOL, 
-			MPI_LOR, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
-	return ret;//myLoopCondition;
+#ifdef WITHMPI
+	MPI_Allreduce(MPI_IN_PLACE, &myLoopCondition, 1, MPI_C_BOOL, 
+			MPI_LOR, *(MPI_Comm*)mycom);
+	return myLoopCondition;
+#else
+	return myLoopCondition;
+#endif
 }
 
 Delta Communication::getGlobalMaxVelocities(Delta myMaxValues)
 {
-	MPI_Barrier(*(MPI_Comm*)mycom);
-
+#ifdef WITHMPI
 	m_sendBuffer[0] = myMaxValues.x;
 	m_sendBuffer[1] = myMaxValues.y;
 	m_sendBuffer[2] = 0.0;//myMaxValues.z; TODO 3D
 
-	MPI_Allreduce(m_sendBuffer, m_recvBuffer, 3, /*TODO switch?*/MPI_DOUBLE, 
-			MPI_MAX, /*MPI_COMM_WORLD*/*(MPI_Comm*)mycom);
+	MPI_Allreduce(m_sendBuffer, m_recvBuffer, 3, MPI_DOUBLE, 
+			MPI_MAX, *(MPI_Comm*)mycom);
 
-	return 
-		Delta(
-		m_recvBuffer[0],
-		m_recvBuffer[1],
-		m_recvBuffer[2]);
+	return Delta(m_recvBuffer[0], m_recvBuffer[1], m_recvBuffer[2]);
+#else
+	return myMaxValues;
+#endif
 }
 
 void Communication::exchangeGridBoundaryValues(
 		Domain& domain, Handle grid) 
 {
+#ifdef WITHMPI
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
@@ -201,6 +225,10 @@ void Communication::exchangeGridBoundaryValues(
 	default:
 		break;
 	}
+#else
+	grid = (Handle)(domain.getDimension().i * (int)grid * 0);
+	/* just to get rid of warnings. hopefully nothing bad happpens. */
+#endif
 }
 
 /*
@@ -229,7 +257,6 @@ void Communication::exchangeGridBoundaryValues(
 	 *handle all neighbour boundaries 
 	 */
 
-	MPI_Barrier(*(MPI_Comm*)mycom);
 	/* a) send left - receive right */
 	if(m_leftRank >= 0)
 	{
@@ -246,15 +273,10 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_rightRank, m_rightRank);
 
 		// copy data from buffer to grid
-		//debug("%i receiving right from %i: ", m_myRank, m_rightRank);
 		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-		{
 			 gf(iend[0]+1, j) = m_recvBuffer[n];
-			 //debug("- %f", m_recvBuffer[n]);
-		}
 	}
 
-	MPI_Barrier(*(MPI_Comm*)mycom);
 	/* b) send right - receive left */
 	if(m_rightRank >= 0)
 	{
@@ -271,15 +293,10 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_leftRank, m_leftRank);
 
 		// copy data from buffer to grid
-		//debug("%i receiving left from %i: ", m_myRank, m_leftRank);
 		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-		{
 			 gf(ibegin[0]-1, j) = m_recvBuffer[n];
-			 //debug("- %f", m_recvBuffer[n]);
-		}
 	}
 
-	MPI_Barrier(*(MPI_Comm*)mycom);
 	/* c) send up - receive down */
 	if(m_upRank >= 0)
 	{
@@ -296,15 +313,10 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_downRank, m_downRank);
 
 		// copy data from buffer to grid
-		//debug("%i receiving down from %i: ", m_myRank, m_downRank);
 		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-		{
 			gf(i, ibegin[1]-1) = m_recvBuffer[n];
-			//debug("- %f", m_recvBuffer[n]);
-		}
 	}
 
-	MPI_Barrier(*(MPI_Comm*)mycom);
 	/* d) send down - receive up */
 	if(m_downRank >= 0)
 	{
@@ -321,24 +333,10 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_upRank, m_upRank);
 
 		// copy data from buffer to grid
-		//debug("%i receiving up from %i: ", m_myRank, m_upRank);
 		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-		{
 			gf(i, iend[1]+1) = m_recvBuffer[n];
-			//debug("- %f", m_recvBuffer[n]);
-		}
 	}
 
 	/* attention: domain handles real boundaries somewhere else, not in this function */
 }
 
-Index Communication::getProcsGridPosition()
-{
-	return m_procsGrid_myPosition;
-}
-
-void Communication::getRankByCoords(int* coords, int& rank)
-{
-	rank = (int)floor(coords[0] / (Real)(m_globalDomain_dim.i) * m_procsGrid_dim.i) * m_procsGrid_dim.j +
-		(int)floor(coords[1] / (Real)(m_globalDomain_dim.j) * m_procsGrid_dim.j);
-}

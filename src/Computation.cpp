@@ -16,8 +16,7 @@ Real computeTimestep(
 	Real vMax = domain.getVelocity().m_v.getMaxValueGridFunction();
 	Delta maxVels(uMax, vMax);
 
-	return computeTimestepFromMaxVelocities
-		(maxVels, domain.getDelta(), tau, Re); /* tau is some safety factor in (0,1] */
+	return computeTimestepFromMaxVelocities(maxVels, domain.getDelta(), tau, Re);
 }
 
 Real computeTimestepFromMaxVelocities(

@@ -42,7 +42,8 @@ Domain::Domain(Dimension dimension, Delta delta,
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		Dimension max(m_inner_end[d][0]+1, m_inner_end[d][1]+1, m_inner_end[d][2]+1);
-		/* TODO max will be dangerous at some point when dealing with multiple domains */
+		/* TODO max will be dangerous at some point when dealing with multiple domains 
+		 * and more complex border functions */
 		if(d==0)
 			m_borderfunc_u = std::bind(in_u,std::placeholders::_1, std::ref(u()), max);
 		if(d==1)
@@ -162,3 +163,4 @@ void Domain::setPressureBoundaries()
 	if (m_boundary.Down)
 		BOTTOM(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
 }
+

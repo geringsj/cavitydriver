@@ -41,7 +41,6 @@ private:
 	void sendBufferTo(int count, int dest, int tag=0);
 	void recvBufferFrom(int source, int tag=0);
 
-	//public:
 	void exchangeGridBoundaryValues(
 			GridFunction& gf,
 			Index ibegin, 
@@ -73,17 +72,13 @@ public:
 	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
 
 	Domain::Boundary getBoundaryCompetence() const 
-	{ 
-		return Domain::Boundary
-			(m_upRank<0, m_downRank<0, m_leftRank<0, m_rightRank<0); 
-	}
+	{ return Domain::Boundary(m_upRank<0, m_downRank<0, m_leftRank<0, m_rightRank<0); }
 
-	// this is the equivalent to getOwnCoords
-	Index getProcsGridPosition();
+	int getRank() const { return m_myRank; }
+	Index getProcsGridPosition() const { return m_procsGrid_myPosition; }
 	Dimension getProcsGridDim() const { return m_procsGrid_dim; }
-	int getRank() { return m_myRank; }
-	void getRankByCoords(int* coords, int& rank);
 	Index getOwnOffsetToGlobalDomain() const { return m_myOffsetToGlobalDomain; }
+	Dimension getGlobalDimensions() const { return m_globalDomain_dim; }
 };
 
 
