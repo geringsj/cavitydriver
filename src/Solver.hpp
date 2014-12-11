@@ -27,11 +27,12 @@ namespace Solver
 	* the script (page 25).
 	*/
 	Real computeResidual(
-			GridFunction& p,
-			GridFunction& rhs,
-			const Point& delta,
-			Dimension inner_begin, Dimension inner_end,
-			Dimension globalDims);
+			const GridFunction& p,
+			const GridFunction& rhs,
+			const Point delta,
+			const Dimension inner_begin, 
+			const Dimension inner_end,
+			const Dimension globalDims);
 
 	/**
 	* Compute the squared residual res that is to be used as an exit condition.
@@ -42,11 +43,12 @@ namespace Solver
 	* the script (page 25).
 	*/
 	Real computeSquaredResidual(
-			GridFunction& p,
-			GridFunction& rhs,
+			const GridFunction& p,
+			const GridFunction& rhs,
 			const Point& delta,
-			Dimension inner_begin, Dimension inner_end,
-			Dimension globalDims);
+			const Dimension inner_begin, 
+			const Dimension inner_end,
+			const Dimension globalDims);
 	
 	/**
 	* Compute one SOR iteration on the pressure p.
@@ -55,18 +57,19 @@ namespace Solver
 	*/
 	void SORCycle(
 			GridFunction& p,
-			GridFunction& rhs,
+			const GridFunction& rhs,
 			const Point& delta,
-			Dimension inner_begin, Dimension inner_end,
-			Real omega);
+			const Dimension& inner_begin, 
+			const Dimension& inner_end,
+			const Real& omega);
 
 	/**
 	* Compute one SOR iterator on every 'Red' or 'Black' cell of the pressure field.
 	*/
 	void SORCycleRedBlack(
 			Domain& domain,
-			Real omega,
-			Color color);
+			const Real& omega,
+			const Color& color);
 
 }
 

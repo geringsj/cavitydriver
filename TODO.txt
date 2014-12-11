@@ -27,19 +27,18 @@ some general ideas:
 
 what needs to be done in each file:
 -	main.cpp:
-	* compute omega for SOR cycle by hand
-	  Used the Method described in the paper (see comment), but the solver became
-	  unstable with the calculated omage. So reverted to the given one.
 
 -	Computation.hpp
-	* make code prettier ? [check, almost]
 
 -	Domain.hpp
-	* document usage of Domain constructor 
 
 -	GridFunction.hpp
 
 -	IO.hpp
+	* re-implement "vorticity" and "stream" output, they got commented out while
+	  refactoring the writeVTK-methods
+	  -> attention: implement stream correctly on whole domain output
+	  (maybe communicate offsets used in writeVTK between processes?)
 	* add an IO Logger class or somerhing? 
 	  that logger could then handle log levels and logging into files,
 	  but this seems rather time consuming and difficult to implement
@@ -48,16 +47,8 @@ what needs to be done in each file:
 -	Solver.hpp
 
 -	Stencil.cpp
-	* donor cell scheme is implemented, who can explain its correctness to me?
-	* document behaviour
-	* rename it? maybe to something like "Derivatives.hpp" ?
 
 -	Structs.cpp
-	* i dont know
 
 -	Communication.hpp/cpp
-	* Look through the code and check if it works!
-	* maybe turn it into a namespace
-	* Documentation!
-
 

@@ -1,6 +1,5 @@
 
-CXX=mpic++
-#CXX=g++
+CXX=g++
 #CXX=clang++
 CPPFLAGS=-Wall -g -Wextra -Isrc -std=c++11 
 #-Iexternal/include/
@@ -23,13 +22,21 @@ tests: build $(OBJECTS) $(TESTS_OBJ)
 run: all
 	$(MAIN_BIN)
 
-opt: CPPFLAGS += -O3 
-#-DNDEBUG
+mpi: CXX = mpic++
+mpi: CPPFLAGS += -DWITHMPI
+mpi: all
+
+optmpi: CXX = mpic++
+optmpi: CPPFLAGS += -DWITHMPI -O3 -flto -fwhole-program -DNDEBUG
+optmpi: all
+
+opt: CPPFLAGS += -O3 -flto -fwhole-program -DNDEBUG
 opt: all
 
 build:
 	@mkdir -p bin
 	@mkdir -p out
+#@mkdir -p build
 
 $(MAIN_BIN): $(MAIN) $(OBJECTS)
 	$(CXX) $(CPPFLAGS) -o $(MAIN_BIN) $(MAIN) $(OBJECTS) $(LDFLAGS)
@@ -42,7 +49,8 @@ doxy:
 
 .PHONY: clean
 clean:
-	rm -rf bin $(OBJECTS) src/*.hpp.gch documentation
+	rm -rf bin $(OBJECTS) src/*.hpp.gch documentation 
+#build
 
 new: clean all
 

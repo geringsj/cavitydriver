@@ -46,23 +46,23 @@ public:
 	 * Provides write access to the grid via the [] operator.
 	 * @return Value at Index position ind, per reference.
 	 */
-	Real& operator[](Index ind);
+	Real& operator[](const Index& ind);
 	/** 
 	 * Provides read access to the grid via the [] operator.
 	 * @return Value of grid at Index position ind, per value;
 	 */
-	Real operator[](Index ind) const;
+	Real operator[](const Index& ind) const;
 
 	/** 
 	 * Provides 2D write access to the grid via the () operator.
 	 * @return Value at position (i,j), per reference.
 	 */
-	Real& operator()(int i, int j);
+	Real& operator()(const int& i, const int& j);
 	/** 
 	 * Provides 2D read access to the grid via the () operator.
 	 * @return Value at position (i,j), per value.
 	 */
-	Real operator()(int i, int j) const;
+	Real operator()(const int& i, const int& j) const;
 
 	/** 
 	 * @return Dimensions the grid was initialized with.

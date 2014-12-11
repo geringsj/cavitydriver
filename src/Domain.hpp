@@ -148,8 +148,6 @@ public:
 	void setVelocitiesBoundaries();
 
 private:
-	/* TODO document in a non-stupid manner. 
-	 * also mention: we are prepared to do 3D, but don't do it yet */
 	/**
 	 * Size of the domain.
 	 */

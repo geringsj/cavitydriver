@@ -36,16 +36,16 @@ Real GridFunction::getMaxValueGridFunction()
 	return max;
 }
 
-Real& GridFunction::operator[](Index d){
+Real& GridFunction::operator[](const Index& d){
 	return this->operator()(d.i, d.j);
 }
-Real GridFunction::operator[](Index d) const {
+Real GridFunction::operator[](const Index& d) const {
 	return this->operator()(d.i, d.j);
 }
-Real& GridFunction::operator()(int i, int j){
+Real& GridFunction::operator()(const int& i, const int& j){
 	return this->grid[i * dimension.j + j];
 }
-Real GridFunction::operator()(int i, int j) const { 
+Real GridFunction::operator()(const int& i, const int& j) const { 
 	return this->grid[i * dimension.j + j];
 }
 

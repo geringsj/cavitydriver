@@ -48,17 +48,16 @@ public:
    */
   void writeVTKFile (Domain& domain, int step);
 
-  void writeVTKMasterFile(/* the whole grid!! */const Index & griddimension, int step,
-			 Communication &comm);
+  void writeVTKMasterFile(Communication& comm, int step);
 
-  void writeVTKSlaveFile(Domain& domain, int step,
-			 Communication &comm,
-			 SimParams sim_params);
+  void writeVTKSlaveFile(Domain& domain, Communication& comm, int step);
 
   /*!
   * Methods reads the simulation parameters from the specified input file.
   */
   SimParams readInputfile();
+
+  void checkOutputDir();
 
 private:
 
