@@ -119,6 +119,8 @@ int main(int argc, char** argv)
 	step++;
 	Real nextWrite = 0.0;
 
+	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
+
 	/* main loop */
 	while (t < simparam.tEnd)
 	{
@@ -208,6 +210,10 @@ int main(int argc, char** argv)
 		t_frame_avg += time_span.count();
 		//log_info("Overall frame time: %f seconds",time_span.count());
 	}
+
+	std::chrono::steady_clock::time_point t_end = std::chrono::steady_clock::now();
+	time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_end-t_start);
+	log_info("Overall time: %f seconds",time_span);
 
 	/* output average time per frame and pressure computation per frame */
 	log_info("Average frame time: %f seconds",t_frame_avg / (double)step-1);
