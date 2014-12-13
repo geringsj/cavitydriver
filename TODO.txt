@@ -1,17 +1,39 @@
 
 hokay, so heres the thing: 
 
--	move "writeToVTKFile" into a subclass which caches data in RAM and only
-	writes to disk when RAM is full / a limit/condition is reached
-	=> right now 1/3 of runnig time is writeVTK !!
+what needs to be done in each file:
 
--	live visualization window instead of ParaView
+-	main.cpp:
 
--	logging / debug messages system for nice, consistent output 
-	("std::cout << "is NOT nice) [check]
-	http://c.learncodethehardway.org/book/ex20.html
+-	Computation.hpp
+	* rewrite Vorticity and FlowFunction to not have indexing errors.
+	  maybe move them into IO? see IO comment above. 
+
+-	Domain.hpp
+	* kill all inner_begin / inner_end and replace with inner_range in .cpp
+
+-	GridFunction.hpp
+
+-	IO.hpp
+	* re-implement "vorticity" and "stream" output, they got commented out while
+	  refactoring the writeVTK-methods
+	  -> attention: implement stream correctly on whole domain output
+	  (maybe communicate offsets used in writeVTK between processes?)
+
+-	Solver.hpp
+
+-	Stencil.cpp
+
+-	Structs.cpp
+
+-	Communication.hpp/cpp
+	* compute global inner_range from (1,1) to (xMax, yMax) and
+	  local subdomains, wich can be passed to VTKWriter for easier
+	  files writing
 
 some general ideas:
+
+how to write doxygen comments: 
 -	write doxygen compatible documentation:
 	*
 	* check out Structs.hpp and Computation.cpp as examples of comment style 
@@ -24,31 +46,4 @@ some general ideas:
 	  expects A, B, C as input, A should have values in range ... "
 	* DO warn the user of weird behaviour 
 -	put a license (do we care? MIT? GPL?) at beginning of each file 
-
-what needs to be done in each file:
--	main.cpp:
-
--	Computation.hpp
-
--	Domain.hpp
-
--	GridFunction.hpp
-
--	IO.hpp
-	* re-implement "vorticity" and "stream" output, they got commented out while
-	  refactoring the writeVTK-methods
-	  -> attention: implement stream correctly on whole domain output
-	  (maybe communicate offsets used in writeVTK between processes?)
-	* add an IO Logger class or somerhing? 
-	  that logger could then handle log levels and logging into files,
-	  but this seems rather time consuming and difficult to implement
-	* encapsulate command line parameters parser in IO class
-
--	Solver.hpp
-
--	Stencil.cpp
-
--	Structs.cpp
-
--	Communication.hpp/cpp
 

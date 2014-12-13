@@ -52,7 +52,7 @@ void VTKOutput::checkOutputPath()
 	}
 }
 
-void VTKOutput::writeVTKFile()
+void VTKOutput::writeVTKSingleFile()
 {
 	/* generate filename with current framestep */
 	std::string filename;
@@ -63,9 +63,6 @@ void VTKOutput::writeVTKFile()
   	filename.append (std::to_string(this->framestep));
   	filename.append (".vts");
 
-  	/* for next VTK write, increase framestep */
-  	this->framestep++;
-
   	/* open stream for VTK XML data */
   	std::filebuf fb;
   	fb.open (const_cast < char *>(filename.c_str ()), std::ios::out);
@@ -73,10 +70,10 @@ void VTKOutput::writeVTKFile()
 
   	/* write extent of grid, the Min/Max values are _inclusive_, 
   	 * like in for(int i=Min; i<=Max; ...) */
-  	int xMin = this->domain.getBeginInnerDomains().i;
-  	int xMax = this->domain.getEndInnerDomainP().i;
-  	int yMin = this->domain.getBeginInnerDomains().j;
-  	int yMax = this->domain.getEndInnerDomainP().j;
+  	int xMin = this->domain.getInnerRangeP().begin.i;
+  	int xMax = this->domain.getInnerRangeP().end.i;
+  	int yMin = this->domain.getInnerRangeP().begin.j;
+  	int yMax = this->domain.getInnerRangeP().end.j;
 	os 
 	<< "<?xml version=\"1.0\"?>" << std::endl
 	<< "<VTKFile type=\"StructuredGrid\">" << std::endl
@@ -150,11 +147,15 @@ void VTKOutput::writeVTKFile()
 }
 
 
-void VTKOutput::writeVTKFileParallel()
+void VTKOutput::writeVTKFile()
 {
+#ifdef WITHMPI
 	if(this->communication->getRank() == 0)
 		this->writeVTKMasterFile();
 	this->writeVTKSlaveFile();
+#else
+	this->writeVTKSingleFile();
+#endif
 	this->framestep++;
 }
 
@@ -176,6 +177,8 @@ void VTKOutput::writeVTKMasterFile()
 	/* all these values are inclusive. like in 'for(int i=min; i <= max; i++)' */
 	/* also these values should start and end at the INNER of the domain.
 	 * when/if needed, the offset for boundaries will be added as -1/+1 */
+	/* TODO: give communication 'global domain range' and 'my local range of global domain'
+	 * and use these here from communication */
 	int xGlobMin = 1; 
 	int xGlobMax = this->communication->getGlobalDimensions().i; 
 	int yGlobMin = 1; 
@@ -355,22 +358,27 @@ void VTKOutput::writeVTKSlaveFile()
 	/* the {x,y}Locl{Min,Max} are w.r.t. the offset of the global domain, 
 	 * so we can not use them as loop boundaries here */
 	Real u_inter, v_inter;
-	for (int j = 1 -1; j <= domain.getEndInnerDomainP().i +1; j++)
+	int xBegin = domain.getInnerRangeP().begin.i -1;
+	int xEnd = domain.getInnerRangeP().end.i +1;
+	int yBegin = domain.getInnerRangeP().begin.j -1;
+	int yEnd = domain.getInnerRangeP().end.j +1;
+	/* note: the loops first write in x direction, then in y direction */
+	for (int j = yBegin; j <= yEnd; j++)
 	{
-		for (int i = 1 -1; i <= domain.getEndInnerDomainP().j +1; i++)
+		for (int i = xBegin; i <= xEnd; i++)
 		{
-			if(i == 0)
+			if(i == xBegin)
 				u_inter = (domain.u()(i, j) + domain.u()(i , j)) / 2.0;
 			else 
-				if(i == domain.getEndInnerDomainP().i+1)
+				if(i == xEnd)
 					u_inter = (domain.u()(i - 1, j) + domain.u()(i - 1, j)) / 2.0;
 				else
 					u_inter = (domain.u()(i, j) + domain.u()(i - 1, j)) / 2.0;
 
-			if(j == 0 )
+			if(j == yBegin)
 				v_inter = (domain.v()(i, j) + domain.v()(i, j)) / 2.0;
 			else
-				if(j == domain.getEndInnerDomainP().j +1)
+				if(j == yEnd)
 					v_inter = (domain.v()(i, j - 1) + domain.v()(i, j - 1)) / 2.0;
 				else
 					v_inter = (domain.v()(i, j) + domain.v()(i, j - 1)) / 2.0;
@@ -386,9 +394,10 @@ void VTKOutput::writeVTKSlaveFile()
 
 	/* write out p as it is */
 	os << "<DataArray type=\"Float64\" Name=\"P\" format=\"ascii\">"<< std::endl;
-	for (int j = 1 -1; j <= domain.getEndInnerDomainP().i +1; j++)
+	/* note: the loops first write in x direction, then in y direction */
+	for (int j = yBegin; j <= yEnd; j++)
 	{
-		for (int i = 1 -1; i <= domain.getEndInnerDomainP().j +1; i++)
+		for (int i = xBegin; i <= xEnd; i++)
 		{
 			os << std::scientific << domain.p()(i, j) << " ";
 		}

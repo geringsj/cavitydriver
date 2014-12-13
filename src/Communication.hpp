@@ -43,8 +43,7 @@ private:
 
 	void exchangeGridBoundaryValues(
 			GridFunction& gf,
-			Index ibegin, 
-			Index iend);
+			Range inner);
 
 public:
 
@@ -75,6 +74,7 @@ public:
 	int getRank() const { return m_myRank; }
 	Dimension getProcsGridDim() const { return m_procsGrid_dim; }
 	Index getOwnOffsetToGlobalDomain() const { return m_myOffsetToGlobalDomain; }
+	//Range getOwnRangeInGlobalDomain() const { return m_myRangeInGlobalDomain; };
 	Dimension getGlobalDimensions() const { return m_globalDomain_dim; }
 	Dimension getLocalDimensions() const { return m_myDomain_dim; }
 };

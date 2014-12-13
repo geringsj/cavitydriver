@@ -1,6 +1,6 @@
 
 #include "src/VTKOutput.hpp"
-#include "SimulationParameters.hpp"
+#include "src/SimulationParameters.hpp"
 #include "src/Domain.hpp"
 #include "src/Computation.hpp"
 #include "src/Solver.hpp"
@@ -95,9 +95,9 @@ int main(int argc, char** argv)
 			);
 	log_info("process %i has end indices: p=(%i,%i), u=(%i,%i), v=(%i,%i), firstColor=%s",
 			communication.getRank(),
-			domain.getEndInnerDomainP().i, domain.getEndInnerDomainP().j,
-			domain.getEndInnerDomainU().i, domain.getEndInnerDomainU().j,
-			domain.getEndInnerDomainV().i, domain.getEndInnerDomainV().j,
+			domain.getInnerRangeP().end.i, domain.getInnerRangeP().end.j,
+			domain.getInnerRangeU().end.i, domain.getInnerRangeU().end.j,
+			domain.getInnerRangeV().end.i, domain.getInnerRangeV().end.j,
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
 
 	/* next: omega and time parameters */
@@ -111,7 +111,7 @@ int main(int argc, char** argv)
 
 	/* write initial state of velocities and pressure */
 	VTKOutput vtkoutput(domain, "out", communication);
-	vtkoutput.writeVTKFileParallel();
+	vtkoutput.writeVTKFile();
 	Real nextVTKWrite = 0.0;
 
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
@@ -151,22 +151,18 @@ int main(int argc, char** argv)
 		{
 			domain.setPressureBoundaries();
 
-			//Solver::SORCycle(
-			//		domain.p(), domain.rhs(), delta, 
-			//		domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), simparam.omg);
-
+			//Solver::SORCycle(domain.p(), domain.rhs(), delta, 
+			//		domain.getInnerRangeP(), simparam.omg);
 			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Red);
-			communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
-
+			communication.exchangeGridBoundaryValues(domain,Communication::Handle::Pressure);
 			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Black);
-			communication.exchangeGridBoundaryValues(domain, Communication::Handle::Pressure);
+			communication.exchangeGridBoundaryValues(domain,Communication::Handle::Pressure);
 
 			//res = Solver::computeResidual(
 			//		domain.p(), domain.rhs(), delta, 
-			//		domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), global_dim);
+			//		domain.getInnerRangeP(), global_dim);
 			res = Solver::computeSquaredResidual(
-					domain.p(), domain.rhs(), delta, 
-					domain.getBeginInnerDomains(), domain.getEndInnerDomainP(), global_dim);
+					domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_dim);
 			res = communication.getGlobalResidual(res);
 			it++;
 		} while (communication.checkGlobalFinishSOR
@@ -187,10 +183,7 @@ int main(int argc, char** argv)
 		if(nextVTKWrite > simparam.deltaVec)
 		{
 			nextVTKWrite = 0.0;
-
-			//vtkoutput.writeVTKFile();
-
-			vtkoutput.writeVTKFileParallel();
+			vtkoutput.writeVTKFile();
 		}
 		step++;
 
@@ -202,11 +195,11 @@ int main(int argc, char** argv)
 
 	std::chrono::steady_clock::time_point t_end = std::chrono::steady_clock::now();
 	time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_end-t_start);
-	log_info("Overall time: %f seconds",time_span);
+	log_info("Overall time: %f seconds",time_span.count());
 
 	/* output average time per frame and pressure computation per frame */
-	log_info("Average frame time: %f seconds",t_frame_avg / (double)step-1);
-	log_info("Average SOR time: %f seconds",t_sor_avg / (double)step-1);
+	log_info("Average frame time: %f seconds",t_frame_avg / (double)(step-1));
+	log_info("Average SOR time: %f seconds",t_sor_avg / (double)(step-1));
 
 	/* end of magic */
 	return 0;

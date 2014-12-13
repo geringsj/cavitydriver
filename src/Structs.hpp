@@ -110,6 +110,31 @@ struct Index
  */
 typedef Index Dimension;
 
+struct IndexRange {
+	Index begin;
+	Index end;
+
+	IndexRange() : begin(), end() {};
+	IndexRange(Index b, Index e) : begin(b), end(e) {};
+
+	Index operator[](const uint index) const 
+	{
+		switch(index)
+		{
+			case 0:
+				return begin;
+				break;
+			case 1:
+				return end;
+				break;
+			default:
+				return end;
+				break;
+		}
+	}
+};
+typedef IndexRange Range;
+
 
 /** The Point struct allows easy handling and access of 2D (and 3D) points.
  * Point dimensions can be accessed via .x , .y ( .z ) or via [0], [1] ([2]), respectively.o

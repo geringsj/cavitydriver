@@ -1,11 +1,12 @@
 #include "Communication.hpp"
 #include "Debug.hpp"
 
+//#define WITHMPI
+
 #ifdef WITHMPI
 	#include <mpi.h>
 #endif
 #include <cmath>
-
 
 Communication::Communication(Dimension globalDomainDim)
 {
@@ -207,20 +208,15 @@ void Communication::exchangeGridBoundaryValues(
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
-		exchangeGridBoundaryValues(domain.p(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
+		exchangeGridBoundaryValues(domain.p(), domain.getInnerRangeP());
 		break;
 	case Communication::Handle::Velocities:
-		exchangeGridBoundaryValues(domain.u(), 
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
-		exchangeGridBoundaryValues(domain.v(), 
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
+		exchangeGridBoundaryValues(domain.u(), domain.getInnerRangeU());
+		exchangeGridBoundaryValues(domain.v(), domain.getInnerRangeV());
 		break;
 	case Communication::Handle::PreliminaryVelocities:
-		exchangeGridBoundaryValues(domain.F(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
-		exchangeGridBoundaryValues(domain.G(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
+		exchangeGridBoundaryValues(domain.F(), domain.getInnerRangeU());
+		exchangeGridBoundaryValues(domain.G(), domain.getInnerRangeV());
 		break;
 	default:
 		break;
@@ -250,8 +246,7 @@ void Communication::exchangeGridInnerValues(Domain domain, Handle grid)
 
 void Communication::exchangeGridBoundaryValues(
 		GridFunction& gf,
-		Index ibegin, 
-		Index iend)
+		Range inner)
 {
 	/* 
 	 *handle all neighbour boundaries 
@@ -261,11 +256,11 @@ void Communication::exchangeGridBoundaryValues(
 	if(m_leftRank >= 0)
 	{
 		// copy data to buffer
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			m_sendBuffer[n] = (gf(ibegin[0], j));
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			m_sendBuffer[n] = (gf(inner.begin[0], j));
 
 		// send buffer to m_leftRank
-		sendBufferTo(iend[1]-ibegin[1]+1, m_leftRank, m_myRank);
+		sendBufferTo(inner.end[1]-inner.begin[1]+1, m_leftRank, m_myRank);
 	}
 	if(m_rightRank >= 0)
 	{
@@ -273,19 +268,19 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_rightRank, m_rightRank);
 
 		// copy data from buffer to grid
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			 gf(iend[0]+1, j) = m_recvBuffer[n];
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			 gf(inner.end[0]+1, j) = m_recvBuffer[n];
 	}
 
 	/* b) send right - receive left */
 	if(m_rightRank >= 0)
 	{
 		// copy data to buffer
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			m_sendBuffer[n] = (gf(iend[0], j));
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			m_sendBuffer[n] = (gf(inner.end[0], j));
 
 		// send buffer to m_rightRank
-		sendBufferTo(iend[1]-ibegin[1]+1, m_rightRank, m_myRank);
+		sendBufferTo(inner.end[1]-inner.begin[1]+1, m_rightRank, m_myRank);
 	}
 	if(m_leftRank >= 0)
 	{
@@ -293,19 +288,19 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_leftRank, m_leftRank);
 
 		// copy data from buffer to grid
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			 gf(ibegin[0]-1, j) = m_recvBuffer[n];
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			 gf(inner.begin[0]-1, j) = m_recvBuffer[n];
 	}
 
 	/* c) send up - receive down */
 	if(m_upRank >= 0)
 	{
 		// copy data to buffer
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			m_sendBuffer[n] = (gf(i, iend[1]));
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			m_sendBuffer[n] = (gf(i, inner.end[1]));
 
 		// send buffer to m_upRank
-		sendBufferTo(iend[0]-ibegin[0]+1, m_upRank, m_myRank);
+		sendBufferTo(inner.end[0]-inner.begin[0]+1, m_upRank, m_myRank);
 	}
 	if(m_downRank >= 0)
 	{
@@ -313,19 +308,19 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_downRank, m_downRank);
 
 		// copy data from buffer to grid
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			gf(i, ibegin[1]-1) = m_recvBuffer[n];
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			gf(i, inner.begin[1]-1) = m_recvBuffer[n];
 	}
 
 	/* d) send down - receive up */
 	if(m_downRank >= 0)
 	{
 		// copy data to buffer
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			m_sendBuffer[n] = (gf(i, ibegin[1]));
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			m_sendBuffer[n] = (gf(i, inner.begin[1]));
 
 		// send buffer to m_downRank
-		sendBufferTo(iend[0]-ibegin[0]+1, m_downRank, m_myRank);
+		sendBufferTo(inner.end[0]-inner.begin[0]+1, m_downRank, m_myRank);
 	}
 	if(m_upRank >= 0)
 	{
@@ -333,8 +328,8 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_upRank, m_upRank);
 
 		// copy data from buffer to grid
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			gf(i, iend[1]+1) = m_recvBuffer[n];
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			gf(i, inner.end[1]+1) = m_recvBuffer[n];
 	}
 
 	/* attention: domain handles real boundaries somewhere else, not in this function */

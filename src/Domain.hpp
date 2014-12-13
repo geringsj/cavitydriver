@@ -114,12 +114,13 @@ public:
 	 * on the other hand: explaining multiple simple similiar functions is stupid, 
 	 * better have the user see what is done? */
 	Dimension getDimension() const { return m_dimension; }
-	Dimension getBeginInnerDomains() const { return m_inner_begin; }
-	Dimension* getEndInnerDomain() { return m_inner_end; }
-	Dimension getEndInnerDomainU() const { return m_inner_end[0]; }
-	Dimension getEndInnerDomainV() const { return m_inner_end[1]; }
-	Dimension getEndInnerDomainW() const { return m_inner_end[2]; }
-	Dimension getEndInnerDomainP() const { return m_inner_end[3]; }
+
+	Range* getInnerRanges() { return m_inner_ranges; };
+	Range getInnerRangeU() const { return m_inner_ranges[0]; };
+	Range getInnerRangeV() const { return m_inner_ranges[1]; };
+	Range getInnerRangeW() const { return m_inner_ranges[2]; };
+	Range getInnerRangeP() const { return m_inner_ranges[3]; };
+
 	Point getDelta() const { return m_delta; }
 
 	Grid3D& getVelocity() { return m_velocities; }
@@ -155,7 +156,17 @@ private:
 	/**
 	 * Marks the inner of the domain.
 	 */
-	Dimension m_inner_begin, m_inner_end[4];
+	Dimension m_inner_begin, m_inner_end[4]; /* TODO: get rid of these */
+
+	/**
+	 * Gives the ranges of the inner of fields.
+	 * Array entries correspond to:
+	 * [0] -> inner Range of U
+	 * [1] -> inner Range of V
+	 * [2] -> inner Range of W (maye we will need it ...)
+	 * [3] -> inner Range of pressure P
+	 */
+	Range m_inner_ranges[4];
 
 	/**
 	 * Color of first inner ((1,1)) Cell of domain.

@@ -8,39 +8,34 @@ namespace Solver
 	Real computeResidual(
 			const GridFunction& p,
 			const GridFunction& rhs,
-			const Point& delta,
-			const Dimension inner_begin, 
-			const Dimension inner_end,
+			const Point delta,
+			const Range inner_range,
 			const Dimension globalDims)
 	{
 		return 
-			sqrt( computeSquaredResidual(p, rhs, delta, inner_begin, inner_end, globalDims) );
+			sqrt( computeSquaredResidual(p, rhs, delta, inner_range, globalDims) );
 	}
 
 	Real computeSquaredResidual(
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Dimension inner_begin, 
-			const Dimension inner_end,
+			const Range inner_range,
 			const Dimension globalDims)
 	{
 		Real numerator = 0.0;
 		Real denominator = (globalDims.i * globalDims.j);
-
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
 
-		forall(i,j,inner_begin,inner_end)
+		for_range(i,j,inner_range)
 		{
 			Real pxx = (p(i+1,j) - 2.0*p(i,j) + p(i-1,j)) / dxx;
 			Real pyy = (p(i,j+1) - 2.0*p(i,j) + p(i,j-1)) / dyy;
-
 			Real help = pxx + pyy - rhs(i,j);
 
 			numerator += pow(help,2.0);
 		}
-
 		return (numerator / denominator);
 	}
 
@@ -74,28 +69,15 @@ namespace Solver
 			GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Dimension& inner_begin, 
-			const Dimension& inner_end,
+			const Range& inner_range,
 			const Real& omega)
 	{
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
 
-		forall(i,j,inner_begin,inner_end)
+		for_range(i,j,inner_range)
 		{
 			evaluateSOR(p, rhs, i, j, dxx, dyy, omega);
-			//Real old_value = p(i,j);
-			//Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
-			//Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
-
-			//Real new_value = 
-			//	(1. - omega) * old_value 
-			//	+ 
-			//	omega 
-			//	* ((dxx*dyy)/(2.0*(dxx+dyy))) 
-			//	* ( pxx + pyy - rhs(i,j) );
-
-			//p(i,j) = new_value;
 		}
 	}
 	
@@ -107,41 +89,29 @@ namespace Solver
 	{
 		GridFunction& p = domain.p();
 		const GridFunction& rhs = domain.rhs();
-		const Delta& delta = domain.getDelta();
-		const Dimension& inner_begin = domain.getBeginInnerDomains();
-		const Dimension& inner_end = domain.getEndInnerDomainP();
+		const Delta delta = domain.getDelta();
+		const Range inner_range = domain.getInnerRangeP();
 
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
 
 		// Decided offset (in y-direction) based on color of first cell.
-		// If color matches the color of the first cell, no offset is required in the first column,
-		// else start with offset +1. Subsequently, the offset will be flipped between 0 and 1 after each column
+		// If color matches the color of the first cell, no offset is required 
+		// in the first column, else start with offset +1. 
+		// Subsequently, the offset will be flipped between 0 and 1 after each column
 		// in order to achieve a check-board pattern (red-black scheme).
 		int offset = (color == domain.getDomainFirstCellColor()) ? 0 : 1;
 
-		for(int i=inner_begin[0]; i<=inner_end[0]; i++)
+		for(int i=inner_range.begin[0]; i<=inner_range.end[0]; i++)
 		{
-			for(int j=inner_begin[1]+offset; j<=inner_end[1]; j=j+2)// skip every other cell in y dimension
+			for(int j=inner_range.begin[1]+offset; j<=inner_range.end[1]; j=j+2)
+				// skip every other cell in y dimension
 			{
 				evaluateSOR(p, rhs, i, j, dxx, dyy, omega);
-				//Real old_value = p(i,j);
-				//Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
-				//Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
-
-				//Real new_value = 
-				//	(1. - omega) * old_value 
-				//	+ 
-				//	omega 
-				//	* ((dxx*dyy)/(2.0*(dxx+dyy))) 
-				//	* ( pxx + pyy - rhs(i,j) );
-
-				//p(i,j) = new_value;
 			}
 			// 'Flip' offset for next column
 			offset = (offset+1)%2;
 		}
-
 	}
 
 }

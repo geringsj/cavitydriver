@@ -33,15 +33,23 @@ Domain::Domain(Dimension dimension, Delta delta,
 	for(uint d=0; d<DIMENSIONS; d++)
 		for(uint e=0; e<DIMENSIONS; e++)
 			m_inner_end[d][e] = dimension[e] + ((e==d)?(-bndry[d]):(0)); 
+	/* TODO: kill inner_begin / inner_end */
 
 	/* the pressure is fourth entry of the array and has symmetric dimensions */
 	m_inner_end[3] = dimension; 
+
+	m_inner_ranges[0] = Range(m_inner_begin, m_inner_end[0]);
+	m_inner_ranges[1] = Range(m_inner_begin, m_inner_end[1]);
+	m_inner_ranges[2] = Range(m_inner_begin, m_inner_end[2]);
+	m_inner_ranges[3] = Range(m_inner_begin, m_inner_end[3]);
+	/* TODO: kill inner_begin / inner_end */
 
 	/* bind given border functions to operate on gridfunctions u(), v(), w()
 	 * and to automatically use the right (upper bounds) dimensions of the grid */
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		Dimension max(m_inner_end[d][0]+1, m_inner_end[d][1]+1, m_inner_end[d][2]+1);
+		/* TODO: kill inner_begin / inner_end */
 		/* TODO max will be dangerous at some point when dealing with multiple domains 
 		 * and more complex border functions */
 		if(d==0)
@@ -58,6 +66,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		forall(i,j,m_inner_begin,m_inner_end[d])
+			/* TODO: kill inner_begin / inner_end */
 		{
 			Dimension current(i, j);//,k);
 			if(d==0)
@@ -74,6 +83,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	 * we don't use the pressure init function in_p after this,
 	 * maybe kick it and just init with zero? would the script be against us? */
 	forall(i,j,m_inner_begin,m_inner_end[3])
+		/* TODO: kill inner_begin / inner_end */
 	{
 		p()(i,j) = in_p(Index(i,j), p(), 
 				Dimension(dimension.i+2, dimension.j+2, dimension.k+2));
@@ -123,6 +133,7 @@ Domain::~Domain()
 
 
 void Domain::setVelocitiesBoundaries()
+	/* TODO: kill inner_begin / inner_end */
 {
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
@@ -138,6 +149,7 @@ void Domain::setVelocitiesBoundaries()
 }
 
 void Domain::setPreliminaryVelocitiesBoundaries()
+	/* TODO: kill inner_begin / inner_end */
 {
 	for (uint d = 0; d<DIMENSIONS; d++)
 	{
@@ -153,6 +165,7 @@ void Domain::setPreliminaryVelocitiesBoundaries()
 }
 
 void Domain::setPressureBoundaries()
+	/* TODO: kill inner_begin / inner_end */
 {
 	if (m_boundary.Left)
 		LEFT(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }

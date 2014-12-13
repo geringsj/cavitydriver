@@ -17,7 +17,6 @@
 namespace Solver
 {
 
-
 	/**
 	* Compute the residual res that is to be used as an exit condition.
 	*
@@ -30,8 +29,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point delta,
-			const Dimension inner_begin, 
-			const Dimension inner_end,
+			const Range inner_range,
 			const Dimension globalDims);
 
 	/**
@@ -46,8 +44,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Dimension inner_begin, 
-			const Dimension inner_end,
+			const Range inner_range,
 			const Dimension globalDims);
 	
 	/**
@@ -59,8 +56,7 @@ namespace Solver
 			GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Dimension& inner_begin, 
-			const Dimension& inner_end,
+			const Range& inner_range,
 			const Real& omega);
 
 	/**

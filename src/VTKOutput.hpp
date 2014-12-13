@@ -19,6 +19,8 @@ private:
 	
 	void checkOutputPath();
 	
+	void writeVTKSingleFile();
+
 	void writeVTKMasterFile();
 	void writeVTKSlaveFile();
 
@@ -29,8 +31,6 @@ public:
 	~VTKOutput();
 
 	void writeVTKFile();
-
-	void writeVTKFileParallel();
 };
 
 #endif
