@@ -177,12 +177,10 @@ void VTKOutput::writeVTKMasterFile()
 	/* all these values are inclusive. like in 'for(int i=min; i <= max; i++)' */
 	/* also these values should start and end at the INNER of the domain.
 	 * when/if needed, the offset for boundaries will be added as -1/+1 */
-	/* TODO: give communication 'global domain range' and 'my local range of global domain'
-	 * and use these here from communication */
-	int xGlobMin = 1; 
-	int xGlobMax = this->communication->getGlobalDimensions().i; 
-	int yGlobMin = 1; 
-	int yGlobMax = this->communication->getGlobalDimensions().j; 
+	int xGlobMin = communication->getGlobalInnerRange().begin.i;
+	int xGlobMax = communication->getGlobalInnerRange().end.i;
+	int yGlobMin = communication->getGlobalInnerRange().begin.j;
+	int yGlobMax = communication->getGlobalInnerRange().end.j;
 
 	os << "<?xml version=\"1.0\"?>" << std::endl;
 	os << "<VTKFile type=\"PRectilinearGrid\">" << std::endl;
@@ -201,66 +199,39 @@ void VTKOutput::writeVTKMasterFile()
 	/* the following Locl variables are analogous to the above "Glob" ones, 
 	 * but for the local domain of the process "localProcRank" */
 	int xLoclbMin, xLoclbMax, yLoclbMin, yLoclbMax; 
-	int localProcRank;
-	/* loop through all processes */
-	for (int x = 0; x < this->communication->getProcsGridDim().i; x++)
+	/* loop through all processes, here we assume that processes have ranks in
+	 * [0 .. Communication.getProcsCount() ) */
+	for(int rank = 0; rank < this->communication->getProcsCount(); rank++)
 	{
-		for (int y = 0; y < this->communication->getProcsGridDim().j; y++)
-		{
-			/* compute 'local' process rank and its dimensions from position in 
-			 * grid of processes */
-			localProcRank = x * this->communication->getProcsGridDim().j + y; 
+		/* get sub-range of process from communication, and the rank of process */
+		int localRank = rank;
+		Range localSubRange = 
+			this->communication->getProcLocalInnerRange(localRank);
 
-			Index expctdCellsPerDim(
-					(this->communication->getGlobalDimensions().i 
-					 / this->communication->getProcsGridDim().i) ,
-					(this->communication->getGlobalDimensions().j 
-					 / this->communication->getProcsGridDim().j) );
+		/* here, write extends of sub-domain of every process Omega_{i,j} */
+		/* for a consistent visualization ParaView wants 
+		 * the subdomains to overlapp, this is why we extend the inner by 
+		 * one in all directions. so we later need to write out the boundary too.
+		 * because we will later write everything with respect to the pressure
+		 * (which sits in the center of each cell), this will work out. 
+		 * (we will need to interpolate velocities accordingly) */
+		xLoclbMin = localSubRange.begin.i ;
+		xLoclbMax = localSubRange.end.i ;
+		yLoclbMin = localSubRange.begin.j;
+		yLoclbMax = localSubRange.end.j;
+		/* walk _on_ the boundary of domain of current process */
+		xLoclbMin += -1;
+		xLoclbMax += +1; 
+		yLoclbMin += -1;
+		yLoclbMax += +1;
 
-			Dimension localOffsetToGlobalDomain(
-					expctdCellsPerDim.i * x ,
-					expctdCellsPerDim.j * y );
-
-			Dimension localDomainDim(
-					/* last process in x/y dimensions gets the rest of cells in that direction,
-					 * that is why the following computation looks ugly */
-					expctdCellsPerDim.i 
-					+ ( (x < this->communication->getProcsGridDim().i-1)
-						?(0):(this->communication->getGlobalDimensions().i 
-							% this->communication->getProcsGridDim().i)) ,
-					expctdCellsPerDim.j 
-					+ ( (y < this->communication->getProcsGridDim().j-1)
-						?(0):(this->communication->getGlobalDimensions().j 
-							% this->communication->getProcsGridDim().j)) );
-
-			/* here, write extends of sub-domain of every process Omega_{i,j} */
-			/* for a consistent visualization ParaView wants 
-			 * the subdomains to overlapp, this is why we extend the inner by 
-			 * one in all directions. so we later need to write out the boundary too.
-			 * because we will later write everything with respect to the pressure
-			 * (which sits in the center of each cell), this will work out. 
-			 * (we will need to interpolate velocities accordingly) */
-			xLoclbMin = localOffsetToGlobalDomain.i + xGlobMin;
-			xLoclbMax = xLoclbMin + localDomainDim.i -1; 
-			/* 'localDomainDim.i-1'
-			 * because we want to go from first cell of domain to last, but not too far */
-			yLoclbMin = localOffsetToGlobalDomain.j + yGlobMin;
-			yLoclbMax = yLoclbMin + localDomainDim.j -1;
-
-			/* walk _on_ the boundary of domain of current process */
-			xLoclbMin += -1;
-			xLoclbMax += +1; 
-			yLoclbMin += -1;
-			yLoclbMax += +1;
-
-			/* write extent of Domain of current process, 
-			 * with respect to global Domain */
-			os << "<Piece Extent=\"" 
-				<< xLoclbMin << " " << xLoclbMax << " " 
-				<< yLoclbMin << " " << yLoclbMax << " 0 0\" Source=\"field_" 
-				<< std::to_string(this->framestep) << "_processor_"
-				<< localProcRank << ".vtr\"/>" << std::endl;
-		}
+		/* write extent of Domain of current process, 
+		 * with respect to global Domain */
+		os << "<Piece Extent=\"" 
+			<< xLoclbMin << " " << xLoclbMax << " " 
+			<< yLoclbMin << " " << yLoclbMax << " 0 0\" Source=\"field_" 
+			<< std::to_string(this->framestep) << "_processor_"
+			<< localRank << ".vtr\"/>" << std::endl;
 	}
 
 	/* standard fields: */
@@ -296,17 +267,14 @@ void VTKOutput::writeVTKSlaveFile()
 	fb.open(const_cast < char *>(filename.c_str()), std::ios::out);
 	std::ostream os(&fb);
 
-	int xGlobMin = 1; 
-	//int xGlobMax = this->communication->getGlobalDimensions().i; 
-	int yGlobMin = 1; 
-	//int yGlobMax = this->communication->getGlobalDimensions().j; 
-
 	int xLoclbMin, xLoclbMax, yLoclbMin, yLoclbMax; 
 	/* set the four indices like in WriteVTKMasterFile */
-	xLoclbMin = this->communication->getOwnOffsetToGlobalDomain().i + xGlobMin;
-	xLoclbMax = xLoclbMin + domain.getDimension().i -1; 
-	yLoclbMin = this->communication->getOwnOffsetToGlobalDomain().j + yGlobMin;
-	yLoclbMax = yLoclbMin + domain.getDimension().j -1;
+	/* get sub-range of process from communication */
+	Range localSubRange = this->communication->getLocalInnerRange();
+	xLoclbMin = localSubRange.begin.i ;
+	xLoclbMax = localSubRange.end.i ;
+	yLoclbMin = localSubRange.begin.j;
+	yLoclbMax = localSubRange.end.j;
 	/* walk _on_ the boundary of domain of current process */
 	xLoclbMin += -1;
 	xLoclbMax += +1; 

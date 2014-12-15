@@ -30,6 +30,7 @@ Communication::Communication(Dimension globalDomainDim)
 
 	/* set mpi cartesian grid with dimension infos */
 	m_globalDomain_dim = globalDomainDim;
+	m_globalInnerRange = Range(Index(1,1,1), m_globalDomain_dim);
 
 	int x_procs = (int)( floor(sqrt((Real)(m_numProcs))) );
 	int y_procs = m_numProcs/x_procs;
@@ -95,23 +96,35 @@ Communication::Communication(Dimension globalDomainDim)
 			m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 
 	/* compute global/local dimensions, checkerboard colors and stuff */
-	int x_pcells = m_globalDomain_dim.i / x_procs;
-	int y_pcells = m_globalDomain_dim.j / y_procs;
+	int x_pcells = m_globalDomain_dim.i / m_procsGrid_dim.i;
+	int y_pcells = m_globalDomain_dim.j / m_procsGrid_dim.j;
 
-	m_myOffsetToGlobalDomain = Dimension(
-			m_procsGrid_myPosition.i * x_pcells ,
-			m_procsGrid_myPosition.j * y_pcells);
+	Index myOffsetToGlobalDomain = Dimension(
+		m_procsGrid_myPosition.i * x_pcells ,
+		m_procsGrid_myPosition.j * y_pcells);
 
 	m_myDomain_dim = Dimension(
-			x_pcells + ((m_procsGrid_myPosition.i < x_procs-1) ?
-				(0) : (m_globalDomain_dim.i % x_procs)) ,
-			y_pcells + ((m_procsGrid_myPosition.j < y_procs-1) ?
-				(0) : (m_globalDomain_dim.j % y_procs)) );
+			x_pcells + ((m_procsGrid_myPosition.i < m_procsGrid_dim.i-1) ?
+				(0) : (m_globalDomain_dim.i % m_procsGrid_dim.i)) ,
+			y_pcells + ((m_procsGrid_myPosition.j < m_procsGrid_dim.j-1) ?
+				(0) : (m_globalDomain_dim.j % m_procsGrid_dim.j)) );
+
+	m_localInnerRange = Range(
+		Index(
+			myOffsetToGlobalDomain.i + 1,
+			myOffsetToGlobalDomain.j + 1,
+			myOffsetToGlobalDomain.k + 1
+			), 
+		Index(
+			myOffsetToGlobalDomain.i + m_myDomain_dim.i,
+			myOffsetToGlobalDomain.j + m_myDomain_dim.j,
+			myOffsetToGlobalDomain.k + m_myDomain_dim.k
+			) );
 
 	/* global (1,1)  cell is Red */
 	m_myDomainFirstCellColor = 
 		(/* have fun reversing this */
-		 !(((m_myOffsetToGlobalDomain.i % 2)+(m_myOffsetToGlobalDomain.j % 2))%2)
+		 !(((myOffsetToGlobalDomain.i % 2)+(myOffsetToGlobalDomain.j % 2))%2)
 		 ) 
 			? (Color::Red) : (Color::Black);
 
@@ -128,7 +141,7 @@ Communication::Communication(Dimension globalDomainDim)
 #endif
 
 	log_info("rank=%i has offset=(%i,%i), mydims=(%i,%i), firstColor=%s, bufferSize=%i",
-			m_myRank, m_myOffsetToGlobalDomain.i, m_myOffsetToGlobalDomain.j,
+			m_myRank, myOffsetToGlobalDomain.i, myOffsetToGlobalDomain.j,
 			m_myDomain_dim.i, m_myDomain_dim.j, 
 			(m_myDomainFirstCellColor==Color::Red)?("Red"):("Black"), m_bufferSize);
 }
@@ -333,5 +346,38 @@ void Communication::exchangeGridBoundaryValues(
 	}
 
 	/* attention: domain handles real boundaries somewhere else, not in this function */
+}
+
+Range Communication::getProcLocalInnerRange(int procrank) const 
+{ 
+	int x_pcells = m_globalDomain_dim.i / m_procsGrid_dim.i;
+	int y_pcells = m_globalDomain_dim.j / m_procsGrid_dim.j;
+
+	Index localProcGridPosition
+		(procrank / m_procsGrid_dim.j, 
+		 procrank % m_procsGrid_dim.j);
+
+	Index procOffsetToGlobalDomain = Dimension(
+		localProcGridPosition.i * x_pcells ,
+		localProcGridPosition.j * y_pcells);
+
+	Dimension localDomain_dim = Dimension(
+			x_pcells + ((localProcGridPosition.i < m_procsGrid_dim.i-1) ?
+				(0) : (m_globalDomain_dim.i % m_procsGrid_dim.i)) ,
+			y_pcells + ((localProcGridPosition.j < m_procsGrid_dim.j-1) ?
+				(0) : (m_globalDomain_dim.j % m_procsGrid_dim.j)) );
+
+	Range ret(
+		Index(
+			procOffsetToGlobalDomain.i + 1,
+			procOffsetToGlobalDomain.j + 1,
+			procOffsetToGlobalDomain.k + 1
+			), 
+		Index(
+			procOffsetToGlobalDomain.i + localDomain_dim.i,
+			procOffsetToGlobalDomain.j + localDomain_dim.j,
+			procOffsetToGlobalDomain.k + localDomain_dim.k
+			) );
+	return ret; 
 }
 

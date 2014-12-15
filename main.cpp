@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 
 	/* init communication of processes */
 	Communication communication = Communication(global_dim);
-	Dimension local_dim = communication.getLocalDimensions();
+	Dimension local_dim = communication.getLocalDimension();
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(local_dim, delta,
@@ -99,6 +99,19 @@ int main(int argc, char** argv)
 			domain.getInnerRangeU().end.i, domain.getInnerRangeU().end.j,
 			domain.getInnerRangeV().end.i, domain.getInnerRangeV().end.j,
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
+	if(! communication.getRank())
+	log_info("global inner: [(%i,%i),(%i,%i)]", 
+			communication.getGlobalInnerRange().begin.i,
+			communication.getGlobalInnerRange().begin.j,
+			communication.getGlobalInnerRange().end.i,
+			communication.getGlobalInnerRange().end.j 
+			);
+	log_info("local inner: [(%i,%i),(%i,%i)]", 
+			communication.getLocalInnerRange().begin.i,
+			communication.getLocalInnerRange().begin.j,
+			communication.getLocalInnerRange().end.i,
+			communication.getLocalInnerRange().end.j 
+			);
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);

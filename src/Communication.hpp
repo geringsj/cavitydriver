@@ -31,7 +31,9 @@ private:
 	Dimension m_globalDomain_dim;
 	Dimension m_myDomain_dim;
 	Color m_myDomainFirstCellColor;
-	Index m_myOffsetToGlobalDomain;
+
+	Range m_globalInnerRange;
+	Range m_localInnerRange;
 
 	uint m_bufferSize;
 	Real* m_sendBuffer;
@@ -57,26 +59,25 @@ public:
 	~Communication();
 
 	void exchangeGridBoundaryValues(Domain& domain, Handle grid);
-
-	//void exchangeGridInnerValues(Domain domain, Handle grid);
-
 	Real getGlobalResidual(Real mySubResidual);
-
 	Delta getGlobalMaxVelocities(Delta myMaxValues);
-
 	bool checkGlobalFinishSOR(bool myLoopCondition);
-
 	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
-
+	//void exchangeGridInnerValues(Domain domain, Handle grid);
 	Domain::Boundary getBoundaryCompetence() const 
 	{ return Domain::Boundary(m_upRank<0, m_downRank<0, m_leftRank<0, m_rightRank<0); }
 
 	int getRank() const { return m_myRank; }
+	int getProcsCount() const { return m_numProcs; }
+
 	Dimension getProcsGridDim() const { return m_procsGrid_dim; }
-	Index getOwnOffsetToGlobalDomain() const { return m_myOffsetToGlobalDomain; }
-	//Range getOwnRangeInGlobalDomain() const { return m_myRangeInGlobalDomain; };
-	Dimension getGlobalDimensions() const { return m_globalDomain_dim; }
-	Dimension getLocalDimensions() const { return m_myDomain_dim; }
+
+	Dimension getGlobalDimension() const { return m_globalDomain_dim; }
+	Range getGlobalInnerRange() const { return m_globalInnerRange; }
+
+	Dimension getLocalDimension() const { return m_myDomain_dim; }
+	Range getLocalInnerRange() const { return m_localInnerRange; }
+	Range getProcLocalInnerRange(int procrank) const;
 };
 
 

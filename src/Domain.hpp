@@ -153,10 +153,6 @@ private:
 	 * Size of the domain.
 	 */
 	Dimension m_dimension;
-	/**
-	 * Marks the inner of the domain.
-	 */
-	Dimension m_inner_begin, m_inner_end[4]; /* TODO: get rid of these */
 
 	/**
 	 * Gives the ranges of the inner of fields.

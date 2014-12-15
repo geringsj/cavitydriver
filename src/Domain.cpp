@@ -17,41 +17,39 @@ Domain::Domain(Dimension dimension, Delta delta,
 	Color firstCellColor
 	) : 
 		m_dimension(dimension),
-		m_inner_begin(1,1,1), 
 		m_FirstCellColor(firstCellColor),
 		m_delta(delta),
 		m_p(Dimension(dimension[0]+2,dimension[1]+2)), 
 		m_p_rhs(Dimension(dimension[0]+2,dimension[1]+2)),
-		m_velocities(dimension,bndry),// because what could possibly go wrong?!
+		m_velocities(dimension,bndry),
 		m_preliminary_velocities_FGH(dimension,bndry),
 		m_boundary(bndry.Up, bndry.Down, bndry.Left, bndry.Right),
 		m_force_gx(in_gx), m_force_gy(in_gy), m_force_gz(in_gz)
 {
+	Index inner_begin(1,1,1);
+	Index inner_end[4];
+
 	/* set indices for end of inner of grids u, v, w and p individually */
 	/* for now, everything < inner_begin and everything > inner_end 
 	 * is border of the grid */
 	for(uint d=0; d<DIMENSIONS; d++)
 		for(uint e=0; e<DIMENSIONS; e++)
-			m_inner_end[d][e] = dimension[e] + ((e==d)?(-bndry[d]):(0)); 
-	/* TODO: kill inner_begin / inner_end */
+			inner_end[d][e] = dimension[e] + ((e==d)?(-bndry[d]):(0)); 
 
 	/* the pressure is fourth entry of the array and has symmetric dimensions */
-	m_inner_end[3] = dimension; 
+	inner_end[3] = dimension; 
 
-	m_inner_ranges[0] = Range(m_inner_begin, m_inner_end[0]);
-	m_inner_ranges[1] = Range(m_inner_begin, m_inner_end[1]);
-	m_inner_ranges[2] = Range(m_inner_begin, m_inner_end[2]);
-	m_inner_ranges[3] = Range(m_inner_begin, m_inner_end[3]);
-	/* TODO: kill inner_begin / inner_end */
+	m_inner_ranges[0] = Range(inner_begin, inner_end[0]);
+	m_inner_ranges[1] = Range(inner_begin, inner_end[1]);
+	m_inner_ranges[2] = Range(inner_begin, inner_end[2]);
+	m_inner_ranges[3] = Range(inner_begin, inner_end[3]);
 
 	/* bind given border functions to operate on gridfunctions u(), v(), w()
 	 * and to automatically use the right (upper bounds) dimensions of the grid */
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
-		Dimension max(m_inner_end[d][0]+1, m_inner_end[d][1]+1, m_inner_end[d][2]+1);
-		/* TODO: kill inner_begin / inner_end */
-		/* TODO max will be dangerous at some point when dealing with multiple domains 
-		 * and more complex border functions */
+		Dimension max(inner_end[d][0]+1, inner_end[d][1]+1, inner_end[d][2]+1);
+		/* TODO replace with more general boudnary handling scheme */
 		if(d==0)
 			m_borderfunc_u = std::bind(in_u,std::placeholders::_1, std::ref(u()), max);
 		if(d==1)
@@ -65,8 +63,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	 * evaluated on the border. somebody should document this demand. */
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
-		forall(i,j,m_inner_begin,m_inner_end[d])
-			/* TODO: kill inner_begin / inner_end */
+		for_range(i,j,m_inner_ranges[d])
 		{
 			Dimension current(i, j);//,k);
 			if(d==0)
@@ -78,12 +75,8 @@ Domain::Domain(Dimension dimension, Delta delta,
 		}
 	}
 
-	/* init pressure and rhs 
-	 * TODO:
-	 * we don't use the pressure init function in_p after this,
-	 * maybe kick it and just init with zero? would the script be against us? */
-	forall(i,j,m_inner_begin,m_inner_end[3])
-		/* TODO: kill inner_begin / inner_end */
+	/* init pressure and rhs */
+	for_range(i,j,m_inner_ranges[3])
 	{
 		p()(i,j) = in_p(Index(i,j), p(), 
 				Dimension(dimension.i+2, dimension.j+2, dimension.k+2));
@@ -133,47 +126,44 @@ Domain::~Domain()
 
 
 void Domain::setVelocitiesBoundaries()
-	/* TODO: kill inner_begin / inner_end */
 {
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		if (m_boundary.Left)
-			LEFT(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
+			LEFT(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Right)
-			RIGHT(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
+			RIGHT(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Up)
-			TOP(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
+			TOP(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Down)
-			BOTTOM(m_inner_begin, m_inner_end[d]){VELOCITIESBOUNDARIES(i, j, d);}
+			BOTTOM(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
 	}
 }
 
 void Domain::setPreliminaryVelocitiesBoundaries()
-	/* TODO: kill inner_begin / inner_end */
 {
 	for (uint d = 0; d<DIMENSIONS; d++)
 	{
 		if (m_boundary.Left)
-			LEFT(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
+			LEFT(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Right)
-			RIGHT(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
+			RIGHT(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Up)
-			TOP(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
+			TOP(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
 		if (m_boundary.Down)
-			BOTTOM(m_inner_begin, m_inner_end[d]){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
+			BOTTOM(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
 	}
 }
 
 void Domain::setPressureBoundaries()
-	/* TODO: kill inner_begin / inner_end */
 {
 	if (m_boundary.Left)
-		LEFT(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
+		LEFT(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
 	if (m_boundary.Right)
-		RIGHT(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
+		RIGHT(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
 	if (m_boundary.Up)
-		TOP(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
+		TOP(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
 	if (m_boundary.Down)
-		BOTTOM(m_inner_begin, m_dimension){ PRESSUREBOUNDARIES(i, j); }
+		BOTTOM(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
 }
 
