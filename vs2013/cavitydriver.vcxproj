@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\CavityPainter.hpp" />
     <ClInclude Include="..\src\Communication.hpp" />
     <ClInclude Include="..\src\Computation.hpp" />
     <ClInclude Include="..\src\Debug.hpp" />
