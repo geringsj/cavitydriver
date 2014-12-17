@@ -41,43 +41,45 @@ namespace Solver
 
 
 	namespace {
-		inline void evaluateSOR(
-				GridFunction& p, 
+		inline Real evaluateSOR(
+				const GridFunction& p, 
 				const GridFunction& rhs,
 				const int& i, 
 				const int& j, 
 				const Real& dxx, 
 				const Real& dyy, 
-				const Real& omega)
+				const Real& omegaMinus1,
+				const Real& omegaTimesDxxDyy)
 		{
-			Real old_value = p(i,j);
-			Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
-			Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
+			const Real old_value = p(i,j);
+			const Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
+			const Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
 
-			Real new_value = 
-				(1. - omega) * old_value 
+			const Real new_value = 
+				omegaMinus1 * old_value 
 				+ 
-				omega 
-				* ((dxx*dyy)/(2.0*(dxx+dyy))) 
+				omegaTimesDxxDyy 
 				* ( pxx + pyy - rhs(i,j) );
 
-			p(i,j) = new_value;
+			return new_value;
 		}
 	};
 
 	void SORCycle(
 			GridFunction& p,
 			const GridFunction& rhs,
-			const Point& delta,
+			const Delta & delta,
 			const Range& inner_range,
 			const Real& omega)
 	{
-		Real dxx = pow(delta.x, 2.0);
-		Real dyy = pow(delta.y, 2.0);
+		const Real dxx = pow(delta.x, 2.0);
+		const Real dyy = pow(delta.y, 2.0);
+		const Real omegaMinus1 = (1. - omega);
+		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
 		for_range(i,j,inner_range)
 		{
-			evaluateSOR(p, rhs, i, j, dxx, dyy, omega);
+			p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, omegaMinus1, omegaTimesDxxDyy);
 		}
 	}
 	
@@ -92,8 +94,10 @@ namespace Solver
 		const Delta delta = domain.getDelta();
 		const Range inner_range = domain.getInnerRangeP();
 
-		Real dxx = pow(delta.x, 2.0);
-		Real dyy = pow(delta.y, 2.0);
+		const Real dxx = pow(delta.x, 2.0);
+		const Real dyy = pow(delta.y, 2.0);
+		const Real omegaMinus1 = (1. - omega);
+		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
 		// Decided offset (in y-direction) based on color of first cell.
 		// If color matches the color of the first cell, no offset is required 
@@ -107,7 +111,7 @@ namespace Solver
 			for(int j=inner_range.begin[1]+offset; j<=inner_range.end[1]; j=j+2)
 				// skip every other cell in y dimension
 			{
-				evaluateSOR(p, rhs, i, j, dxx, dyy, omega);
+				p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, omegaMinus1, omegaTimesDxxDyy);
 			}
 			// 'Flip' offset for next column
 			offset = (offset+1)%2;

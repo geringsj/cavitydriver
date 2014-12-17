@@ -41,29 +41,29 @@ namespace Computation
 		{
 			/* get second derivatives for momentum equation for dimension D */
 			auto Fxx =
-				Derivatives::getDerivative(domain.getVelocity()[D], domain.getDelta(),
+				/*::*/DerivativesgetDerivative(domain.getVelocity()[D], domain.getDelta(),
 						Derivatives::Direction::xx);
 			auto Fyy = 
-				Derivatives::getDerivative(domain.getVelocity()[D], domain.getDelta(),
+				/*::*/DerivativesgetDerivative(domain.getVelocity()[D], domain.getDelta(),
 						Derivatives::Direction::yy);
 
 			/* derivative of product of functions */
-			auto FFf = Derivatives::getProductFirstDerivative(
+			auto FFf = /*::*/DerivativesgetProductFirstDerivative(
 					domain.getVelocity()[D],domain.getVelocity()[D],domain.getDelta(),
 					1+D,1+D);
 			/* donor cell scheme correction operator */
-			auto FFfdc = Derivatives::getProductFirstDerivativeDCS(
+			auto FFfdc = /*::*/DerivativesgetProductFirstDerivativeDCS(
 					domain.getVelocity()[D],domain.getVelocity()[D],domain.getDelta(),
 					1+D,1+D);
 
 			/* get product derivatives / donor cell scheme operator for next dimension
 			 * with respect to D */
 			int Gdim = (D+1)%DIMENSIONS;
-			auto FGg = Derivatives::getProductFirstDerivative(
+			auto FGg = /*::*/DerivativesgetProductFirstDerivative(
 					domain.getVelocity()[D],domain.getVelocity()[Gdim],domain.getDelta(),
 					1+D,1+Gdim);
 
-			auto FGgdc = Derivatives::getProductFirstDerivativeDCS(
+			auto FGgdc = /*::*/DerivativesgetProductFirstDerivativeDCS(
 					domain.getVelocity()[D],domain.getVelocity()[Gdim],domain.getDelta(),
 					1+D,1+Gdim);
 
@@ -88,10 +88,10 @@ namespace Computation
 			Domain& domain,
 			const Real deltaT)
 	{
-		auto Fxb = Derivatives::getDerivative(domain.F(),domain.getDelta(),
+		auto Fxb = /*::*/DerivativesgetDerivative(domain.F(),domain.getDelta(),
 				Derivatives::Direction::xb);
 
-		auto Gyb = Derivatives::getDerivative(domain.G(),domain.getDelta(),
+		auto Gyb = /*::*/DerivativesgetDerivative(domain.G(),domain.getDelta(),
 				Derivatives::Direction::yb);
 
 		for_range(i,j,domain.getInnerRangeP())
@@ -107,7 +107,7 @@ namespace Computation
 	{
 		for(uint D=0; D<DIMENSIONS; D++)
 		{
-			auto Pdf = Derivatives::getDerivative(domain.p(),domain.getDelta(),
+			auto Pdf = /*::*/DerivativesgetDerivative(domain.p(),domain.getDelta(),
 					(1+D)); /* D+1 ~ first forward derivative in (D+1) direction (1 => x) */
 
 			for_range(i,j,domain.getInnerRanges()[D])
