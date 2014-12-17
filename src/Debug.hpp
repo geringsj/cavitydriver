@@ -34,15 +34,4 @@
 
 #define check_debug(A, M, ...) if(!(A)) { debug(M, ##__VA_ARGS__); errno=0; goto error; }
 
-/**
- * I hate myself for doing this, but we need to do this if we want to set
- * the output of the debug and log defines from the parseArguments function
- * in IO.
- * TODO: Find a nicer way to do this!!!
- */
-extern bool m_debug;
-extern bool m_log_err;
-extern bool m_log_warn;
-extern bool m_log_info;
-
 #endif

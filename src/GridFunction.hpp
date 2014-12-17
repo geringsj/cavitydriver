@@ -12,6 +12,8 @@
  */
 #define forall(F,S,B,E) for(int F=B[0];F<=E[0];F++)for(int S=B[1];S<=E[1];S++)
 
+#define for_range(F,S,R) for(int F=R.begin[0];F<=R.end[0];F++)for(int S=R.begin[1];S<=R.end[1];S++)
+
 
 /** 
  * Provides indexed access to a 2D (3D) grid structure of Real values.
@@ -30,6 +32,7 @@ class GridFunction
 {
 private:
 	Dimension dimension; /**< Dimensions of the grid. */
+	Range wholeRange; /**< Range in which access to grid points is defined. All bounds are inclusive, like in for(int i=begin; i <= end; ...)  */
 	Real* grid; /**< Raw memory of the grid as array of Real values. */
 
 public:

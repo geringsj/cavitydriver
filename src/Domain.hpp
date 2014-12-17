@@ -113,14 +113,15 @@ public:
 	/* TODO: document for doxygen and move implementation into .cpp ?
 	 * on the other hand: explaining multiple simple similiar functions is stupid, 
 	 * better have the user see what is done? */
-	Dimension getDimension() { return m_dimension; }
-	Dimension getBeginInnerDomains() { return m_inner_begin; }
-	Dimension* getEndInnerDomain() { return m_inner_end; }
-	Dimension getEndInnerDomainU() { return m_inner_end[0]; }
-	Dimension getEndInnerDomainV() { return m_inner_end[1]; }
-	Dimension getEndInnerDomainW() { return m_inner_end[2]; }
-	Dimension getEndInnerDomainP() { return m_inner_end[3]; }
-	Point getDelta() { return m_delta; }
+	Dimension getDimension() const { return m_dimension; }
+
+	Range* getInnerRanges() { return m_inner_ranges; };
+	Range getInnerRangeU() const { return m_inner_ranges[0]; };
+	Range getInnerRangeV() const { return m_inner_ranges[1]; };
+	Range getInnerRangeW() const { return m_inner_ranges[2]; };
+	Range getInnerRangeP() const { return m_inner_ranges[3]; };
+
+	Point getDelta() const { return m_delta; }
 
 	Grid3D& getVelocity() { return m_velocities; }
 	Grid3D& getPreliminaryVelocity() { return m_preliminary_velocities_FGH; }
@@ -134,7 +135,7 @@ public:
 	GridFunction& H() { return m_preliminary_velocities_FGH.m_w ; }
 	GridFunction& rhs() { return m_p_rhs; }
 
-	Real g(int dim) 
+	Real g(int dim) const
 	{ if(dim == 0) return gx(); if(dim == 1) return gy(); return gz(); }
 
 	Real gx() const { return m_force_gx; }
@@ -152,10 +153,16 @@ private:
 	 * Size of the domain.
 	 */
 	Dimension m_dimension;
+
 	/**
-	 * Marks the inner of the domain.
+	 * Gives the ranges of the inner of fields.
+	 * Array entries correspond to:
+	 * [0] -> inner Range of U
+	 * [1] -> inner Range of V
+	 * [2] -> inner Range of W (maye we will need it ...)
+	 * [3] -> inner Range of pressure P
 	 */
-	Dimension m_inner_begin, m_inner_end[4];
+	Range m_inner_ranges[4];
 
 	/**
 	 * Color of first inner ((1,1)) Cell of domain.

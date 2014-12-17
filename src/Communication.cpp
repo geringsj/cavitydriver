@@ -1,11 +1,12 @@
 #include "Communication.hpp"
 #include "Debug.hpp"
 
+//#define WITHMPI
+
 #ifdef WITHMPI
 	#include <mpi.h>
 #endif
 #include <cmath>
-
 
 Communication::Communication(Dimension globalDomainDim)
 {
@@ -29,6 +30,7 @@ Communication::Communication(Dimension globalDomainDim)
 
 	/* set mpi cartesian grid with dimension infos */
 	m_globalDomain_dim = globalDomainDim;
+	m_globalInnerRange = Range(Index(1,1,1), m_globalDomain_dim);
 
 	int x_procs = (int)( floor(sqrt((Real)(m_numProcs))) );
 	int y_procs = m_numProcs/x_procs;
@@ -94,23 +96,35 @@ Communication::Communication(Dimension globalDomainDim)
 			m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 
 	/* compute global/local dimensions, checkerboard colors and stuff */
-	int x_pcells = m_globalDomain_dim.i / x_procs;
-	int y_pcells = m_globalDomain_dim.j / y_procs;
+	int x_pcells = m_globalDomain_dim.i / m_procsGrid_dim.i;
+	int y_pcells = m_globalDomain_dim.j / m_procsGrid_dim.j;
 
-	m_myOffsetToGlobalDomain = Dimension(
-			m_procsGrid_myPosition.i * x_pcells ,
-			m_procsGrid_myPosition.j * y_pcells);
+	Index myOffsetToGlobalDomain = Dimension(
+		m_procsGrid_myPosition.i * x_pcells ,
+		m_procsGrid_myPosition.j * y_pcells);
 
 	m_myDomain_dim = Dimension(
-			x_pcells + ((m_procsGrid_myPosition.i < x_procs-1) ?
-				(0) : (m_globalDomain_dim.i % x_procs)) ,
-			y_pcells + ((m_procsGrid_myPosition.j < y_procs-1) ?
-				(0) : (m_globalDomain_dim.j % y_procs)) );
+			x_pcells + ((m_procsGrid_myPosition.i < m_procsGrid_dim.i-1) ?
+				(0) : (m_globalDomain_dim.i % m_procsGrid_dim.i)) ,
+			y_pcells + ((m_procsGrid_myPosition.j < m_procsGrid_dim.j-1) ?
+				(0) : (m_globalDomain_dim.j % m_procsGrid_dim.j)) );
+
+	m_localInnerRange = Range(
+		Index(
+			myOffsetToGlobalDomain.i + 1,
+			myOffsetToGlobalDomain.j + 1,
+			myOffsetToGlobalDomain.k + 1
+			), 
+		Index(
+			myOffsetToGlobalDomain.i + m_myDomain_dim.i,
+			myOffsetToGlobalDomain.j + m_myDomain_dim.j,
+			myOffsetToGlobalDomain.k + m_myDomain_dim.k
+			) );
 
 	/* global (1,1)  cell is Red */
 	m_myDomainFirstCellColor = 
 		(/* have fun reversing this */
-		 !(((m_myOffsetToGlobalDomain.i % 2)+(m_myOffsetToGlobalDomain.j % 2))%2)
+		 !(((myOffsetToGlobalDomain.i % 2)+(myOffsetToGlobalDomain.j % 2))%2)
 		 ) 
 			? (Color::Red) : (Color::Black);
 
@@ -127,7 +141,7 @@ Communication::Communication(Dimension globalDomainDim)
 #endif
 
 	log_info("rank=%i has offset=(%i,%i), mydims=(%i,%i), firstColor=%s, bufferSize=%i",
-			m_myRank, m_myOffsetToGlobalDomain.i, m_myOffsetToGlobalDomain.j,
+			m_myRank, myOffsetToGlobalDomain.i, myOffsetToGlobalDomain.j,
 			m_myDomain_dim.i, m_myDomain_dim.j, 
 			(m_myDomainFirstCellColor==Color::Red)?("Red"):("Black"), m_bufferSize);
 }
@@ -207,20 +221,15 @@ void Communication::exchangeGridBoundaryValues(
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
-		exchangeGridBoundaryValues(domain.p(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainP());
+		exchangeGridBoundaryValues(domain.p(), domain.getInnerRangeP());
 		break;
 	case Communication::Handle::Velocities:
-		exchangeGridBoundaryValues(domain.u(), 
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
-		exchangeGridBoundaryValues(domain.v(), 
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
+		exchangeGridBoundaryValues(domain.u(), domain.getInnerRangeU());
+		exchangeGridBoundaryValues(domain.v(), domain.getInnerRangeV());
 		break;
 	case Communication::Handle::PreliminaryVelocities:
-		exchangeGridBoundaryValues(domain.F(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainU());
-		exchangeGridBoundaryValues(domain.G(),
-			domain.getBeginInnerDomains(), domain.getEndInnerDomainV());
+		exchangeGridBoundaryValues(domain.F(), domain.getInnerRangeU());
+		exchangeGridBoundaryValues(domain.G(), domain.getInnerRangeV());
 		break;
 	default:
 		break;
@@ -250,8 +259,7 @@ void Communication::exchangeGridInnerValues(Domain domain, Handle grid)
 
 void Communication::exchangeGridBoundaryValues(
 		GridFunction& gf,
-		Index ibegin, 
-		Index iend)
+		Range inner)
 {
 	/* 
 	 *handle all neighbour boundaries 
@@ -261,11 +269,11 @@ void Communication::exchangeGridBoundaryValues(
 	if(m_leftRank >= 0)
 	{
 		// copy data to buffer
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			m_sendBuffer[n] = (gf(ibegin[0], j));
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			m_sendBuffer[n] = (gf(inner.begin[0], j));
 
 		// send buffer to m_leftRank
-		sendBufferTo(iend[1]-ibegin[1]+1, m_leftRank, m_myRank);
+		sendBufferTo(inner.end[1]-inner.begin[1]+1, m_leftRank, m_myRank);
 	}
 	if(m_rightRank >= 0)
 	{
@@ -273,19 +281,19 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_rightRank, m_rightRank);
 
 		// copy data from buffer to grid
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			 gf(iend[0]+1, j) = m_recvBuffer[n];
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			 gf(inner.end[0]+1, j) = m_recvBuffer[n];
 	}
 
 	/* b) send right - receive left */
 	if(m_rightRank >= 0)
 	{
 		// copy data to buffer
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			m_sendBuffer[n] = (gf(iend[0], j));
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			m_sendBuffer[n] = (gf(inner.end[0], j));
 
 		// send buffer to m_rightRank
-		sendBufferTo(iend[1]-ibegin[1]+1, m_rightRank, m_myRank);
+		sendBufferTo(inner.end[1]-inner.begin[1]+1, m_rightRank, m_myRank);
 	}
 	if(m_leftRank >= 0)
 	{
@@ -293,19 +301,19 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_leftRank, m_leftRank);
 
 		// copy data from buffer to grid
-		for (int j = ibegin[1], n=0; j <= iend[1]; j++, n++)
-			 gf(ibegin[0]-1, j) = m_recvBuffer[n];
+		for (int j = inner.begin[1], n=0; j <= inner.end[1]; j++, n++)
+			 gf(inner.begin[0]-1, j) = m_recvBuffer[n];
 	}
 
 	/* c) send up - receive down */
 	if(m_upRank >= 0)
 	{
 		// copy data to buffer
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			m_sendBuffer[n] = (gf(i, iend[1]));
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			m_sendBuffer[n] = (gf(i, inner.end[1]));
 
 		// send buffer to m_upRank
-		sendBufferTo(iend[0]-ibegin[0]+1, m_upRank, m_myRank);
+		sendBufferTo(inner.end[0]-inner.begin[0]+1, m_upRank, m_myRank);
 	}
 	if(m_downRank >= 0)
 	{
@@ -313,19 +321,19 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_downRank, m_downRank);
 
 		// copy data from buffer to grid
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			gf(i, ibegin[1]-1) = m_recvBuffer[n];
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			gf(i, inner.begin[1]-1) = m_recvBuffer[n];
 	}
 
 	/* d) send down - receive up */
 	if(m_downRank >= 0)
 	{
 		// copy data to buffer
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			m_sendBuffer[n] = (gf(i, ibegin[1]));
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			m_sendBuffer[n] = (gf(i, inner.begin[1]));
 
 		// send buffer to m_downRank
-		sendBufferTo(iend[0]-ibegin[0]+1, m_downRank, m_myRank);
+		sendBufferTo(inner.end[0]-inner.begin[0]+1, m_downRank, m_myRank);
 	}
 	if(m_upRank >= 0)
 	{
@@ -333,10 +341,43 @@ void Communication::exchangeGridBoundaryValues(
 		recvBufferFrom(m_upRank, m_upRank);
 
 		// copy data from buffer to grid
-		for (int i = ibegin[0], n=0; i <= iend[0]; i++, n++)
-			gf(i, iend[1]+1) = m_recvBuffer[n];
+		for (int i = inner.begin[0], n=0; i <= inner.end[0]; i++, n++)
+			gf(i, inner.end[1]+1) = m_recvBuffer[n];
 	}
 
 	/* attention: domain handles real boundaries somewhere else, not in this function */
+}
+
+Range Communication::getProcLocalInnerRange(int procrank) const 
+{ 
+	int x_pcells = m_globalDomain_dim.i / m_procsGrid_dim.i;
+	int y_pcells = m_globalDomain_dim.j / m_procsGrid_dim.j;
+
+	Index localProcGridPosition
+		(procrank / m_procsGrid_dim.j, 
+		 procrank % m_procsGrid_dim.j);
+
+	Index procOffsetToGlobalDomain = Dimension(
+		localProcGridPosition.i * x_pcells ,
+		localProcGridPosition.j * y_pcells);
+
+	Dimension localDomain_dim = Dimension(
+			x_pcells + ((localProcGridPosition.i < m_procsGrid_dim.i-1) ?
+				(0) : (m_globalDomain_dim.i % m_procsGrid_dim.i)) ,
+			y_pcells + ((localProcGridPosition.j < m_procsGrid_dim.j-1) ?
+				(0) : (m_globalDomain_dim.j % m_procsGrid_dim.j)) );
+
+	Range ret(
+		Index(
+			procOffsetToGlobalDomain.i + 1,
+			procOffsetToGlobalDomain.j + 1,
+			procOffsetToGlobalDomain.k + 1
+			), 
+		Index(
+			procOffsetToGlobalDomain.i + localDomain_dim.i,
+			procOffsetToGlobalDomain.j + localDomain_dim.j,
+			procOffsetToGlobalDomain.k + localDomain_dim.k
+			) );
+	return ret; 
 }
 

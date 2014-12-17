@@ -6,6 +6,8 @@ GridFunction::GridFunction(Index dims)
 	dimension[1] = dims.j;
 	dimension[2] = 1;
 
+	this->wholeRange = Range(Index(0,0), Index(dims.i-1, dims.j-1));
+
 	this->grid = new Real[dimension[0]*dimension[1]*dimension[2]];
 
 	forall(i,j,Index(0,0),Index(this->dimension.i-1,this->dimension.j-1)) 
@@ -28,7 +30,7 @@ Real GridFunction::getMaxValueGridFunction()
 	Index begin(0,0);
 	Real max = this->operator()(begin.i, begin.j);
 
-	forall(i,j,begin,Index(this->dimension.i-1,this->dimension.j-1))
+	for_range(i,j,wholeRange)
 	{
 		if(max < this->operator()(i,j))
 			max = this->operator()(i,j);
@@ -56,6 +58,7 @@ Real GridFunction::operator()(const int& i, const int& j) const {
 //	return this->grid[i * dimension.j * dimension.k + j * dimension.k + k];
 //}
 
+#include <iostream>
 void GridFunction::printSTDOUT()
 {
 	Index SI(0,0), EI(this->dimension.i-1,this->dimension.j-1);

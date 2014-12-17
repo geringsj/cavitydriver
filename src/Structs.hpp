@@ -110,6 +110,31 @@ struct Index
  */
 typedef Index Dimension;
 
+struct IndexRange {
+	Index begin;
+	Index end;
+
+	IndexRange() : begin(), end() {};
+	IndexRange(Index b, Index e) : begin(b), end(e) {};
+
+	Index operator[](const uint index) const 
+	{
+		switch(index)
+		{
+			case 0:
+				return begin;
+				break;
+			case 1:
+				return end;
+				break;
+			default:
+				return end;
+				break;
+		}
+	}
+};
+typedef IndexRange Range;
+
 
 /** The Point struct allows easy handling and access of 2D (and 3D) points.
  * Point dimensions can be accessed via .x , .y ( .z ) or via [0], [1] ([2]), respectively.o
@@ -175,90 +200,11 @@ struct Point
 typedef Point Delta;
 
 
-#include <iostream>
-/** Struct that holds all simulation parameters the program will use.
- * This struct will be filled and returned by the IO class when reading the inputvalues file.
- */
-struct SimParams
-{
-	Real xLength;
-	Real yLength;
-	int iMax;
-	int jMax;
-	Real tEnd;
-	Real deltaT;
-	Real tau;
-	Real deltaVec;
-	int iterMax;
-	Real eps;
-	Real omg;
-	Real alpha;
-	Real re;
-	Real gx;
-	Real gy;
-	Real ui;
-	Real vi;
-	Real pi;
-	int xProcs;
-	int yProcs;
-	
-	/** Write the current state of the simulation parameters to stdout. 
-	 */
-	void writeSimParamsToSTDOUT()
-	{
-		std::cout << "SimParam: " << std::endl <<
-			"xLength=" <<
-			xLength << std::endl <<
-			"yLength=" <<
-			yLength << std::endl <<
-			"iMax=" <<
-			iMax << std::endl <<
-			"jMax=" <<
-			jMax << std::endl <<
-			"tEnd=" <<
-			tEnd << std::endl <<
-			"deltaT=" <<
-			deltaT << std::endl <<
-			"tau=" <<
-			tau << std::endl <<
-			"deltaVec=" <<
-			deltaVec << std::endl <<
-			"iterMax=" <<
-			iterMax << std::endl <<
-			"eps=" <<
-			eps << std::endl <<
-			"omg=" <<
-			omg << std::endl <<
-			"alpha=" <<
-			alpha << std::endl <<
-			"re=" <<
-			re << std::endl <<
-			"gx=" <<
-			gx << std::endl <<
-			"gy=" <<
-			gy << std::endl <<
-			"ui=" <<
-			ui << std::endl <<
-			"vi=" <<
-			vi << std::endl <<
-			"pi=" <<
-			pi << std::endl;
-		/* TODO remove comment when implementing MPI stuff */
-		// <<
-		// "xProcs=" <<
-		// xProcs << std::endl <<
-		// "yProcs=" <<
-		// yProcs << std::endl;
-	}
-};
-
-
 /**
  * We use this for the Checkerboard-Solving Pattern in SOR, 
  * and also in Communication for exchanging pressures.
  */
 enum class Color {
-	All,
 	Red,
 	Black
 };
