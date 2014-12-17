@@ -6,6 +6,8 @@
 
 #include "glowl\glowl.h"
 
+#include "Structs.hpp"
+
 class CavityPainter
 {
 public:
@@ -14,13 +16,14 @@ public:
 
 	void paint(unsigned int window_width, unsigned int window_height);
 
+	bool createGrid(Range p, Range u, Range v);
+
 private:
+	enum Grid { P,U,V};
+	Mesh m_p_grid, m_u_grid, m_v_grid;
+
 	unsigned int m_window_width;
 	unsigned int m_window_height;
-
-	unsigned int m_grid_size_x;
-	unsigned int m_grid_size_y;
-	Mesh m_grid_mesh;
 
 	/** Draw overlay grid */
 	void drawGridOverlay();
