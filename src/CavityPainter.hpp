@@ -20,10 +20,13 @@ public:
 
 private:
 	enum Grid { P,U,V};
+	Grid m_show_grid;
 	Mesh m_p_grid, m_u_grid, m_v_grid;
 
 	unsigned int m_window_width;
 	unsigned int m_window_height;
+
+	Gridvertex* createSingleGrid(Range innerRange, unsigned int& data_size);
 
 	/** Draw overlay grid */
 	void drawGridOverlay();

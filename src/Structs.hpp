@@ -209,4 +209,11 @@ enum class Color {
 	Black
 };
 
+struct Gridvertex {
+	Gridvertex() : x(0), y(0), z(0), w(0) {}
+	Gridvertex(float x_coord, float y_coord, float z_coord, float w_coord) :
+		x(x_coord), y(y_coord), z(z_coord), w(w_coord) {}
+	float x, y, z, w;
+};
+
 #endif

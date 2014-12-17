@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\IO.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\Solver.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -45,11 +42,14 @@
     <ClInclude Include="..\src\CavityPainter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\VTKOutput.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\SimulationParameters.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\IO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\Domain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -68,10 +68,16 @@
     <ClCompile Include="..\src\Stencil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\Debug.cpp">
+    <ClCompile Include="..\src\Communication.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\Communication.cpp">
+    <ClCompile Include="..\src\CavityPainter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\SimulationParameters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\VTKOutput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

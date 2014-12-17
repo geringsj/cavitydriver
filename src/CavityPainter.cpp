@@ -2,6 +2,7 @@
 
 CavityPainter::CavityPainter()
 {
+	m_show_grid = P;
 }
 CavityPainter::~CavityPainter()
 {
@@ -50,6 +51,8 @@ void CavityPainter::paint(unsigned int window_width, unsigned int window_height)
 		glfwGetFramebufferSize(window, &width, &height);
 		glViewport(0, 0, width, height);
 		
+		drawGridOverlay();
+
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
@@ -60,8 +63,73 @@ void CavityPainter::paint(unsigned int window_width, unsigned int window_height)
 	//TODO cleanup
 }
 
+bool CavityPainter::createGrid(Range p, Range u, Range v)
+{
+	unsigned int p_size, u_size, v_size;
+	Gridvertex* p_data = createSingleGrid(p, p_size);
+	Gridvertex* u_data = createSingleGrid(u, u_size);
+	Gridvertex* v_data = createSingleGrid(v, v_size);
+}
+
+Gridvertex* CavityPainter::createSingleGrid(Range innerRange, unsigned int& data_size)
+{
+	std::vector<Gridvertex> data;
+	unsigned int bottom_left_i = innerRange.begin[0] - 1;
+	unsigned int bottom_left_j = innerRange.begin[1] - 1;
+
+	unsigned int bottom_right_i = innerRange.end[0] + 1;
+	unsigned int bottom_right_j = innerRange.begin[1] - 1;
+
+	unsigned int top_right_i = innerRange.end[0] + 1;
+	unsigned int top_right_j = innerRange.end[1] + 1;
+
+	unsigned int top_left_i = innerRange.begin[0] - 1;
+	unsigned int top_left_j = innerRange.end[1] + 1;
+
+	data.push_back(Gridvertex((float)bottom_left_i, (float)bottom_left_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex((float)bottom_right_i, (float)bottom_right_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex((float)top_right_i, (float)top_right_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex((float)top_left_i, (float)top_left_j, -1.0f, 1.0f));
+
+	data.push_back(Gridvertex((float)bottom_left_i, (float)bottom_left_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex((float)top_left_i, (float)top_left_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex((float)bottom_right_i, (float)bottom_right_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex((float)top_right_i, (float)top_right_j, -1.0f, 1.0f));
+
+	//LEFT RIGHT
+	unsigned int left = bottom_left_i;
+	unsigned int right = bottom_right_i;
+	for (unsigned int j = bottom_left_j; j <= top_left_j; j++)
+	{
+		data.push_back(Gridvertex((float)left, (float)j, -1.0f, 1.0f));
+		data.push_back(Gridvertex((float)right, (float)j, -1.0f, 1.0f));
+	}
+	//TOP BOTTOM
+	unsigned int bottom = bottom_right_j;
+	unsigned int top = top_left_j;
+	for (unsigned int i = bottom_left_i; i <= bottom_right_i; i++)
+	{
+		data.push_back(Gridvertex((float)i, (float)bottom, -1.0f, 1.0f));
+		data.push_back(Gridvertex((float)i, (float)top, -1.0f, 1.0f));
+	}
+
+	data_size = (unsigned int)data.size();
+	return data.data();
+}
+
 void CavityPainter::drawGridOverlay()
 {
+	switch (m_show_grid)
+	{
+	case CavityPainter::P:
+		break;
+	case CavityPainter::U:
+		break;
+	case CavityPainter::V:
+		break;
+	default:
+		break;
+	}
 }
 
 void CavityPainter::drawField()

@@ -29,6 +29,12 @@ VTKOutput::~VTKOutput()
 #if defined(__linux)
 	#include "sys/stat.h"
 #endif
+#if defined(_WIN64)
+	#include <Windows.h>
+#endif
+#if defined(_WIN32)
+	#include <Windows.h>
+#endif
 void VTKOutput::checkOutputPath()
 {
 	std::string filename;
