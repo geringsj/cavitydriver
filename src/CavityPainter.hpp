@@ -1,6 +1,9 @@
 #ifndef CavityPainter_hpp
 #define CavityPainter_hpp
 
+#include <iostream>
+#include <vector>
+
 #include "glew.h"
 #include "glfw3.h"
 
