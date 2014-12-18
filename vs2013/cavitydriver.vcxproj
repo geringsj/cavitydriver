@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\CameraSystem.h" />
     <ClInclude Include="..\src\CavityPainter.hpp" />
     <ClInclude Include="..\src\Communication.hpp" />
     <ClInclude Include="..\src\Computation.hpp" />
@@ -33,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\src\CameraSystem.cpp" />
     <ClCompile Include="..\src\CavityPainter.cpp" />
     <ClCompile Include="..\src\Communication.cpp" />
     <ClCompile Include="..\src\Computation.cpp" />
@@ -42,6 +44,10 @@
     <ClCompile Include="..\src\Solver.cpp" />
     <ClCompile Include="..\src\Stencil.cpp" />
     <ClCompile Include="..\src\VTKOutput.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shader\gridFragment.glsl" />
+    <None Include="..\shader\gridVertex.glsl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{43D3333A-6ACC-43DB-A937-5CD612680CD3}</ProjectGuid>

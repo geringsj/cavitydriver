@@ -6,8 +6,10 @@
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
 #include "src/Communication.hpp"
+#include "src/CavityPainter.hpp"
 
 #define _USE_MATH_DEFINES
+#define _PAINT_STUFF
 #include <math.h>
 
 #include <chrono>
@@ -81,6 +83,15 @@ int main(int argc, char** argv)
 			simparam.gx, simparam.gy, 0.0,
 		/* boundaries and color pattern */
 			communication.getBoundaryCompetence(), communication.getFirstCellColor());
+
+#ifdef _PAINT_STUFF
+	CavityPainter paint = CavityPainter();
+	if (paint.init(640, 480))
+	{
+		paint.createGrid(domain.getInnerRangeP(), domain.getInnerRangeU(), domain.getInnerRangeV());
+		paint.paint(640, 480);
+	}
+#endif
 
 	log_info("process %i has competence over boundaries: %s %s %s %s",
 			communication.getRank(),
