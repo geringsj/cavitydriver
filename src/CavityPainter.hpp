@@ -9,6 +9,7 @@
 #include "glfw3.h"
 
 #include "glowl/glowl.h"
+#include "AntTweakBar.h"
 
 #include "Structs.hpp"
 #include "CameraSystem.h"
@@ -50,6 +51,7 @@ public:
 		);
 
 private:
+	TwBar* bar;
 	GLFWwindow* m_window; /**< Pointer to the window that glfw will use. */
 	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
 	enum Grid {

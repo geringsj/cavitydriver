@@ -26,6 +26,26 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 		return false;
 	}
 	glfwMakeContextCurrent(m_window);
+	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // can be GLFW_CURSOR_HIDDEN
+
+	// Initialize AntTweakBar
+	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
+
+	// Create a tweak bar
+	bar = TwNewBar("TweakBar");
+	TwWindowSize(window_width, window_height);
+	int wire = 0;
+	float bgColor[] = { 0.1f, 0.2f, 0.4f };
+	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
+	// Add 'wire' to 'bar': it is a modifable variable of type TW_TYPE_BOOL32 (32 bits boolean). Its key shortcut is [w].
+	TwAddVarRW(bar, "wire", TW_TYPE_BOOL32, &wire,
+		" label='Wireframe mode' key=w help='Toggle wireframe display mode.' ");
+	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
+	TwAddVarRW(bar, "bgColor", TW_TYPE_COLOR3F, &bgColor, " label='Background color' ");
+
+	// Set GLFW event callbacks
+	// TODO: here!!!
+	// Set GLFW event callbacks
 
 	/*	Initialize glew */
 	//glewExperimental = GL_TRUE;
@@ -41,6 +61,7 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 	}
 	/* Apparently glewInit() causes a GL ERROR 1280, so let's just catch that... */
 	glGetError();
+
 
 	m_cam_sys = CameraSystem(glm::vec3(0.0f, 0.0f, 80.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	return true;
@@ -61,6 +82,14 @@ void CavityPainter::paint()
 		
 		drawGridOverlay();
 
+		// Draw TB
+		glUseProgram(0); //(??)
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		TwDraw();
+		// Draw TB
+
         /* Swap front and back buffers */
         glfwSwapBuffers(m_window);
 
@@ -69,6 +98,7 @@ void CavityPainter::paint()
     }
 
 	//TODO cleanup
+	TwTerminate();
 	glfwTerminate();
 }
 
