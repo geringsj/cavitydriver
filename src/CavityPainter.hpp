@@ -94,7 +94,21 @@ private:
 	/** Draw geometric shapes */
 	void drawGeometry();
 
-	/* Read a shader source file */
+	/* Static GLFW callback functions - Primarily calls AntTweakBar functions */
+	inline void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+	{TwEventMouseButtonGLFW(button, action);}
+	inline void mousePositionCallback(GLFWwindow* window, double x, double y)
+	{TwMouseMotion(int(x), int(y));}
+	inline void mouseWheelCallback(GLFWwindow* window, double x_offset, double y_offset)
+	{TwEventMouseWheelGLFW(y_offset);}
+	inline void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	{TwEventKeyGLFW(key, action);}
+	inline void charCallback(GLFWwindow* window, int codepoint)
+	{TwEventCharGLFW(codepoint, GLFW_PRESS);}
+	inline void windowResizeCallback(GLFWwindow* window, int width, int height)
+	{TwWindowSize(width, height);}
+
+	/** Read a shader source file */
 	const std::string readShaderFile(const char* const path);
 };
 
