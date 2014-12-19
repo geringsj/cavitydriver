@@ -12,6 +12,7 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 	m_window_width = window_width;
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2;m_window_background_colour[1] = 0.2;m_window_background_colour[2] = 0.2;
+	m_zoom = 80.0f;
 
 	m_show_grid = true;
 
@@ -40,6 +41,7 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
 	TwAddVarRW(bar, "m_show_grid", TW_TYPE_BOOL8, &m_show_grid, " label='Show grid' ");
+	TwAddVarRW(bar, "m_zoom", TW_TYPE_FLOAT, &m_zoom, " label='Zoom' ");
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
@@ -66,7 +68,7 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 	glGetError();
 
 
-	m_cam_sys = CameraSystem(glm::vec3(0.0f, 0.0f, 80.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	m_cam_sys = CameraSystem(glm::vec3(0.0f, 0.0f, m_zoom), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	return true;
 }
 
@@ -185,8 +187,9 @@ void CavityPainter::createSingleGrid(Range innerRange, std::vector<unsigned int>
 
 void CavityPainter::drawGridOverlay()
 {
+	m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
 	m_grid_prgm.use();
-	glm::mat4 proj_mat = glm::perspective(45.0f, (float)m_window_width / (float)m_window_height, 0.1f, 100.0f);
+	glm::mat4 proj_mat = glm::perspective(45.0f, (float)m_window_width / (float)m_window_height, 0.1f, 1000.0f);
 	glm::mat4 model_mat = glm::mat4(1.0f);
 	glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
 	glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;

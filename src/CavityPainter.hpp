@@ -57,6 +57,7 @@ private:
 	unsigned int m_window_height; /**< Store the window height in pixel. */
 	GLfloat m_window_background_colour[3];
 	TwBar* bar;
+	float m_zoom;
 
 	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
 
