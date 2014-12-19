@@ -1,13 +1,13 @@
-#include "CavityPainter.hpp"
+#include "CavityRenderer.hpp"
 
-CavityPainter::CavityPainter()
+CavityRenderer::CavityRenderer()
 {
 }
-CavityPainter::~CavityPainter()
+CavityRenderer::~CavityRenderer()
 {
 }
 
-bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
+bool CavityRenderer::init(unsigned int window_width, unsigned int window_height, SimulationParameters sim_params)
 {
 	m_window_width = window_width;
 	m_window_height = window_height;
@@ -72,7 +72,7 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 	return true;
 }
 
-void CavityPainter::paint()
+void CavityRenderer::paint()
 {
 
 	/* Loop until the user closes the window */
@@ -103,7 +103,7 @@ void CavityPainter::paint()
 	glfwTerminate();
 }
 
-bool CavityPainter::createGrid(Range grid_size)
+bool CavityRenderer::createGrid(Range grid_size)
 {
 	std::vector<unsigned int> index_array;
 	std::vector<Gridvertex> vertex_array;
@@ -134,7 +134,7 @@ bool CavityPainter::createGrid(Range grid_size)
 	return true;
 }
 
-void CavityPainter::createSingleGrid(Range innerRange, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
+void CavityRenderer::createSingleGrid(Range innerRange, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
 {
 	unsigned int bottom_left_i = innerRange.begin[0] - 1;
 	unsigned int bottom_left_j = innerRange.begin[1] - 1;
@@ -185,7 +185,7 @@ void CavityPainter::createSingleGrid(Range innerRange, std::vector<unsigned int>
 	}
 }
 
-void CavityPainter::drawGridOverlay()
+void CavityRenderer::drawGridOverlay()
 {
 	m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
 	m_grid_prgm.use();
@@ -199,19 +199,19 @@ void CavityPainter::drawGridOverlay()
 		m_grid.draw();
 }
 
-void CavityPainter::drawField()
+void CavityRenderer::drawField()
 {
 }
 
-void CavityPainter::drawLIC()
+void CavityRenderer::drawLIC()
 {
 }
 
-void CavityPainter::drawGeometry()
+void CavityRenderer::drawGeometry()
 {
 }
 
-const std::string CavityPainter::readShaderFile(const char* const path)
+const std::string CavityRenderer::readShaderFile(const char* const path)
 {
 	std::ifstream inFile(path, std::ios::in);
 	std::ostringstream source;

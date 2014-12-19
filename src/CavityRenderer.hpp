@@ -1,5 +1,5 @@
-#ifndef CavityPainter_hpp
-#define CavityPainter_hpp
+#ifndef CavityRenderer_hpp
+#define CavityRenderer_hpp
 
 #include <fstream>
 #include <sstream>
@@ -13,12 +13,13 @@
 
 #include "Structs.hpp"
 #include "CameraSystem.h"
+#include "SimulationParameters.hpp"
 
-class CavityPainter
+class CavityRenderer
 {
 public:
-	CavityPainter();
-	~CavityPainter();
+	CavityRenderer();
+	~CavityRenderer();
 
 	/**
 	 * Function to create the OpenGL context and creata a 
@@ -26,7 +27,8 @@ public:
 	 */
 	bool init(
 		unsigned int window_width, /**< Width of the window in pixels [>=0]. */
-		unsigned int window_height /**< Height of the window in pixels [>=0]. */
+		unsigned int window_height, /**< Height of the window in pixels [>=0]. */
+		SimulationParameters sim_params
 		);
 
 	/**
@@ -112,7 +114,7 @@ private:
 	{TwEventCharGLFW(codepoint, GLFW_PRESS);}
 	inline static void windowResizeCallback(GLFWwindow* window, int width, int height)
 	{
-		CavityPainter* painter = reinterpret_cast<CavityPainter*>(glfwGetWindowUserPointer(window));
+		CavityRenderer* painter = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
 		painter->setWindowSize(width,height);
 		TwWindowSize(width, height);
 	}
