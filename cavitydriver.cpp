@@ -84,6 +84,7 @@ int main(int argc, char** argv)
 		/* boundaries and color pattern */
 			communication.getBoundaryCompetence(), communication.getFirstCellColor());
 
+
 	//#ifdef _PAINT_STUFF
 	//	CavityPainter paint;
 	//	if (paint.init(640, 480))

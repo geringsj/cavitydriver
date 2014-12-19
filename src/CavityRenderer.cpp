@@ -1,5 +1,13 @@
 #include "CavityRenderer.hpp"
 
+/**
+ * Example for a callback function that is used in addButtonParam
+ */
+void TW_CALL Callback(void *clientData)
+{
+	// do something
+}
+
 CavityRenderer::CavityRenderer()
 {
 }
@@ -40,8 +48,8 @@ bool CavityRenderer::init(unsigned int window_width, unsigned int window_height,
 	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	TwAddVarRW(bar, "m_show_grid", TW_TYPE_BOOL8, &m_show_grid, " label='Show grid' ");
-	TwAddVarRW(bar, "m_zoom", TW_TYPE_FLOAT, &m_zoom, " label='Zoom' ");
+	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, 1.0f, 999.0f);
+	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
@@ -247,7 +255,12 @@ void CavityRenderer::addVec3Param(const char* name, const char* def, void* var)
 	TwAddVarRW(bar, name, TW_TYPE_DIR3F, var, def);
 }
 
-void CavityRenderer::addButtonParam()
+void CavityRenderer::addButtonParam(const char* name, const char* def, TwButtonCallback callback)
 {
+	TwAddButton(bar, name, callback, this, def);
+}
 
+void CavityRenderer::removeParam(const char* name)
+{
+	TwRemoveVar(bar, name);
 }

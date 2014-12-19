@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\CameraSystem.h" />
     <ClInclude Include="..\src\Communication.hpp" />
     <ClInclude Include="..\src\Computation.hpp" />
     <ClInclude Include="..\src\Debug.hpp" />
@@ -33,7 +32,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\cavitydriver.cpp" />
-    <ClCompile Include="..\src\CameraSystem.cpp" />
     <ClCompile Include="..\src\Communication.cpp" />
     <ClCompile Include="..\src\Computation.cpp" />
     <ClCompile Include="..\src\Domain.cpp" />
