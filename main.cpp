@@ -84,14 +84,14 @@ int main(int argc, char** argv)
 		/* boundaries and color pattern */
 			communication.getBoundaryCompetence(), communication.getFirstCellColor());
 
-#ifdef _PAINT_STUFF
-	CavityPainter paint = CavityPainter();
-	if (paint.init(640, 480))
-	{
-		paint.createGrid(domain.getInnerRangeP(), domain.getInnerRangeU(), domain.getInnerRangeV());
-		paint.paint(640, 480);
-	}
-#endif
+	#ifdef _PAINT_STUFF
+		CavityPainter paint;
+		if (paint.init(640, 480))
+		{
+			paint.createGrid(domain.getInnerRangeP());
+			paint.paint();
+		}
+	#endif
 
 	log_info("process %i has competence over boundaries: %s %s %s %s",
 			communication.getRank(),

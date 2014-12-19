@@ -25,50 +25,51 @@ public:
 	 * window. Also initializes the camera system.
 	 */
 	bool init(
-		unsigned int window_width,
-		/**< Width of the window in pixels [>=0]. */
-		unsigned int window_height
-		/**< Height of the window in pixels [>=0]. */
+		unsigned int window_width, /**< Width of the window in pixels [>=0]. */
+		unsigned int window_height /**< Height of the window in pixels [>=0]. */
 		);
+
 	/**
 	 * The main render loop. Render a frame, swap buffer
 	 * and poll events until the window gets closed.
 	 */
 	void paint();
+
+	void loadFieldData();
+
 	/**
 	 * Create the three grids for pressure, u and v by 
 	 * calling createSingleGrid for each range. As the
 	 * data is buffered here as well call this function
 	 * after calling init.
 	 */
-	bool createGrids(
-		Range p,
-		/**< Range that defines the pressure grid. */
-		Range u,
-		/**< Range that defines the u grid.*/
-		Range v
-		/**< Range that defines the v grid. */
+	bool createGrid(
+		Range grid_size
+		/**< Range that defines the grid. */
 		);
 
+	void setWindowSize(int width, int height)
+		{ m_window_width=width; m_window_height = height; }
+
 private:
-	TwBar* bar;
 	GLFWwindow* m_window; /**< Pointer to the window that glfw will use. */
-	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
-	enum Grid {
-		P,
-		/**< Render the pressure grid. */
-		U,
-		/**< Render the u grid. */
-		V
-		/**< Render the v grid */
-	};
-	Grid m_show_grid; /**< Based on the Grid enumerator render the associated grid. */
-	Mesh m_p_grid; /**< Store the mesh data of the pressure grid. */
-	Mesh m_u_grid; /**< Store the mesh data of the u grid. */
-	Mesh m_v_grid; /**< Store the mesh data of the v grid. */
-	GLSLProgram m_grid_prgm; /**< Store the programm data for the grid rendering programm. */
 	unsigned int m_window_width; /**< Store the window width in pixel. */
 	unsigned int m_window_height; /**< Store the window height in pixel. */
+	GLfloat m_window_background_colour[3];
+	TwBar* bar;
+
+	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
+
+	Mesh m_grid;
+	GLSLProgram m_grid_prgm; /**< Store the programm data for the grid rendering programm. */
+	bool m_show_grid;
+
+	Mesh m_field_quad;
+	GLSLProgram m_field_prgm;
+	Texture2D m_pressure_tx;
+	Texture2D m_velocity_tx;
+	bool m_show_field;
+
 	/** 
 	 * Function to create the data and index array for a grid
 	 * of the given Range.
@@ -76,13 +77,14 @@ private:
 	void createSingleGrid(
 		Range innerRange,
 		/**< Range that defines the grid. */
-		unsigned int& data_size, 
-		/**< Refrence of the size of the data [>= 0]. */
 		std::vector<unsigned int>& index,
 		/**< Reference to the index array. */
 		std::vector<Gridvertex>& data
 		/**< Reference to the data array. */
 		);
+
+	/** Upload field data of a specified timestep to texture ojects */
+	void updateTextures(unsigned int timestep);
 
 	/** Draw overlay grid */
 	void drawGridOverlay();
@@ -97,18 +99,22 @@ private:
 	void drawGeometry();
 
 	/* Static GLFW callback functions - Primarily calls AntTweakBar functions */
-	inline void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+	inline static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	{TwEventMouseButtonGLFW(button, action);}
-	inline void mousePositionCallback(GLFWwindow* window, double x, double y)
+	inline static void mousePositionCallback(GLFWwindow* window, double x, double y)
 	{TwMouseMotion(int(x), int(y));}
-	inline void mouseWheelCallback(GLFWwindow* window, double x_offset, double y_offset)
+	inline static void mouseWheelCallback(GLFWwindow* window, double x_offset, double y_offset)
 	{TwEventMouseWheelGLFW(y_offset);}
-	inline void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	inline static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{TwEventKeyGLFW(key, action);}
-	inline void charCallback(GLFWwindow* window, int codepoint)
+	inline static void charCallback(GLFWwindow* window, int codepoint)
 	{TwEventCharGLFW(codepoint, GLFW_PRESS);}
-	inline void windowResizeCallback(GLFWwindow* window, int width, int height)
-	{TwWindowSize(width, height);}
+	inline static void windowResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		CavityPainter* painter = reinterpret_cast<CavityPainter*>(glfwGetWindowUserPointer(window));
+		painter->setWindowSize(width,height);
+		TwWindowSize(width, height);
+	}
 
 	/** Read a shader source file */
 	const std::string readShaderFile(const char* const path);

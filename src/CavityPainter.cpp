@@ -2,7 +2,6 @@
 
 CavityPainter::CavityPainter()
 {
-	m_show_grid = P;
 }
 CavityPainter::~CavityPainter()
 {
@@ -12,13 +11,16 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 {
 	m_window_width = window_width;
 	m_window_height = window_height;
+	m_window_background_colour[0] = 0.2;m_window_background_colour[1] = 0.2;m_window_background_colour[2] = 0.2;
+
+	m_show_grid = true;
 
 	/* Initialize the library */
 	if (!glfwInit()) return false;
 
 	/* Create a windowed mode window and its OpenGL context */
 	glfwWindowHint(GLFW_SAMPLES, 8);
-	m_window = glfwCreateWindow(window_width, window_height, "Lasagne", NULL, NULL);
+	m_window = glfwCreateWindow(window_width, window_height, "Cavity", NULL, NULL);
 	if (!m_window)
 	{
 		//std::cout<<"Couldn't create glfw window."<<std::endl;
@@ -34,18 +36,19 @@ bool CavityPainter::init(unsigned int window_width, unsigned int window_height)
 	// Create a tweak bar
 	bar = TwNewBar("TweakBar");
 	TwWindowSize(window_width, window_height);
-	int wire = 0;
-	float bgColor[] = { 0.1f, 0.2f, 0.4f };
 	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
-	// Add 'wire' to 'bar': it is a modifable variable of type TW_TYPE_BOOL32 (32 bits boolean). Its key shortcut is [w].
-	TwAddVarRW(bar, "wire", TW_TYPE_BOOL32, &wire,
-		" label='Wireframe mode' key=w help='Toggle wireframe display mode.' ");
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
-	TwAddVarRW(bar, "bgColor", TW_TYPE_COLOR3F, &bgColor, " label='Background color' ");
+	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
+	TwAddVarRW(bar, "m_show_grid", TW_TYPE_BOOL8, &m_show_grid, " label='Show grid' ");
 
 	// Set GLFW event callbacks
-	// TODO: here!!!
-	// Set GLFW event callbacks
+	glfwSetWindowUserPointer(m_window,this);
+	glfwSetWindowSizeCallback(m_window, (GLFWwindowposfun)windowResizeCallback);
+    glfwSetMouseButtonCallback(m_window, (GLFWmousebuttonfun)mouseButtonCallback);
+    glfwSetCursorPosCallback(m_window, (GLFWcursorposfun)mousePositionCallback);
+    glfwSetScrollCallback(m_window, (GLFWscrollfun)mouseWheelCallback);
+    glfwSetKeyCallback(m_window, (GLFWkeyfun)keyCallback);
+    glfwSetCharCallback(m_window, (GLFWcharfun)glfwSetCharCallback);
 
 	/*	Initialize glew */
 	//glewExperimental = GL_TRUE;
@@ -74,7 +77,7 @@ void CavityPainter::paint()
     while (!glfwWindowShouldClose(m_window))
     {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+		glClearColor(m_window_background_colour[0], m_window_background_colour[1], m_window_background_colour[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		int width, height;
 		glfwGetFramebufferSize(m_window, &width, &height);
@@ -83,10 +86,6 @@ void CavityPainter::paint()
 		drawGridOverlay();
 
 		// Draw TB
-		glUseProgram(0); //(??)
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		TwDraw();
 		// Draw TB
 
@@ -102,35 +101,21 @@ void CavityPainter::paint()
 	glfwTerminate();
 }
 
-bool CavityPainter::createGrids(Range p, Range u, Range v)
+bool CavityPainter::createGrid(Range grid_size)
 {
-	unsigned int p_size, u_size, v_size;
-	std::vector<unsigned int> p_index, u_index, v_index;
-	std::vector<Gridvertex> p_data, u_data, v_data;
-	createSingleGrid(p, p_size, p_index, p_data);
-	createSingleGrid(u, u_size, u_index, u_data);
-	createSingleGrid(v, v_size, v_index, v_data);
+	std::vector<unsigned int> index_array;
+	std::vector<Gridvertex> vertex_array;
+	createSingleGrid(grid_size, index_array, vertex_array);
 
-	float right_shift = (float)((p.end[0] + 1) - (p.begin[0] - 1)) / 2.0f;
-	float up_shift = (float)((p.end[1] + 1) - (p.begin[1] - 1)) / 2.0f;
+	float right_shift = (float)((grid_size.end[0] + 1) - (grid_size.begin[0] - 1)) / 2.0f;
+	float up_shift = (float)((grid_size.end[1] + 1) - (grid_size.begin[1] - 1)) / 2.0f;
 
 	m_cam_sys.Translation(glm::vec3(1.0f, 0.0f, 0.0f), right_shift);
 	m_cam_sys.Translation(glm::vec3(0.0f, 1.0f, 0.0f), up_shift);
 
-	m_p_grid.bufferDataFromArray(p_data.data(), p_index.data(), 
-		(GLsizei)(p_size*sizeof(Gridvertex)), (GLsizei)(p_index.size()*sizeof(unsigned int)), 
-		GL_LINES);
-	m_p_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
-
-	m_u_grid.bufferDataFromArray(u_data.data(), u_index.data(), 
-		(GLsizei)(u_size*sizeof(Gridvertex)), (GLsizei)(u_index.size()*sizeof(unsigned int)), 
-		GL_LINES);
-	m_u_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
-
-	m_v_grid.bufferDataFromArray(v_data.data(), v_index.data(), 
-		(GLsizei)(v_size*sizeof(Gridvertex)), (GLsizei)(v_index.size()*sizeof(unsigned int)), 
-		GL_LINES);
-	m_v_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
+	m_grid.bufferDataFromArray(vertex_array.data(),index_array.data(),
+		(GLsizei)(vertex_array.size()*sizeof(Gridvertex)),(GLsizei)(index_array.size()*sizeof(unsigned int)),GL_LINES);
+	m_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
 
 	m_grid_prgm.init();
 
@@ -147,7 +132,7 @@ bool CavityPainter::createGrids(Range p, Range u, Range v)
 	return true;
 }
 
-void CavityPainter::createSingleGrid(Range innerRange, unsigned int& data_size, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
+void CavityPainter::createSingleGrid(Range innerRange, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
 {
 	unsigned int bottom_left_i = innerRange.begin[0] - 1;
 	unsigned int bottom_left_j = innerRange.begin[1] - 1;
@@ -196,8 +181,6 @@ void CavityPainter::createSingleGrid(Range innerRange, unsigned int& data_size, 
 		data.push_back(Gridvertex((float)i, (float)top, -1.0f, 1.0f));
 		index.push_back(index_value); index_value++;
 	}
-
-	data_size = (unsigned int)data.size();
 }
 
 void CavityPainter::drawGridOverlay()
@@ -208,20 +191,9 @@ void CavityPainter::drawGridOverlay()
 	glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
 	glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
 	m_grid_prgm.setUniform("mvp_matrix", mvp_mat);
-	switch (m_show_grid)
-	{
-	case CavityPainter::P:
-		m_p_grid.draw();
-		break;
-	case CavityPainter::U:
-		m_u_grid.draw();
-		break;
-	case CavityPainter::V:
-		m_v_grid.draw();
-		break;
-	default:
-		break;
-	}
+
+	if(m_show_grid)
+		m_grid.draw();
 }
 
 void CavityPainter::drawField()
