@@ -222,3 +222,32 @@ const std::string CavityRenderer::readShaderFile(const char* const path)
 	inFile.close();
 	return source.str();
 }
+
+void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, float min, float max)
+{
+	TwAddVarRW(bar, name, TW_TYPE_FLOAT, var, def);
+	TwSetParam(bar, name, "min", TW_PARAM_FLOAT, 1, &min);
+	TwSetParam(bar, name, "max", TW_PARAM_FLOAT, 1, &max);
+}
+
+void CavityRenderer::addIntParam(const char* name, const char* def, void* var, int min, int max)
+{
+	TwAddVarRW(bar, name, TW_TYPE_INT32, var, def);
+	TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
+	TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
+}
+
+void CavityRenderer::addBoolParam(const char* name, const char* def, void* var)
+{
+	TwAddVarRW(bar, name, TW_TYPE_BOOL32, var, def);
+}
+
+void CavityRenderer::addVec3Param(const char* name, const char* def, void* var)
+{
+	TwAddVarRW(bar, name, TW_TYPE_DIR3F, var, def);
+}
+
+void CavityRenderer::addButtonParam()
+{
+
+}
