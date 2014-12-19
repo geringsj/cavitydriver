@@ -41,10 +41,6 @@
     <ClCompile Include="..\src\Stencil.cpp" />
     <ClCompile Include="..\src\VTKOutput.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\shader\gridFragment.glsl" />
-    <None Include="..\shader\gridVertex.glsl" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{43D3333A-6ACC-43DB-A937-5CD612680CD3}</ProjectGuid>
     <RootNamespace>cavitydriver</RootNamespace>

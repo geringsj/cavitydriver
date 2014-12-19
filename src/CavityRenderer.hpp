@@ -28,7 +28,13 @@ public:
 	bool init(
 		unsigned int window_width, /**< Width of the window in pixels [>=0]. */
 		unsigned int window_height, /**< Height of the window in pixels [>=0]. */
-		SimulationParameters sim_params
+		SimulationParameters& sim_params
+		);
+
+	bool initBakeryVis(
+		unsigned int window_width, /**< Width of the window in pixels [>=0]. */
+		unsigned int window_height, /**< Height of the window in pixels [>=0]. */
+		SimulationParameters& sim_params
 		);
 
 	/**
@@ -60,6 +66,39 @@ private:
 	GLfloat m_window_background_colour[3];
 	TwBar* bar;
 	float m_zoom;
+
+	/**
+	 * I'm very sorry but we can't do this:
+	 * SimulationParameters m_sim_params;
+	 * because SimulationParameters doesn't have
+	 * a default constructor (so far?). So we will
+	 * create a copy of each simparam value in here.
+	 * Just because it's late and i'm hungry.
+	 */
+	Real m_alpha, m_deltaT, m_eps, m_gx, m_gy, m_KarmanAngle, 
+		m_KarmanObjectWidth,m_pi, m_re, m_tau, m_tEnd, 
+		m_ui, m_vi, m_xLength, m_yLength, m_omg;
+	union{
+		Real m_tDeltaWriteVTK;
+		Real m_deltaVec;
+	};
+	int m_iterMax;
+	union{
+		int m_iMax;
+		int m_xCells;
+	};
+	union{
+		int m_jMax;
+		int m_yCells;
+	};
+	std::string m_name;
+	/**
+	 * And this also doesn't work because AntTweakBar,
+	 * apparently hates pointers and crashes for (no?)
+	 * good reason.
+	 */
+	//SimulationParameters* m_sim_params;
+
 
 	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
 
@@ -95,6 +134,7 @@ private:
 	void addBoolParam(const char* name, const char* def, void* var);
 	void addVec3Param(const char* name, const char* def, void* var);
 	void addButtonParam(const char* name, const char* def, TwButtonCallback callback);
+	void addStringParam(const char* name, const char* def, void* var);
 	void removeParam(const char* name);
 
 	/** Upload field data of a specified timestep to texture ojects */
