@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\CameraSystem.h" />
-    <ClInclude Include="..\src\CavityPainter.hpp" />
     <ClInclude Include="..\src\Communication.hpp" />
     <ClInclude Include="..\src\Computation.hpp" />
     <ClInclude Include="..\src\Debug.hpp" />
@@ -33,9 +32,8 @@
     <ClInclude Include="..\src\VTKOutput.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\cavitydriver.cpp" />
     <ClCompile Include="..\src\CameraSystem.cpp" />
-    <ClCompile Include="..\src\CavityPainter.cpp" />
     <ClCompile Include="..\src\Communication.cpp" />
     <ClCompile Include="..\src\Computation.cpp" />
     <ClCompile Include="..\src\Domain.cpp" />

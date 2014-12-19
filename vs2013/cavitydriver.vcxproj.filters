@@ -42,9 +42,6 @@
     <ClInclude Include="..\src\Communication.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\CavityPainter.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\VTKOutput.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -62,9 +59,6 @@
     <ClCompile Include="..\src\GridFunction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\Computation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -77,9 +71,6 @@
     <ClCompile Include="..\src\Communication.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\CavityPainter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\SimulationParameters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -87,6 +78,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\CameraSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cavitydriver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

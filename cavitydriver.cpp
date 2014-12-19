@@ -6,7 +6,7 @@
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
 #include "src/Communication.hpp"
-#include "src/CavityPainter.hpp"
+//#include "src/CavityPainter.hpp"
 
 #define _USE_MATH_DEFINES
 #define _PAINT_STUFF
@@ -84,14 +84,14 @@ int main(int argc, char** argv)
 		/* boundaries and color pattern */
 			communication.getBoundaryCompetence(), communication.getFirstCellColor());
 
-	#ifdef _PAINT_STUFF
-		CavityPainter paint;
-		if (paint.init(640, 480))
-		{
-			paint.createGrid(domain.getInnerRangeP());
-			paint.paint();
-		}
-	#endif
+	//#ifdef _PAINT_STUFF
+	//	CavityPainter paint;
+	//	if (paint.init(640, 480))
+	//	{
+	//		paint.createGrid(domain.getInnerRangeP());
+	//		paint.paint();
+	//	}
+	//#endif
 
 	log_info("process %i has competence over boundaries: %s %s %s %s",
 			communication.getRank(),
