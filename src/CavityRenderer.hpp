@@ -86,6 +86,12 @@ private:
 		/**< Reference to the data array. */
 		);
 
+	void addFloatParam(const char* name, const char* def, void* var, float min, float max);
+	void addIntParam(const char* name, const char* def, void* var, int min, int max);
+	void addBoolParam(const char* name, const char* def, void* var);
+	void addVec3Param(const char* name, const char* def, void* var);
+	void addButtonParam();
+
 	/** Upload field data of a specified timestep to texture ojects */
 	void updateTextures(unsigned int timestep);
 
