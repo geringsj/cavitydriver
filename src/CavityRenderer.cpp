@@ -10,7 +10,11 @@ void TW_CALL Callback(void *clientData)
 
 void TW_CALL Bake(void* clientData)
 {
-	// start baking
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+	Index begin = Index(1, 1);
+	Index end = Index(cr->getijMax()[0], cr->getijMax()[1]);
+	Range new_range = Range(begin, end);
+	cr->createGrid(new_range);
 }
 
 CavityRenderer::CavityRenderer()
@@ -21,6 +25,7 @@ CavityRenderer::CavityRenderer()
 	 * good reason.
 	 */
 	//m_sim_params = NULL;
+	m_grid_resize = false;
 }
 
 CavityRenderer::~CavityRenderer()
@@ -103,7 +108,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	m_window_width = window_width;
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2; m_window_background_colour[1] = 0.2; m_window_background_colour[2] = 0.2;
-	m_zoom = 80.0f;
+	m_zoom = 1.1f;
 
 	m_show_grid = true;
 
@@ -131,7 +136,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, 1.0f, 999.0f);
+	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, 1.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 	m_alpha = sim_params.alpha;
@@ -158,24 +163,25 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	m_xLength = sim_params.xLength; 
 	m_yCells = sim_params.yCells; 
 	m_yLength = sim_params.yLength;
-	addFloatParam("m_alpha", " label='alpha' ", &m_alpha);
-	addFloatParam("m_deltaT", " label='deltaT' ", &m_deltaT);
-	addFloatParam("m_deltaVec", " label='deltaVec' ", &m_deltaVec);
-	addFloatParam("m_eps", " label='eps' ", &m_eps);
-	addFloatParam("m_gx", " label='gx' ", &m_gx);
-	addFloatParam("m_gy", " label='gy' ", &m_gy);
-	addFloatParam("m_KarmanAngle", " label='KarmanAngle' ", &m_KarmanAngle);
-	addFloatParam("m_KarmanObjectWidth", " label='KarmanObjectWidth' ", &m_KarmanObjectWidth);
-	addFloatParam("m_pi", " label='pi' ", &m_pi);
-	addFloatParam("m_re", " label='re' ", &m_re);
-	addFloatParam("m_tau", " label='tau' ", &m_tau);
-	addFloatParam("m_tDeltaWriteVTK", " label='tDeltaWriteVTK' ", &m_tDeltaWriteVTK);
-	addFloatParam("m_tEnd", " label='tEnd' ", &m_tEnd);
-	addFloatParam("m_ui", " label='ui' ", &m_ui);
-	addFloatParam("m_vi", " label='vi' ", &m_vi);
-	addFloatParam("m_xLength", " label='xLength' ", &m_xLength);
-	addFloatParam("m_yLength", " label='yLength' ", &m_yLength);
-	addFloatParam("m_omg", " label='omega' ", &m_omg);
+	printf("m_xLength: %f m_yLength: %f \n", m_xLength, m_yLength);
+	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_alpha);
+	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_deltaT);
+	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_deltaVec);
+	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_eps);
+	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_gx);
+	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_gy);
+	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_KarmanAngle);
+	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_KarmanObjectWidth);
+	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_pi);
+	addFloatParam("m_re", " step=0.1 label='re' ", &m_re);
+	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_tau);
+	addFloatParam("m_tDeltaWriteVTK", " step=0.1 label='tDeltaWriteVTK' ", &m_tDeltaWriteVTK);
+	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_tEnd);
+	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_ui);
+	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_vi);
+	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_xLength);
+	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_yLength);
+	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_omg);
 	addIntParam("m_iterMax", " label='iterMax' ", &m_iterMax);
 	addIntParam("m_iMax", " label='iMax' ", &m_iMax);
 	addIntParam("m_jMax", " label='jMax' ", &m_jMax);
@@ -280,53 +286,63 @@ bool CavityRenderer::createGrid(Range grid_size)
 	std::vector<unsigned int> index_array;
 	std::vector<Gridvertex> vertex_array;
 	createSingleGrid(grid_size, index_array, vertex_array);
-
-	float right_shift = (float)((grid_size.end[0] + 1) - (grid_size.begin[0] - 1)) / 2.0f;
-	float up_shift = (float)((grid_size.end[1] + 1) - (grid_size.begin[1] - 1)) / 2.0f;
-
-	m_cam_sys.Translation(glm::vec3(1.0f, 0.0f, 0.0f), right_shift*1.0f);
-	m_cam_sys.Translation(glm::vec3(0.0f, 1.0f, 0.0f), up_shift*1.0f);
-
+	
 	m_grid.bufferDataFromArray(vertex_array.data(),index_array.data(),
 		(GLsizei)(vertex_array.size()*sizeof(Gridvertex)),(GLsizei)(index_array.size()*sizeof(unsigned int)),GL_LINES);
 	m_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
 
-	m_grid_prgm.init();
+	if (!m_grid_resize)
+	{
+		m_grid_resize = true;
+		m_grid_prgm.init();
 
-	std::string grid_vertex = readShaderFile("./shader/gridVertex.glsl");
-	if (!m_grid_prgm.compileShaderFromString(&grid_vertex, GL_VERTEX_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
+		std::string grid_vertex = readShaderFile("./shader/gridVertex.glsl");
+		if (!m_grid_prgm.compileShaderFromString(&grid_vertex, GL_VERTEX_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
 
-	std::string grid_fragment = readShaderFile("./shader/gridFragment.glsl");
-	if (!m_grid_prgm.compileShaderFromString(&grid_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
+		std::string grid_fragment = readShaderFile("./shader/gridFragment.glsl");
+		if (!m_grid_prgm.compileShaderFromString(&grid_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
 
-	m_grid_prgm.bindAttribLocation(0, "in_position");
+		m_grid_prgm.bindAttribLocation(0, "in_position");
 
-	m_grid_prgm.link();
-
+		m_grid_prgm.link();
+	}
 	return true;
 }
 
 void CavityRenderer::createSingleGrid(Range innerRange, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
 {
-	unsigned int bottom_left_i = innerRange.begin[0] - 1;
-	unsigned int bottom_left_j = innerRange.begin[1] - 1;
+	float x_length = m_xLength / (float)m_iMax;
+	float y_length = m_yLength / (float)m_jMax;
 
-	unsigned int bottom_right_i = innerRange.end[0] + 1;
-	unsigned int bottom_right_j = innerRange.begin[1] - 1;
+	printf("m_xLength: %f m_yLength: %f \n", m_xLength, m_yLength);
 
-	unsigned int top_right_i = innerRange.end[0] + 1;
-	unsigned int top_right_j = innerRange.end[1] + 1;
+	float bottom_left_i = (float)innerRange.begin[0] - 1.0f;
+	float bottom_left_j = (float)innerRange.begin[1] - 1.0f;
 
-	unsigned int top_left_i = innerRange.begin[0] - 1;
-	unsigned int top_left_j = innerRange.end[1] + 1;
+	float bottom_right_i = bottom_left_i + m_xCells * x_length;
+	float bottom_right_j = bottom_left_j;
 
-	data.push_back(Gridvertex((float)bottom_left_i, (float)bottom_left_j, -1.0f, 1.0f));
+	float top_right_i = bottom_right_i;
+	float top_right_j = bottom_right_j + m_yCells * y_length;
+
+	float top_left_i = bottom_left_i;
+	float top_left_j = bottom_left_j + m_yCells * y_length;
+
+	float right_shift = (m_xCells * x_length) / 2.0f;
+	float up_shift = (m_yCells * y_length) / 2.0f;
+
+	m_cam_sys.Translation(m_cam_sys.GetRightVector(), 0.0f - m_cam_sys.GetCamPos().x);
+	m_cam_sys.Translation(m_cam_sys.GetRightVector(), right_shift);
+	m_cam_sys.Translation(m_cam_sys.GetUpVector(), 0.0f - m_cam_sys.GetCamPos().y);
+	m_cam_sys.Translation(m_cam_sys.GetUpVector(), up_shift);
+
+	data.push_back(Gridvertex(bottom_left_i, bottom_left_j, -1.0f, 1.0f));
 	index.push_back(0);
-	data.push_back(Gridvertex((float)bottom_right_i, (float)bottom_right_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex(bottom_right_i, bottom_right_j, -1.0f, 1.0f));
 	index.push_back(1);
-	data.push_back(Gridvertex((float)top_right_i, (float)top_right_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex(top_right_i, top_right_j, -1.0f, 1.0f));
 	index.push_back(2);
-	data.push_back(Gridvertex((float)top_left_i, (float)top_left_j, -1.0f, 1.0f));
+	data.push_back(Gridvertex(top_left_i, top_left_j, -1.0f, 1.0f));
 	index.push_back(3);
 
 	index.push_back(0);
@@ -335,24 +351,24 @@ void CavityRenderer::createSingleGrid(Range innerRange, std::vector<unsigned int
 	index.push_back(2);
 
 	//LEFT RIGHT
-	unsigned int left = bottom_left_i;
-	unsigned int right = bottom_right_i;
+	float left = bottom_left_i;
+	float right = bottom_right_i;
 	unsigned int index_value = 4;
-	for (unsigned int j = bottom_left_j; j <= top_left_j; j++)
+	for (unsigned int j = innerRange.begin[1] - 1; j <= (unsigned int)innerRange.end[1]; j++)
 	{
-		data.push_back(Gridvertex((float)left, (float)j, -1.0f, 1.0f));
+		data.push_back(Gridvertex(left, (float)j * y_length, -1.0f, 1.0f));
 		index.push_back(index_value); index_value++;
-		data.push_back(Gridvertex((float)right, (float)j, -1.0f, 1.0f));
+		data.push_back(Gridvertex(right, (float)j * y_length, -1.0f, 1.0f));
 		index.push_back(index_value); index_value++;
 	}
 	//TOP BOTTOM
-	unsigned int bottom = bottom_right_j;
-	unsigned int top = top_left_j;
-	for (unsigned int i = bottom_left_i; i <= bottom_right_i; i++)
+	float bottom = bottom_right_j;
+	float top = top_right_j;
+	for (unsigned int i = innerRange.begin[0] - 1; i <= (unsigned int)innerRange.end[0]; i++)
 	{
-		data.push_back(Gridvertex((float)i, (float)bottom, -1.0f, 1.0f));
+		data.push_back(Gridvertex((float)i * x_length, bottom, -1.0f, 1.0f));
 		index.push_back(index_value); index_value++;
-		data.push_back(Gridvertex((float)i, (float)top, -1.0f, 1.0f));
+		data.push_back(Gridvertex((float)i * x_length, top, -1.0f, 1.0f));
 		index.push_back(index_value); index_value++;
 	}
 }

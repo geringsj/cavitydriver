@@ -59,6 +59,8 @@ public:
 	void setWindowSize(int width, int height)
 		{ m_window_width=width; m_window_height = height; }
 
+	int* getijMax(){ int ij_max[2]; ij_max[0] = m_iMax; ij_max[1] = m_jMax; return ij_max; }
+
 private:
 	GLFWwindow* m_window; /**< Pointer to the window that glfw will use. */
 	unsigned int m_window_width; /**< Store the window width in pixel. */
@@ -111,6 +113,7 @@ private:
 	Texture2D m_pressure_tx;
 	Texture2D m_velocity_tx;
 	bool m_show_field;
+	bool m_grid_resize;
 
 	/** 
 	 * Function to create the data and index array for a grid
