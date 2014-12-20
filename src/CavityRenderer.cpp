@@ -12,7 +12,9 @@ void TW_CALL Bake(void* clientData)
 {
 	CavityRenderer* cr = (CavityRenderer*)clientData;
 	Index begin = Index(1, 1);
-	Index end = Index(cr->getijMax()[0], cr->getijMax()[1]);
+	int iMax, jMax;
+	cr->getijMax(iMax, jMax);
+	Index end = Index(iMax,jMax);
 	Range new_range = Range(begin, end);
 	cr->createGrid(new_range);
 }
@@ -36,7 +38,7 @@ bool CavityRenderer::init(unsigned int window_width, unsigned int window_height,
 {
 	m_window_width = window_width;
 	m_window_height = window_height;
-	m_window_background_colour[0] = 0.2;m_window_background_colour[1] = 0.2;m_window_background_colour[2] = 0.2;
+	m_window_background_colour[0] = 0.2f;m_window_background_colour[1] = 0.2f;m_window_background_colour[2] = 0.2f;
 	m_zoom = 80.0f;
 
 	m_show_grid = true;
@@ -107,7 +109,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	//m_sim_params = new SimulationParameters(sim_params);
 	m_window_width = window_width;
 	m_window_height = window_height;
-	m_window_background_colour[0] = 0.2; m_window_background_colour[1] = 0.2; m_window_background_colour[2] = 0.2;
+	m_window_background_colour[0] = 0.2f; m_window_background_colour[1] = 0.2f; m_window_background_colour[2] = 0.2f;
 	m_zoom = 1.1f;
 
 	m_show_grid = true;
@@ -139,30 +141,30 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, 1.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
-	m_alpha = sim_params.alpha;
-	m_deltaT = sim_params.deltaT; 
-	m_deltaVec = sim_params.deltaVec; 
-	m_eps = sim_params.eps; 
-	m_gx = sim_params.gx; 
-	m_gy = sim_params.gy; 
-	m_iMax = sim_params.iMax;
-	m_iterMax = sim_params.iterMax; 
-	m_jMax = sim_params.jMax; 
-	m_KarmanAngle = sim_params.KarmanAngle; 
-	m_KarmanObjectWidth = sim_params.KarmanObjectWidth; 
-	m_name = sim_params.name; 
-	m_omg = sim_params.omg;
-	m_pi = sim_params.pi; 
-	m_re = sim_params.re; 
-	m_tau = sim_params.tau; 
-	m_tDeltaWriteVTK = sim_params.tDeltaWriteVTK; 
-	m_tEnd = sim_params.tEnd; 
-	m_ui = sim_params.ui; 
-	m_vi = sim_params.vi;
-	m_xCells = sim_params.xCells; 
-	m_xLength = sim_params.xLength; 
-	m_yCells = sim_params.yCells; 
-	m_yLength = sim_params.yLength;
+	m_alpha = (float)sim_params.alpha;
+	m_deltaT = (float)sim_params.deltaT;
+	m_deltaVec = (float)sim_params.deltaVec;
+	m_eps = (float)sim_params.eps;
+	m_gx = (float)sim_params.gx;
+	m_gy = (float)sim_params.gy;
+	m_iMax = (int)sim_params.iMax;
+	m_iterMax = (int)sim_params.iterMax;
+	m_jMax = (int)sim_params.jMax;
+	m_KarmanAngle = (float)sim_params.KarmanAngle;
+	m_KarmanObjectWidth = (float)sim_params.KarmanObjectWidth;
+	m_name = sim_params.name;
+	m_omg = (float)sim_params.omg;
+	m_pi = (float)sim_params.pi;
+	m_re = (float)sim_params.re;
+	m_tau = (float)sim_params.tau;
+	m_tDeltaWriteVTK = (float)sim_params.tDeltaWriteVTK;
+	m_tEnd = (float)sim_params.tEnd;
+	m_ui = (float)sim_params.ui;
+	m_vi = (float)sim_params.vi;
+	m_xCells = (int)sim_params.xCells;
+	m_xLength = (float)sim_params.xLength;
+	m_yCells = (int)sim_params.yCells;
+	m_yLength = (float)sim_params.yLength;
 	printf("m_xLength: %f m_yLength: %f \n", m_xLength, m_yLength);
 	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_alpha);
 	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_deltaT);

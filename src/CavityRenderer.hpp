@@ -59,7 +59,7 @@ public:
 	void setWindowSize(int width, int height)
 		{ m_window_width=width; m_window_height = height; }
 
-	int* getijMax(){ int ij_max[2]; ij_max[0] = m_iMax; ij_max[1] = m_jMax; return ij_max; }
+	void getijMax(int& p_iMax, int& p_jMax){ p_iMax = m_iMax; p_jMax = m_jMax; }
 
 private:
 	GLFWwindow* m_window; /**< Pointer to the window that glfw will use. */
@@ -161,7 +161,7 @@ private:
 	inline static void mousePositionCallback(GLFWwindow* window, double x, double y)
 	{TwMouseMotion(int(x), int(y));}
 	inline static void mouseWheelCallback(GLFWwindow* window, double x_offset, double y_offset)
-	{TwEventMouseWheelGLFW(y_offset);}
+	{TwEventMouseWheelGLFW((int)y_offset);}
 	inline static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{TwEventKeyGLFW(key, action);}
 	inline static void charCallback(GLFWwindow* window, int codepoint)
