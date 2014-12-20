@@ -12,31 +12,6 @@
 
 #include <chrono>
 
-Real u_bounds(Index index, GridFunction& gf, Dimension dim, 
-		SimulationParameters& simparam)
-{
-	Real value = simparam.ui;
-	if (index.i == 0) value = 0.0;
-	if (index.i == dim.i) value = 0.0;
-	if (index.j == 0) value = -gf(index.i, index.j + 1);
-	if (index.j == dim.j) value = 2.0 - gf(index.i, index.j - 1);
-	return value;
-}
-
-Real v_bounds(Index index, GridFunction& gf, Dimension dim, 
-		SimulationParameters& simparam)
-{
-	Real value = simparam.vi;
-	if (index.i == 0) value = -gf(index.i+1, index.j);
-	if (index.i == dim.i) value = -gf(index.i-1, index.j);
-	if (index.j == 0) value = 0.0;
-	if (index.j == dim.j) value = 0.0;
-	return value;
-}
-
-void mainLoop()
-{
-}
 
 int main(int argc, char** argv)
 {
@@ -66,17 +41,7 @@ int main(int argc, char** argv)
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(local_dim, delta,
-		/* 
-		 * you can ignore the next few lines. 
-		 * they set the boundary conditions on the domain by passing boundary functions */
-		/* U */std::bind(u_bounds, std::placeholders::_1, std::placeholders::_2, 
-			std::placeholders::_3, std::ref(simparam)),
-		/* V */std::bind(v_bounds, std::placeholders::_1, std::placeholders::_2, 
-			std::placeholders::_3, std::ref(simparam)),
-		/* W==0 */[](Index i, GridFunction& gf, Dimension dim)
-			{return 0.0*i.i*gf.getGridDimension().i*dim.i; }, 
-		/* P==0 */[&simparam](Index i, GridFunction& gf, Dimension dim)
-			{return simparam.pi + 0.0*(i.i*gf.getGridDimension().i*dim.i); },
+
 		/* outer forces */
 			simparam.gx, simparam.gy, 0.0,
 		/* boundaries and color pattern */

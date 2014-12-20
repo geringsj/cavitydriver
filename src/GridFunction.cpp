@@ -10,8 +10,8 @@ GridFunction::GridFunction(Index dims)
 
 	this->grid = new Real[dimension[0]*dimension[1]*dimension[2]];
 
-	forall(i,j,Index(0,0),Index(this->dimension.i-1,this->dimension.j-1)) 
-		this->operator()(i,j) = 0.0;
+	for(int i=0; i<dimension[0]*dimension[1]*dimension[2]; i++)
+		this->grid[i] = 0.0;
 }
 
 GridFunction::~GridFunction()
@@ -45,12 +45,16 @@ Real GridFunction::operator[](const Index& d) const {
 	return this->operator()(d.i, d.j);
 }
 Real& GridFunction::operator()(const int& i, const int& j){
-	return this->grid[i * dimension.j + j];
+	return this->grid[j * dimension.i + i];
+	//return this->grid[i * dimension.j + j];
 }
 Real GridFunction::operator()(const int& i, const int& j) const { 
-	return this->grid[i * dimension.j + j];
+	return this->grid[j * dimension.i + i];
+	//return this->grid[i * dimension.j + j];
 }
 
+/* WARNING: here, the indices move as follows: first k, then j, i is slowest, 
+ * so beware when extending to 3D */
 //Real& operator()(int i, int j, int k){ /* TODO !? */
 //	return this->grid[i * dimension.j * dimension.k + j * dimension.k + k];
 //}
@@ -62,11 +66,11 @@ Real GridFunction::operator()(const int& i, const int& j) const {
 void GridFunction::printSTDOUT()
 {
 	Index SI(0,0), EI(this->dimension.i-1,this->dimension.j-1);
-	for(int I=EI[1]; I>=SI[1]; I--)
+	for(int J=EI[1]; J>=SI[1]; J--)
 	{
-		for(int J=SI[0]; J<=EI[0]; J++)
+		for(int I=SI[0]; I<=EI[0]; I++)
 		{
-			std::cout <<std::setprecision(5)<<std::fixed << this->operator()(J,I) << "  ";
+			std::cout <<std::setprecision(5)<<std::fixed << this->operator()(I,J) << "  ";
 		}
 		std::cout << std::endl;
 	}

@@ -3,6 +3,7 @@
 #define SimulationParameters_hpp
 
 #include "Structs.hpp"
+#include "Boundary.hpp"
 
 #include <iostream>
 
@@ -30,7 +31,7 @@ public:
 	Real tEnd;
 	Real deltaT;
 	union{
-		Real tDeltaWriteVTK;
+		Real tDeltaWrite;
 		Real deltaVec;
 	};
 
@@ -55,6 +56,15 @@ public:
 	Real KarmanAngle;
 	Real KarmanObjectWidth;
 
+	/* inner ranges of boundaries (including objects).
+	 * note: the ranges are from the inner-part of the domain and the direction
+	 * included in the piece struct tells in which direction from the cell the 
+	 * boundary lies. */
+	std::vector<Boundary::BoundaryPiece> boundary_conditions;
+	std::vector<Range> p_inner_ranges;
+	std::vector<Range> u_inner_ranges;
+	std::vector<Range> v_inner_ranges;
+
 public:
 
 	SimulationParameters(std::string settingsfile);
@@ -64,7 +74,6 @@ public:
 	void writeToSTDOUT();
 
 	bool readInputfile(std::string settingsfile);
-
 };
 
 

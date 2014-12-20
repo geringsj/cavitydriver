@@ -42,26 +42,24 @@ namespace Solver
 
 	namespace {
 		inline Real evaluateSOR(
-				const GridFunction& p, 
-				const GridFunction& rhs,
-				const int& i, 
-				const int& j, 
-				const Real& dxx, 
-				const Real& dyy, 
-				const Real& omegaMinus1,
-				const Real& omegaTimesDxxDyy)
+				const GridFunction p, 
+				const GridFunction rhs,
+				const int i, 
+				const int j, 
+				const Real dxx, 
+				const Real dyy, 
+				const Real omegaMinus1,
+				const Real omegaTimesDxxDyy)
 		{
 			const Real old_value = p(i,j);
 			const Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
 			const Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
 
-			const Real new_value = 
+			return 
 				omegaMinus1 * old_value 
 				+ 
 				omegaTimesDxxDyy 
 				* ( pxx + pyy - rhs(i,j) );
-
-			return new_value;
 		}
 	};
 
@@ -74,12 +72,12 @@ namespace Solver
 	{
 		const Real dxx = pow(delta.x, 2.0);
 		const Real dyy = pow(delta.y, 2.0);
-		const Real omegaMinus1 = (1. - omega);
+		const Real OneMinusOmega = (1. - omega);
 		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
 		for_range(i,j,inner_range)
 		{
-			p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, omegaMinus1, omegaTimesDxxDyy);
+			p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, OneMinusOmega, omegaTimesDxxDyy);
 		}
 	}
 	
@@ -94,9 +92,14 @@ namespace Solver
 		const Delta delta = domain.getDelta();
 		const Range inner_range = domain.getInnerRangeP();
 
+		const int xBegin = inner_range.begin.i;
+		const int yBegin = inner_range.begin.j;
+		const int xEnd = inner_range.end.i;
+		const int yEnd = inner_range.end.j;
+
 		const Real dxx = pow(delta.x, 2.0);
 		const Real dyy = pow(delta.y, 2.0);
-		const Real omegaMinus1 = (1. - omega);
+		const Real OneMinusOmega = (1. - omega);
 		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
 		// Decided offset (in y-direction) based on color of first cell.
@@ -106,15 +109,13 @@ namespace Solver
 		// in order to achieve a check-board pattern (red-black scheme).
 		int offset = (color == domain.getDomainFirstCellColor()) ? 0 : 1;
 
-		for(int i=inner_range.begin[0]; i<=inner_range.end[0]; i++)
+		for(int j=yBegin; j<=yEnd; j++)
 		{
-			for(int j=inner_range.begin[1]+offset; j<=inner_range.end[1]; j=j+2)
-				// skip every other cell in y dimension
+			for(int i=xBegin+offset; i<=xEnd; i=i+2)// skip every other cell in x dimension
 			{
-				p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, omegaMinus1, omegaTimesDxxDyy);
+				p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, OneMinusOmega, omegaTimesDxxDyy);
 			}
-			// 'Flip' offset for next column
-			offset = (offset+1)%2;
+			offset = (offset+1)%2;// 'Flip' offset for next column
 		}
 	}
 

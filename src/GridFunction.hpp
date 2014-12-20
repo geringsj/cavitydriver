@@ -10,9 +10,10 @@
 /**
  * Better use this makro to walk on the grid.
  */
-#define forall(F,S,B,E) for(int F=B[0];F<=E[0];F++)for(int S=B[1];S<=E[1];S++)
+#define forall(F,S,B,E) for(int S=B[1];S<=E[1];S++)for(int F=B[0];F<=E[0];F++)
 
-#define for_range(F,S,R) for(int F=R.begin[0];F<=R.end[0];F++)for(int S=R.begin[1];S<=R.end[1];S++)
+/* F beeing i (in x direction) and S beeing j (in y direction) */
+#define for_range(F,S,R) for(int S=R.begin.j;S<=R.end.j;S++)for(int F=R.begin.i;F<=R.end.i;F++)
 
 
 /** 
