@@ -77,12 +77,12 @@ private:
 	 * create a copy of each simparam value in here.
 	 * Just because it's late and i'm hungry.
 	 */
-	Real m_alpha, m_deltaT, m_eps, m_gx, m_gy, m_KarmanAngle, 
+	float m_alpha, m_deltaT, m_eps, m_gx, m_gy, m_KarmanAngle, 
 		m_KarmanObjectWidth,m_pi, m_re, m_tau, m_tEnd, 
 		m_ui, m_vi, m_xLength, m_yLength, m_omg;
 	union{
-		Real m_tDeltaWriteVTK;
-		Real m_deltaVec;
+		float m_tDeltaWriteVTK;
+		float m_deltaVec;
 	};
 	int m_iterMax;
 	union{

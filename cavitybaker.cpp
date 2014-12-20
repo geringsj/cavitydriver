@@ -12,6 +12,7 @@ int main(int argc, char** argv)
 	Index begin = Index(1, 1);
 	Index end = Index(simparam.iMax, simparam.jMax);
 	Range range = Range(begin, end);
+	simparam.writeToSTDOUT();
 	/**
 	 * This is just a test but the range should
 	 * match the inner range of p.
