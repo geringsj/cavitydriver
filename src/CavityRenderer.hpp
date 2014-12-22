@@ -104,12 +104,15 @@ private:
 	GLSLProgram m_grid_prgm; /**< Store the programm data for the grid rendering programm. */
 	bool m_show_grid;
 
+	Texture2D m_arrow;
+	GLSLProgram m_arrow_prgm;
+	Mesh m_arrow_quad;
+
 	Mesh m_field_quad;
 	GLSLProgram m_field_prgm;
 	Texture2D m_pressure_tx;
 	Texture2D m_velocity_tx;
 	bool m_show_field;
-	bool m_grid_resize;
 
 	/** 
 	 * Function to create the data and index array for a grid
@@ -178,6 +181,28 @@ private:
 
 	/** Read a shader source file */
 	const std::string readShaderFile(const char* const path);
+
+	bool createGLSLProgramms();
+
+	/**
+	* \brief Read a the header of a ppm image file. Courtesy to the computer vision lecture I attended.
+	* \param filename Location of the image file
+	* \param headerEndPos Out parameter, marks the point where the header of the ppm file ends
+	* \param imgDimX Out parameter, containing the dimension of the image in X direction in pixels
+	* \param imgDimY Out parameter, containing the dimension of the image in Y direction in pixels
+	* \return Returns true if the ppm header was succesfully read, false otherwise
+	*/
+	bool readPpmHeader(const char* filename, unsigned long& headerEndPos, int& imgDimX, int& imgDimY);
+	/**
+	* \brief Read a the data of a ppm image file. Courtesy to the computer vision lecture I attended.
+	* \param filename Location of the image file
+	* \param imageData Pointer to the data buffer, that the image data will be written to
+	* \param dataBegin Marks the location within the ppm file, where the data block begins
+	* \param imgDimX Dimension of the image in X direction in pixels
+	* \param imgDimY Dimension of the image in Y direction in pixels
+	* \return Returns true if the ppm header was succesfully read, false otherwise
+	*/
+	bool readPpmData(const char* filename, char* imageData, unsigned long dataBegin, int imgDimX, int imgDimY);
 };
 
 #endif

@@ -27,7 +27,6 @@ CavityRenderer::CavityRenderer()
 	 * good reason.
 	 */
 	//m_sim_params = NULL;
-	m_grid_resize = false;
 }
 
 CavityRenderer::~CavityRenderer()
@@ -96,6 +95,9 @@ bool CavityRenderer::init(unsigned int window_width, unsigned int window_height,
 
 
 	m_cam_sys = CameraSystem(glm::vec3(0.0f, 0.0f, m_zoom), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	
+	createGLSLProgramms();
+
 	return true;
 }
 
@@ -191,11 +193,6 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 
 	addButtonParam("m_bake", " label='bake the parameter' ", Bake);
 
-	for (auto b : sim_params.boundary_conditions)
-	{
-		drawBoundaryCondition(b.range, b.gridtype, b.direction, b.condition_value, b.condition);
-	}
-
 	/**
 	 * And this also doesn't work because AntTweakBar,
 	 * apparently hates pointers and crashes for (no?)
@@ -252,7 +249,44 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 
 
 	m_cam_sys = CameraSystem(glm::vec3(0.0f, 0.0f, m_zoom), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+	createGLSLProgramms();
+
+	for (auto b : sim_params.boundary_conditions)
+	{
+		drawBoundaryCondition(b.range, b.gridtype, b.direction, b.condition_value, b.condition);
+	}
+
 	return true;
+}
+
+bool CavityRenderer::createGLSLProgramms()
+{
+	/* Arrow texture programm */
+	m_arrow_prgm.init();
+
+	std::string arrow_vertex = readShaderFile("./shader/arrowVertex.glsl");
+	if (!m_arrow_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_arrow_prgm.getLog(); return; };
+
+	std::string arrow_fragment = readShaderFile("./shader/arrowFragment.glsl");
+	if (!m_arrow_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_arrow_prgm.getLog(); return; };
+
+	m_arrow_prgm.bindAttribLocation(0, "in_position");
+
+	m_arrow_prgm.link();
+
+	/* Grid programm */
+	m_grid_prgm.init();
+
+	std::string grid_vertex = readShaderFile("./shader/gridVertex.glsl");
+	if (!m_grid_prgm.compileShaderFromString(&grid_vertex, GL_VERTEX_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
+
+	std::string grid_fragment = readShaderFile("./shader/gridFragment.glsl");
+	if (!m_grid_prgm.compileShaderFromString(&grid_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
+
+	m_grid_prgm.bindAttribLocation(0, "in_position");
+
+	m_grid_prgm.link();
 }
 
 void CavityRenderer::paint()
@@ -296,21 +330,6 @@ bool CavityRenderer::createGrid(Range grid_size)
 		(GLsizei)(vertex_array.size()*sizeof(Gridvertex)),(GLsizei)(index_array.size()*sizeof(unsigned int)),GL_LINES);
 	m_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
 
-	if (!m_grid_resize)
-	{
-		m_grid_resize = true;
-		m_grid_prgm.init();
-
-		std::string grid_vertex = readShaderFile("./shader/gridVertex.glsl");
-		if (!m_grid_prgm.compileShaderFromString(&grid_vertex, GL_VERTEX_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
-
-		std::string grid_fragment = readShaderFile("./shader/gridFragment.glsl");
-		if (!m_grid_prgm.compileShaderFromString(&grid_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
-
-		m_grid_prgm.bindAttribLocation(0, "in_position");
-
-		m_grid_prgm.link();
-	}
 	return true;
 }
 
@@ -407,7 +426,58 @@ void CavityRenderer::drawGeometry()
 void CavityRenderer::drawBoundaryCondition(Range range, Boundary::Grid grid_type, 
 	Boundary::Direction dir, Real condition_value, Boundary::Condition cond)
 {
-	
+	unsigned long begin_pos;
+	int x_dim, y_dim;
+	char* img_data;
+	readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
+	img_data = new char[x_dim * y_dim];
+	readPpmData("arrow.ppm", img_data, begin_pos, x_dim, y_dim);
+
+	m_arrow.load(GL_RGB32F, 0, 0, GL_RGB, GL_FLOAT, img_data);
+
+	float x_length = m_xLength / (float)m_iMax;
+	float y_length = m_yLength / (float)m_jMax;
+	for_range(i, j, range)
+	{
+		float pos[] = { (float)i * x_length, (float)j * y_length };
+
+		float left = pos[0] - x_length / 2.0f; 
+		float bottom = pos[1] - y_length / 2.0f;
+		float right = pos[0] + x_length / 2.0f; 
+		float top = pos[1] + y_length / 2.0f;
+
+		Gridvertex quad[] = {
+			Gridvertex(left, bottom, -1.0f, 1.0f),
+			Gridvertex(left, top, -1.0f, 1.0f),
+			Gridvertex(right, top, -1.0f, 1.0f),
+			Gridvertex(right, bottom, -1.0f, 1.0f)
+		};
+		unsigned int quad_index[] =
+		{
+			0, 1, 2, 3
+		};
+		m_arrow_quad.bufferDataFromArray(quad, quad_index,
+			(GLsizei)(4 * sizeof(Gridvertex)),
+			(GLsizei)(4 * sizeof(unsigned int)),
+			GL_QUADS);
+		m_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
+
+		m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
+		m_arrow_prgm.use();
+		glEnable(GL_TEXTURE_2D);
+		glm::mat4 proj_mat = glm::perspective(45.0f, (float)m_window_width / (float)m_window_height, 0.1f, 1000.0f);
+		glm::mat4 model_mat = glm::mat4(1.0f);
+		glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
+		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+		m_grid_prgm.setUniform("mvp_matrix", mvp_mat);
+		m_arrow_prgm.setUniform("arrowTexture", 0);
+		glActiveTexture(GL_TEXTURE0);
+		m_arrow.bindTexture();
+
+		m_grid.draw();
+	}	
+
+	delete(img_data);
 }
 
 const std::string CavityRenderer::readShaderFile(const char* const path)
@@ -420,6 +490,150 @@ const std::string CavityRenderer::readShaderFile(const char* const path)
 	}
 	inFile.close();
 	return source.str();
+}
+
+bool CavityRenderer::readPpmHeader(const char* filename, unsigned long& headerEndPos, int& imgDimX, int& imgDimY)
+{
+	int currentComponent = 0;
+	bool firstline = false;
+	std::string::iterator itr1;
+	std::string::iterator itr2;
+	std::string buffer;
+	std::string compBuffer;
+	std::ifstream file(filename, std::ios::in | std::ios::binary);
+	/*
+	/ Check if the file could be opened.
+	*/
+	if (!(file.is_open()))return false;
+	/*
+	/ Go to the beginning of the file and read the first line.
+	*/
+	file.seekg(0, file.beg);
+	std::getline(file, buffer, '\n');
+	itr1 = buffer.begin();
+	for (itr2 = buffer.begin(); itr2 != buffer.end(); itr2++)
+	{
+		/*
+		/ Check if the first line contains more than just ppm's magic number.
+		/ If it does, it should look like this:
+		/ "magic_number image_dimension_x image_dimension_y maximum_value"
+		/ Therefore we scan the string for a space character and start parsing it.
+		*/
+		if (*itr2 == ' ')
+		{
+			if (currentComponent == 0)
+			{
+				/* The first component is the magic number. We don't need it. */
+				currentComponent++;
+				firstline = true;
+				itr1 = (itr2 + 1);
+			}
+			else if (currentComponent == 1)
+			{
+				/* Get the image dimension in x. */
+				compBuffer.assign(itr1, itr2);
+				imgDimX = atoi(compBuffer.c_str());
+				currentComponent++;
+				itr1 = (itr2 + 1);
+			}
+			else if (currentComponent == 2)
+			{
+				/* Get the image dimension in y. */
+				compBuffer.assign(itr1, itr2);
+				imgDimY = atoi(compBuffer.c_str());
+				currentComponent++;
+				itr1 = (itr2 + 1);
+			}
+		}
+	}
+	/*
+	/ If the information we were looking for was inside the first line, we are done here.
+	/ Note the position where we left off and exit with return true after closing the file.
+	*/
+	if (firstline)
+	{
+		headerEndPos = static_cast<long>(file.tellg());
+		file.close();
+		return true;
+	}
+	/*
+	/ If the information wasn't inside the first line we have to keep reading lines.
+	/ Skip all comment lines (first character = '#').
+	*/
+	std::getline(file, buffer, '\n');
+	while (buffer[0] == '#' || (buffer.size() < 1))
+	{
+		std::getline(file, buffer, '\n');
+	}
+	/*
+	/ Now we should have a string containing the image dimensions and can extract them.
+	*/
+	itr1 = buffer.begin();
+	for (itr2 = buffer.begin(); itr2 != buffer.end(); itr2++)
+	{
+		/* Get the image dimension in x. */
+		if (*itr2 == ' ')
+		{
+			compBuffer.assign(itr1, itr2);
+			imgDimX = atoi(compBuffer.c_str());
+			currentComponent++;
+			itr1 = (itr2 + 1);
+		}
+	}
+	/*
+	/ The last component of a line can't be parsed within the loop since it isn't followed by
+	/ a space character, but an end-of-line.
+	/
+	/ Get the image dimension in x.
+	*/
+	compBuffer.assign(itr1, itr2);
+	imgDimY = atoi(compBuffer.c_str());
+	/*
+	/ Read one more line. This should contain the maximum value of the image, but we don't need
+	/ that.
+	/ Note down the position after this line and exit with return true after closing the file.
+	*/
+	std::getline(file, buffer, '\n');
+	headerEndPos = static_cast<unsigned long>(file.tellg());
+	file.close();
+	return true;
+}
+bool CavityRenderer::readPpmData(const char* filename, char* imageData, unsigned long dataBegin, int imgDimX, int imgDimY)
+{
+	std::ifstream file(filename, std::ios::in | std::ios::binary);
+	/*
+	/ Check if the file could be opened.
+	*/
+	if (!(file.is_open()))return false;
+	/*
+	/ Determine the length from the beginning of the image data to the end of the file.
+	*/
+	file.seekg(0, file.end);
+	unsigned long length = static_cast<unsigned long>(file.tellg());
+	length = length - dataBegin;
+	char* buffer = new char[length];
+	file.seekg(dataBegin, std::ios::beg);
+	file.read(buffer, length);
+	/*
+	/ Rearrange the image information so that the data begins with the lower left corner.
+	*/
+	int k = 0;
+	for (int i = 0; i < imgDimY; i++)
+	{
+		int dataLoc = (imgDimY - 1 - i)*imgDimX * 3;
+		for (int j = 0; j < imgDimX; j++)
+		{
+			imageData[k] = buffer[dataLoc + (j * 3)];
+			k++;
+			imageData[k] = buffer[dataLoc + (j * 3) + 1];
+			k++;
+			imageData[k] = buffer[dataLoc + (j * 3) + 2];
+			k++;
+		}
+	}
+	file.close();
+	delete[] buffer;
+	return true;
 }
 
 void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, float min, float max, std::string mode)
