@@ -191,6 +191,11 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 
 	addButtonParam("m_bake", " label='bake the parameter' ", Bake);
 
+	for (auto b : sim_params.boundary_conditions)
+	{
+		drawBoundaryCondition(b.range, b.gridtype, b.direction, b.condition_value, b.condition);
+	}
+
 	/**
 	 * And this also doesn't work because AntTweakBar,
 	 * apparently hates pointers and crashes for (no?)
@@ -399,6 +404,12 @@ void CavityRenderer::drawGeometry()
 {
 }
 
+void CavityRenderer::drawBoundaryCondition(Range range, Boundary::Grid grid_type, 
+	Boundary::Direction dir, Real condition_value, Boundary::Condition cond)
+{
+	
+}
+
 const std::string CavityRenderer::readShaderFile(const char* const path)
 {
 	std::ifstream inFile(path, std::ios::in);
@@ -411,28 +422,56 @@ const std::string CavityRenderer::readShaderFile(const char* const path)
 	return source.str();
 }
 
-void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, float min, float max)
+void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, float min, float max, std::string mode)
 {
-	TwAddVarRW(bar, name, TW_TYPE_FLOAT, var, def);
-	TwSetParam(bar, name, "min", TW_PARAM_FLOAT, 1, &min);
-	TwSetParam(bar, name, "max", TW_PARAM_FLOAT, 1, &max);
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_FLOAT, var, def);
+		TwSetParam(bar, name, "min", TW_PARAM_FLOAT, 1, &min);
+		TwSetParam(bar, name, "max", TW_PARAM_FLOAT, 1, &max);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_FLOAT, var, def);
+	}
 }
 
-void CavityRenderer::addIntParam(const char* name, const char* def, void* var, int min, int max)
+void CavityRenderer::addIntParam(const char* name, const char* def, void* var, int min, int max, std::string mode)
 {
-	TwAddVarRW(bar, name, TW_TYPE_INT32, var, def);
-	TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
-	TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_INT32, var, def);
+		TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
+		TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_INT32, var, def);
+	}
 }
 
-void CavityRenderer::addBoolParam(const char* name, const char* def, void* var)
+void CavityRenderer::addBoolParam(const char* name, const char* def, void* var, std::string mode)
 {
-	TwAddVarRW(bar, name, TW_TYPE_BOOL32, var, def);
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_BOOL32, var, def);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_BOOL32, var, def);
+	}
 }
 
-void CavityRenderer::addVec3Param(const char* name, const char* def, void* var)
+void CavityRenderer::addVec3Param(const char* name, const char* def, void* var, std::string mode)
 {
-	TwAddVarRW(bar, name, TW_TYPE_DIR3F, var, def);
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_DIR3F, var, def);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_DIR3F, var, def);
+	}
 }
 
 void CavityRenderer::addButtonParam(const char* name, const char* def, TwButtonCallback callback)
@@ -440,9 +479,16 @@ void CavityRenderer::addButtonParam(const char* name, const char* def, TwButtonC
 	TwAddButton(bar, name, callback, this, def);
 }
 
-void CavityRenderer::addStringParam(const char* name, const char* def, void* var)
+void CavityRenderer::addStringParam(const char* name, const char* def, void* var, std::string mode)
 {
-	TwAddVarRW(bar, name, TW_TYPE_CDSTRING, var, def);
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_CDSTRING, var, def);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_CDSTRING, var, def);
+	}
 }
 
 void CavityRenderer::removeParam(const char* name)

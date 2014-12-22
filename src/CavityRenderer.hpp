@@ -124,16 +124,21 @@ private:
 		/**< Reference to the data array. */
 		);
 
-	void addFloatParam(const char* name, const char* def, void* var, 
-		float min = std::numeric_limits<float>::min(), 
-		float max = std::numeric_limits<float>::max());
+	void addFloatParam(const char* name, const char* def, void* var,
+		float min = std::numeric_limits<float>::min(),
+		float max = std::numeric_limits<float>::max(),
+		std::string mode = "RW");
 	void addIntParam(const char* name, const char* def, void* var, 
 		int min = std::numeric_limits<int>::min(),
-		int max = std::numeric_limits<int>::max());
-	void addBoolParam(const char* name, const char* def, void* var);
-	void addVec3Param(const char* name, const char* def, void* var);
+		int max = std::numeric_limits<int>::max(),
+		std::string mode = "RW");
+	void addBoolParam(const char* name, const char* def, void* var, 
+		std::string mode = "RW");
+	void addVec3Param(const char* name, const char* def, void* var, 
+		std::string mode = "RW");
 	void addButtonParam(const char* name, const char* def, TwButtonCallback callback);
-	void addStringParam(const char* name, const char* def, void* var);
+	void addStringParam(const char* name, const char* def, void* var, 
+		std::string mode = "RW");
 	void removeParam(const char* name);
 
 	/** Upload field data of a specified timestep to texture ojects */
@@ -150,6 +155,8 @@ private:
 
 	/** Draw geometric shapes */
 	void drawGeometry();
+
+	void drawBoundaryCondition(Range range, Boundary::Grid grid_type, Boundary::Direction dir, Real condition_value, Boundary::Condition cond);
 
 	/* Static GLFW callback functions - Primarily calls AntTweakBar functions */
 	inline static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
