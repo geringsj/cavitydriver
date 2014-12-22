@@ -29,7 +29,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point delta,
-			const Range inner_range,
+			const Ranges inner_range,
 			const Dimension globalDims);
 
 	/**
@@ -44,7 +44,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Range inner_range,
+			const Ranges inner_range,
 			const Dimension globalDims);
 	
 	/**
@@ -56,7 +56,7 @@ namespace Solver
 			GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Range& inner_range,
+			const Ranges& inner_range,
 			const Real& omega);
 
 	/**

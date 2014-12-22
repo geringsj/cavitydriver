@@ -33,28 +33,31 @@ Domain::Domain(
 
 		m_force_gx(in_gx), m_force_gy(in_gy) // , m_force_gz(in_gz)
 {
-	Index inner_begin(1,1,1);
-	Index inner_end[4];
+	m_inner_ranges[0] = m_boundary.getInnerRanges(Boundary::Grid::U);
+	m_inner_ranges[1] = m_boundary.getInnerRanges(Boundary::Grid::V);
+	//m_inner_ranges[2] = m_boundary.getInnerRanges(Boundary::Grid::V);
+	m_inner_ranges[3] = m_boundary.getInnerRanges(Boundary::Grid::P);
+	m_whole_inner_range = m_boundary.getWholeInnerRange();
 
-	/* set indices for end of inner of grids u, v, w and p individually */
-	/* for now, everything < inner_begin and everything > inner_end 
-	 * is border of the grid */
-	for(uint d=0; d<DIMENSIONS; d++)
-		for(uint e=0; e<DIMENSIONS; e++)
-			inner_end[d][e] = dimension[e] + ((e==d)?(-boundary.getCompetence()[d]):(0)); 
+	// /* set indices for end of inner of grids u, v, w and p individually */
+	// /* for now, everything < inner_begin and everything > inner_end 
+	//  * is border of the grid */
+	// for(uint d=0; d<DIMENSIONS; d++)
+	// 	for(uint e=0; e<DIMENSIONS; e++)
+	// 		inner_end[d][e] = dimension[e] + ((e==d)?(-boundary.getCompetence()[d]):(0)); 
 
-	/* the pressure is fourth entry of the array and has symmetric dimensions */
-	inner_end[3] = dimension; 
+	// /* the pressure is fourth entry of the array and has symmetric dimensions */
+	// inner_end[3] = dimension; 
 
-	m_inner_ranges[0] = Range(inner_begin, inner_end[0]);
-	m_inner_ranges[1] = Range(inner_begin, inner_end[1]);
-	m_inner_ranges[2] = Range(inner_begin, inner_end[2]);
-	m_inner_ranges[3] = Range(inner_begin, inner_end[3]);
+	// m_inner_ranges[0] = Range(inner_begin, inner_end[0]);
+	// m_inner_ranges[1] = Range(inner_begin, inner_end[1]);
+	// m_inner_ranges[2] = Range(inner_begin, inner_end[2]);
+	// m_inner_ranges[3] = Range(inner_begin, inner_end[3]);
 
 	/* init all grids to start values given from outside */
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
-		for_range(i,j,m_inner_ranges[d])
+		for_vecrange(i,j,m_inner_ranges[d])
 		{
 			if(d==0)
 				u()(i,j) = in_uinit;
@@ -66,7 +69,7 @@ Domain::Domain(
 	}
 
 	/* init pressure and rhs */
-	for_range(i,j,m_inner_ranges[3])
+	for_vecrange(i,j,m_inner_ranges[3])
 	{
 		p()(i,j) = in_pinit;
 		rhs()(i,j) = 0.0;

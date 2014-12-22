@@ -61,9 +61,6 @@ public:
 	 * included in the piece struct tells in which direction from the cell the 
 	 * boundary lies. */
 	std::vector<Boundary::BoundaryPiece> boundary_conditions;
-	std::vector<Range> p_inner_ranges;
-	std::vector<Range> u_inner_ranges;
-	std::vector<Range> v_inner_ranges;
 
 public:
 

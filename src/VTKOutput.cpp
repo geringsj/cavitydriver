@@ -70,10 +70,10 @@ void VTKOutput::writeVTKSingleFile()
 
   	/* write extent of grid, the Min/Max values are _inclusive_, 
   	 * like in for(int i=Min; i<=Max; ...) */
-  	int xMin = this->domain.getInnerRangeP().begin.i;
-  	int xMax = this->domain.getInnerRangeP().end.i;
-  	int yMin = this->domain.getInnerRangeP().begin.j;
-  	int yMax = this->domain.getInnerRangeP().end.j;
+  	int xMin = this->domain.getWholeInnerRange().begin.i;
+  	int xMax = this->domain.getWholeInnerRange().end.i;
+  	int yMin = this->domain.getWholeInnerRange().begin.j;
+  	int yMax = this->domain.getWholeInnerRange().end.j;
 	os 
 	<< "<?xml version=\"1.0\"?>" << std::endl
 	<< "<VTKFile type=\"StructuredGrid\">" << std::endl
@@ -326,10 +326,10 @@ void VTKOutput::writeVTKSlaveFile()
 	/* the {x,y}Locl{Min,Max} are w.r.t. the offset of the global domain, 
 	 * so we can not use them as loop boundaries here */
 	Real u_inter, v_inter;
-	int xBegin = domain.getInnerRangeP().begin.i -1;
-	int xEnd = domain.getInnerRangeP().end.i +1;
-	int yBegin = domain.getInnerRangeP().begin.j -1;
-	int yEnd = domain.getInnerRangeP().end.j +1;
+  	int xBegin = this->domain.getWholeInnerRange().begin.i -1;
+  	int xEnd = this->domain.getWholeInnerRange().end.i +1;
+  	int yBegin = this->domain.getWholeInnerRange().begin.j -1;
+  	int yEnd = this->domain.getWholeInnerRange().end.j +1;
 	/* note: the loops first write in x direction, then in y direction */
 	for (int j = yBegin; j <= yEnd; j++)
 	{

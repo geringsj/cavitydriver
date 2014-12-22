@@ -6,8 +6,11 @@
 #include "GridFunction.hpp"
 #include "Boundary.hpp"
 
-#include <functional>
+#include <vector>
 
+typedef std::vector<Range> Ranges;
+
+#define for_vecrange(F,S,R) for(auto M : R)for_range(F,S,M)
 
 /** 
  * Implements the Domain we will be working on, managing dimensions, grids and properties.
@@ -33,7 +36,7 @@ private:
 	 */
 	struct Grid3D
 	{
-		Grid3D(Dimension dim, Boundary::Competence bndrycomp=Boundary::Competence()) : 
+		Grid3D(Dimension dim, Boundary::Competence bndrycomp) : 
 			m_u(Dimension(dim.i+2-(int)bndrycomp.Right,dim.j+2)),
 			m_v(Dimension(dim.i+2,dim.j+2-(int)bndrycomp.Up)),
 			m_w(Dimension(0,0)) {}
@@ -90,11 +93,12 @@ public:
 	 * better have the user see what is done? */
 	Dimension getDimension() const { return m_dimension; }
 
-	Range* getInnerRanges() { return m_inner_ranges; };
-	Range getInnerRangeU() const { return m_inner_ranges[0]; };
-	Range getInnerRangeV() const { return m_inner_ranges[1]; };
-	Range getInnerRangeW() const { return m_inner_ranges[2]; };
-	Range getInnerRangeP() const { return m_inner_ranges[3]; };
+	Range getWholeInnerRange() { return m_whole_inner_range; }
+	Ranges* getInnerRanges() { return m_inner_ranges; };
+	Ranges getInnerRangeU() const { return m_inner_ranges[0]; };
+	Ranges getInnerRangeV() const { return m_inner_ranges[1]; };
+	//Ranges getInnerRangeW() const { return m_inner_ranges[2]; };
+	Ranges getInnerRangeP() const { return m_inner_ranges[3]; };
 
 	Point getDelta() const { return m_delta; }
 
@@ -139,7 +143,8 @@ private:
 	 * [2] -> inner Range of W (maye we will need it ...)
 	 * [3] -> inner Range of pressure P
 	 */
-	Range m_inner_ranges[4];
+	std::vector<Range> /* aka 'Ranges' */ m_inner_ranges[4];
+	Range m_whole_inner_range;
 
 	/**
 	 * Color of first inner ((1,1)) Cell of domain.
@@ -162,15 +167,6 @@ private:
 	 */
 	Grid3D m_velocities;
 	Grid3D m_preliminary_velocities_FGH;
-
-	///**
-	// * Input functions used to (re)set boundaries and starting conditions
-	// */
-	//std::function<Real(Index)> m_borderfunc_u;
-	//std::function<Real(Index)> m_borderfunc_v;
-	//std::function<Real(Index)> m_borderfunc_w;
-
-	//Boundary m_boundary;
 
 	/**
 	 * External forces
