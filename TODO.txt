@@ -3,6 +3,21 @@ hokay, so heres the thing:
 
 what needs to be done in each file:
 
+Vis team:
+-   arrowVertex.glsl
+	* Fix the scaling so that we are in the range of [0,1]
+
+-	arrowFragment.glsl
+	* Check the alpha sampling
+	
+-	CavityRenderer.cpp/hpp
+	* Check the arrow rendering and improve it
+	* Cleanup
+	* Make communication with Bakery possible
+	* Rename init(...) to initVis to match the naming
+	* Fill the bar in initVis with read only parameters
+Vis team
+
 -	main.cpp:
 
 -	Computation.hpp
