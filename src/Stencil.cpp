@@ -3,6 +3,7 @@
 #include "Debug.hpp"
 #include <cmath>
 
+
 namespace Derivatives
 {
 	namespace {
@@ -363,3 +364,4 @@ namespace Derivatives
 	}
 
 };
+

@@ -1,30 +1,37 @@
 #include "Domain.hpp"
 
 
-Domain::Domain(Dimension dimension, Delta delta,
+Domain::Domain(
+		Dimension dimension, Delta delta,
 
-	std::function<Real(Index,GridFunction&,Dimension)> in_u,
-	std::function<Real(Index,GridFunction&,Dimension)> in_v,
-	std::function<Real(Index, GridFunction&, Dimension)> in_w,
-	std::function<Real(Index, GridFunction&, Dimension)> in_p,
+		Boundary boundary,
 
-	Real in_gx,
-	Real in_gy,
-	Real in_gz,
+		/* field forces */
+		Real in_gx,
+		Real in_gy,
+		//Real in_gz,
 
-	Domain::Boundary bndry,
+		/* initial grid values */
+		Real in_uinit,
+		Real in_vinit,
+		//Real in_winit,
+		Real in_pinit,
 
-	Color firstCellColor
+		/* color for SOR Red/Black pattern */
+		Color firstCellColor
 	) : 
 		m_dimension(dimension),
+		m_boundary(boundary),
 		m_FirstCellColor(firstCellColor),
 		m_delta(delta),
+
 		m_p(Dimension(dimension[0]+2,dimension[1]+2)), 
 		m_p_rhs(Dimension(dimension[0]+2,dimension[1]+2)),
-		m_velocities(dimension,bndry),
-		m_preliminary_velocities_FGH(dimension,bndry),
-		m_boundary(bndry.Up, bndry.Down, bndry.Left, bndry.Right),
-		m_force_gx(in_gx), m_force_gy(in_gy), m_force_gz(in_gz)
+
+		m_velocities(dimension,boundary.getCompetence()),
+		m_preliminary_velocities_FGH(dimension,boundary.getCompetence()),
+
+		m_force_gx(in_gx), m_force_gy(in_gy) // , m_force_gz(in_gz)
 {
 	Index inner_begin(1,1,1);
 	Index inner_end[4];
@@ -34,7 +41,7 @@ Domain::Domain(Dimension dimension, Delta delta,
 	 * is border of the grid */
 	for(uint d=0; d<DIMENSIONS; d++)
 		for(uint e=0; e<DIMENSIONS; e++)
-			inner_end[d][e] = dimension[e] + ((e==d)?(-bndry[d]):(0)); 
+			inner_end[d][e] = dimension[e] + ((e==d)?(-boundary.getCompetence()[d]):(0)); 
 
 	/* the pressure is fourth entry of the array and has symmetric dimensions */
 	inner_end[3] = dimension; 
@@ -44,42 +51,24 @@ Domain::Domain(Dimension dimension, Delta delta,
 	m_inner_ranges[2] = Range(inner_begin, inner_end[2]);
 	m_inner_ranges[3] = Range(inner_begin, inner_end[3]);
 
-	/* bind given border functions to operate on gridfunctions u(), v(), w()
-	 * and to automatically use the right (upper bounds) dimensions of the grid */
-	for(uint d=0; d<DIMENSIONS; d++)
-	{
-		Dimension max(inner_end[d][0]+1, inner_end[d][1]+1, inner_end[d][2]+1);
-		/* TODO replace with more general boudnary handling scheme */
-		if(d==0)
-			m_borderfunc_u = std::bind(in_u,std::placeholders::_1, std::ref(u()), max);
-		if(d==1)
-			m_borderfunc_v = std::bind(in_v,std::placeholders::_1, std::ref(v()), max);
-		if(d==2)
-			m_borderfunc_w = std::bind(in_w,std::placeholders::_1, std::ref(w()), max);
-	}
-
-	/* init all grids to start values given from outside
-	 * yes, the borderfunctions shall return us initial values if not 
-	 * evaluated on the border. somebody should document this demand. */
+	/* init all grids to start values given from outside */
 	for(uint d=0; d<DIMENSIONS; d++)
 	{
 		for_range(i,j,m_inner_ranges[d])
 		{
-			Dimension current(i, j);//,k);
 			if(d==0)
-				u()(i,j)/*,k)*/ = m_borderfunc_u(current);
+				u()(i,j) = in_uinit;
 			if(d==1)
-				v()(i, j)/*,k)*/ = m_borderfunc_v(current);
-			if(d==3)
-				w()(i, j)/*,k)*/ = m_borderfunc_w(current);
+				v()(i, j) = in_vinit;
+			//if(d==3)
+			//	w()(i, j)/*,k)*/ = ;
 		}
 	}
 
 	/* init pressure and rhs */
 	for_range(i,j,m_inner_ranges[3])
 	{
-		p()(i,j) = in_p(Index(i,j), p(), 
-				Dimension(dimension.i+2, dimension.j+2, dimension.k+2));
+		p()(i,j) = in_pinit;
 		rhs()(i,j) = 0.0;
 	}
 
@@ -93,77 +82,20 @@ Domain::~Domain()
 {
 }
 
-#define LEFT(start,end)	for(int i = start[0]-1, j = start[1]; j <= end[1]; j++)
-#define RIGHT(start,end) for(int i = end[0] + 1, j = start[1]; j <= end[1]; j++)
-#define TOP(start,end) for(int j = end[1] + 1, i = start[0]; i <= end[0]; i++)
-#define BOTTOM(start,end) for(int j = start[1]-1, i = start[0]; i <= end[0]; i++)
-
-#define VELOCITIESBOUNDARIES(i,j,d) do{\
-	;\
-	if(d == 0)\
-		u()(i, j)/*,k)*/ = m_borderfunc_u(Dimension(i,j));\
-	if(d == 1)\
-		v()(i, j)/*,k)*/ = m_borderfunc_v(Dimension(i,j));\
-	if(d == 2)\
-		w()(i, j)/*,k)*/ = m_borderfunc_w(Dimension(i,j));\
-}while(0)
-
-#define PRELIMINARYVELOCITIESBOUNDARIES(i,j,d) do{\
-	if (d == 0)\
-		F()(i, j) = u()(i, j);\
-	if (d == 1)\
-		G()(i, j) = v()(i, j);\
-	if (d == 2)\
-		H()(i, j) = w()(i, j);\
-}while(0)
-
-#define PRESSUREBOUNDARIES(i,j) do{\
-	if (i == 0) p()(i, j) = p()(i + 1, j);\
-	if (i == m_dimension[0] + 1) p()(i, j) = p()(i - 1, j);\
-	if (j == m_dimension[1] + 1) p()(i, j) = p()(i, j - 1);\
-	if (j == 0) p()(i, j) = p()(i, j + 1);\
-}while(0)
-
-
 void Domain::setVelocitiesBoundaries()
 {
-	for(uint d=0; d<DIMENSIONS; d++)
-	{
-		if (m_boundary.Left)
-			LEFT(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Right)
-			RIGHT(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Up)
-			TOP(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Down)
-			BOTTOM(m_inner_ranges[d].begin, m_inner_ranges[d].end){VELOCITIESBOUNDARIES(i, j, d);}
-	}
+	this->m_boundary.setBoundary(Boundary::Grid::U, this->u());
+	this->m_boundary.setBoundary(Boundary::Grid::V, this->v());
 }
 
 void Domain::setPreliminaryVelocitiesBoundaries()
 {
-	for (uint d = 0; d<DIMENSIONS; d++)
-	{
-		if (m_boundary.Left)
-			LEFT(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Right)
-			RIGHT(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Up)
-			TOP(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
-		if (m_boundary.Down)
-			BOTTOM(m_inner_ranges[d].begin, m_inner_ranges[d].end){PRELIMINARYVELOCITIESBOUNDARIES(i, j, d);}
-	}
+	this->m_boundary.copyGridBoundary(Boundary::Grid::F, this->u(), this->F());
+	this->m_boundary.copyGridBoundary(Boundary::Grid::G, this->v(), this->G());
 }
 
 void Domain::setPressureBoundaries()
 {
-	if (m_boundary.Left)
-		LEFT(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
-	if (m_boundary.Right)
-		RIGHT(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
-	if (m_boundary.Up)
-		TOP(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
-	if (m_boundary.Down)
-		BOTTOM(m_inner_ranges[3].begin, m_inner_ranges[3].end){ PRESSUREBOUNDARIES(i, j); }
+	this->m_boundary.setBoundary(Boundary::Grid::P, this->p());
 }
 

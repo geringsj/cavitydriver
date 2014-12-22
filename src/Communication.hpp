@@ -4,6 +4,7 @@
 
 #include "GridFunction.hpp"
 #include "Domain.hpp"
+#include "Boundary.hpp"
 
 /** 
  * Communication via MPI.
@@ -64,8 +65,8 @@ public:
 	bool checkGlobalFinishSOR(bool myLoopCondition);
 	Color getFirstCellColor() const { return m_myDomainFirstCellColor; }
 	//void exchangeGridInnerValues(Domain domain, Handle grid);
-	Domain::Boundary getBoundaryCompetence() const 
-	{ return Domain::Boundary(m_upRank<0, m_downRank<0, m_leftRank<0, m_rightRank<0); }
+	Boundary::Competence getBoundaryCompetence() const 
+	{ return Boundary::Competence(m_upRank<0, m_downRank<0, m_leftRank<0, m_rightRank<0); }
 
 	int getRank() const { return m_myRank; }
 	int getProcsCount() const { return m_numProcs; }

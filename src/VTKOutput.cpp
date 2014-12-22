@@ -99,9 +99,9 @@ void VTKOutput::writeVTKSingleFile()
 	<< "<DataArray type=\"Float64\" format=\"ascii\" NumberOfComponents=\"3\"> " << std::endl;
 	Real deltaX = this->domain.getDelta().x;
   	Real deltaY = this->domain.getDelta().y;
-	for(int i = xMin; i <= xMax; i++)
+	for(int j = yMin; j <= yMax; j++)
 	{
-		for(int j = yMin; j <= yMax; j++)
+		for(int i = xMin; i <= xMax; i++)
 		{
 			os << std::scientific 
 				<< i * deltaX << " " 
@@ -119,9 +119,9 @@ void VTKOutput::writeVTKSingleFile()
 	 * when looping using the ranges of P */
 	<< "<PointData Vectors=\"Field\"  Scalars=\"P\">" << std::endl 
 	<< "<DataArray Name=\"Field\" NumberOfComponents=\"3\" type=\"Float64\" >" << std::endl;
-	for(int i = xMin; i <= xMax; ++i)
+	for(int j = yMin; j <= yMax; ++j)
 	{
-		for(int j = yMin; j <= yMax; ++j)
+		for(int i = xMin; i <= xMax; ++i)
 		{
 			os << std::scientific 
 				<< (domain.u()(i, j) + domain.u()(i - 1, j)) / 2.0 << " " 
@@ -134,9 +134,9 @@ void VTKOutput::writeVTKSingleFile()
 	os
 	<< "</DataArray>" << std::endl
 	<< "<DataArray type=\"Float64\" Name=\"P\" format=\"ascii\">" << std::endl;
-	for(int i = xMin; i <= xMax; ++i)
+	for(int j = yMin; j <= yMax; ++j)
 	{
-		for(int j = yMin; j <= yMax; ++j)
+		for(int i = xMin; i <= xMax; ++i)
 		{
 			os << std::scientific << domain.p()(i, j) << " ";
 		}

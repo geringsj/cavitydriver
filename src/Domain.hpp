@@ -4,6 +4,7 @@
 
 #include "Structs.hpp"
 #include "GridFunction.hpp"
+#include "Boundary.hpp"
 
 #include <functional>
 
@@ -23,38 +24,6 @@
  */
 class Domain
 {
-public:
-	struct Boundary {
-		/* to be used as booleans ! */
-		int Up;
-		int Down;
-		int Left;
-		int Right;
-
-		Boundary() : Up(1), Down(1), Left(1), Right(1) {};
-		Boundary(int u, int d, int l, int r) 
-			: Up(u), Down(d), Left(l), Right(r) {};
-
-		bool operator[](int i)
-		{
-			switch(i)
-			{
-				case 0: /* U */
-					return Right;
-					break;
-				case 1: /* V */
-					return Up;
-					break;
-				case 2: /* W */
-					return 0; /* TODO Front/Back */
-					break;
-				default:
-					return 0;
-					break;
-			}
-		}
-	};
-
 private: 
 	/** 
 	 * We need this struct for things to be easier.
@@ -64,9 +33,9 @@ private:
 	 */
 	struct Grid3D
 	{
-		Grid3D(Dimension dim, Boundary bndry=Boundary()) : 
-			m_u(Dimension(dim.i+2-(int)bndry.Right,dim.j+2)),
-			m_v(Dimension(dim.i+2,dim.j+2-(int)bndry.Up)),
+		Grid3D(Dimension dim, Boundary::Competence bndrycomp=Boundary::Competence()) : 
+			m_u(Dimension(dim.i+2-(int)bndrycomp.Right,dim.j+2)),
+			m_v(Dimension(dim.i+2,dim.j+2-(int)bndrycomp.Up)),
 			m_w(Dimension(0,0)) {}
 	
 		GridFunction m_u;
@@ -94,17 +63,23 @@ private:
 	};
 
 public:
-	Domain(Dimension dimension, Delta delta,
+	Domain(
+		Dimension dimension, Delta delta,
 
-		/* the functions for setting boundary and initial grid values */
-		std::function<Real(Index,GridFunction&,Dimension)> in_u,
-		std::function<Real(Index,GridFunction&,Dimension)> in_v,
-		std::function<Real(Index,GridFunction&,Dimension)> in_w,
-		std::function<Real(Index, GridFunction&, Dimension)> in_p,
+		Boundary boundary,
+
+		/* field forces */
 		Real in_gx = 0.0,
 		Real in_gy = 0.0,
-		Real in_gz = 0.0,
-		Domain::Boundary bndry = Boundary(),
+		//Real in_gz = 0.0,
+
+		/* initial grid values */
+		Real in_uinit = 0.0,
+		Real in_vinit = 0.0,
+		//Real in_winit = 0.0,
+		Real in_pinit = 0.0,
+
+		/* color for SOR Red/Black pattern */
 		Color firstCellColor = Color::Red
 		);
 
@@ -136,11 +111,11 @@ public:
 	GridFunction& rhs() { return m_p_rhs; }
 
 	Real g(int dim) const
-	{ if(dim == 0) return gx(); if(dim == 1) return gy(); return gz(); }
+	{ if(dim == 0) return gx(); if(dim == 1) return gy(); return gy();/*TODO later do gz*/ }
 
 	Real gx() const { return m_force_gx; }
 	Real gy() const { return m_force_gy; }
-	Real gz() const { return m_force_gz; }
+	//Real gz() const { return m_force_gz; }
 
 	Color getDomainFirstCellColor(){ return m_FirstCellColor; };
 
@@ -153,6 +128,8 @@ private:
 	 * Size of the domain.
 	 */
 	Dimension m_dimension;
+
+	Boundary m_boundary;
 
 	/**
 	 * Gives the ranges of the inner of fields.
@@ -186,21 +163,21 @@ private:
 	Grid3D m_velocities;
 	Grid3D m_preliminary_velocities_FGH;
 
-	/**
-	 * Input functions used to (re)set boundaries and starting conditions
-	 */
-	std::function<Real(Index)> m_borderfunc_u;
-	std::function<Real(Index)> m_borderfunc_v;
-	std::function<Real(Index)> m_borderfunc_w;
+	///**
+	// * Input functions used to (re)set boundaries and starting conditions
+	// */
+	//std::function<Real(Index)> m_borderfunc_u;
+	//std::function<Real(Index)> m_borderfunc_v;
+	//std::function<Real(Index)> m_borderfunc_w;
 
-	Boundary m_boundary;
+	//Boundary m_boundary;
 
 	/**
 	 * External forces
 	 */
 	Real m_force_gx;
 	Real m_force_gy;
-	Real m_force_gz;
+	//Real m_force_gz;
 };
 
 #endif
