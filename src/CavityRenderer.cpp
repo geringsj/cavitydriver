@@ -76,7 +76,7 @@ bool CavityRenderer::init(unsigned int window_width, unsigned int window_height,
     glfwSetCursorPosCallback(m_window, (GLFWcursorposfun)mousePositionCallback);
     glfwSetScrollCallback(m_window, (GLFWscrollfun)mouseWheelCallback);
     glfwSetKeyCallback(m_window, (GLFWkeyfun)keyCallback);
-    glfwSetCharCallback(m_window, (GLFWcharfun)glfwSetCharCallback);
+	glfwSetCharCallback(m_window, (GLFWcharfun)charCallback);
 
 	/*	Initialize glew */
 	//glewExperimental = GL_TRUE;
@@ -230,7 +230,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	glfwSetCursorPosCallback(m_window, (GLFWcursorposfun)mousePositionCallback);
 	glfwSetScrollCallback(m_window, (GLFWscrollfun)mouseWheelCallback);
 	glfwSetKeyCallback(m_window, (GLFWkeyfun)keyCallback);
-	glfwSetCharCallback(m_window, (GLFWcharfun)glfwSetCharCallback);
+	glfwSetCharCallback(m_window, (GLFWcharfun)charCallback);
 
 	/*	Initialize glew */
 	//glewExperimental = GL_TRUE;
@@ -287,6 +287,38 @@ bool CavityRenderer::createGLSLProgramms()
 	m_grid_prgm.bindAttribLocation(0, "in_position");
 
 	m_grid_prgm.link();
+}
+
+void CavityRenderer::reloadSimParams(SimulationParameters sim_params)
+{
+	m_alpha = (float)sim_params.alpha;
+	m_deltaT = (float)sim_params.deltaT;
+	m_deltaVec = (float)sim_params.deltaVec;
+	m_eps = (float)sim_params.eps;
+	m_gx = (float)sim_params.gx;
+	m_gy = (float)sim_params.gy;
+	m_iMax = (int)sim_params.iMax;
+	m_iterMax = (int)sim_params.iterMax;
+	m_jMax = (int)sim_params.jMax;
+	m_KarmanAngle = (float)sim_params.KarmanAngle;
+	m_KarmanObjectWidth = (float)sim_params.KarmanObjectWidth;
+	m_name = sim_params.name;
+	m_omg = (float)sim_params.omg;
+	m_pi = (float)sim_params.pi;
+	m_re = (float)sim_params.re;
+	m_tau = (float)sim_params.tau;
+	m_tEnd = (float)sim_params.tEnd;
+	m_ui = (float)sim_params.ui;
+	m_vi = (float)sim_params.vi;
+	m_xCells = (int)sim_params.xCells;
+	m_xLength = (float)sim_params.xLength;
+	m_yCells = (int)sim_params.yCells;
+	m_yLength = (float)sim_params.yLength;
+
+	for (auto b : sim_params.boundary_conditions)
+	{
+		drawBoundaryCondition(b.range, b.gridtype, b.direction, b.condition_value, b.condition);
+	}
 }
 
 void CavityRenderer::paint()

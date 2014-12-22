@@ -161,6 +161,8 @@ private:
 
 	void drawBoundaryCondition(Range range, Boundary::Grid grid_type, Boundary::Direction dir, Real condition_value, Boundary::Condition cond);
 
+	void reloadSimParams(SimulationParameters sim_params);
+
 	/* Static GLFW callback functions - Primarily calls AntTweakBar functions */
 	inline static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 	{TwEventMouseButtonGLFW(button, action);}
