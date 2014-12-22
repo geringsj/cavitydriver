@@ -79,11 +79,7 @@ private:
 	 */
 	float m_alpha, m_deltaT, m_eps, m_gx, m_gy, m_KarmanAngle, 
 		m_KarmanObjectWidth,m_pi, m_re, m_tau, m_tEnd, 
-		m_ui, m_vi, m_xLength, m_yLength, m_omg;
-	union{
-		float m_tDeltaWriteVTK;
-		float m_deltaVec;
-	};
+		m_ui, m_vi, m_xLength, m_yLength, m_omg, m_deltaVec;
 	int m_iterMax;
 	union{
 		int m_iMax;

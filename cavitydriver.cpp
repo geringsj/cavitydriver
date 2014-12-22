@@ -42,12 +42,19 @@ int main(int argc, char** argv)
 	Dimension local_dim = communication.getLocalDimension();
 
 	/* init domain, which holds all grids and knows about their dimensions */
-	Domain domain(local_dim, delta,
-
-		/* outer forces */
-			simparam.gx, simparam.gy, 0.0,
-		/* boundaries and color pattern */
-			communication.getBoundaryCompetence(), communication.getFirstCellColor());
+	/**
+	 * TODO Fix this, it's just quick and dirty!
+	 */
+	Index a = Index(1, 1);
+	Index b = Index(local_dim.i, local_dim.j);
+	Boundary bndry = Boundary(Range(a, b), communication.getBoundaryCompetence());
+	Domain domain(local_dim, delta, bndry);
+	//Domain domain(local_dim, delta,
+	//
+	//	/* outer forces */
+	//		simparam.gx, simparam.gy, 0.0,
+	//	/* boundaries and color pattern */
+	//		communication.getBoundaryCompetence(), communication.getFirstCellColor());
 
 
 	//#ifdef _PAINT_STUFF

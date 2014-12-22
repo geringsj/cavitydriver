@@ -157,7 +157,6 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	m_pi = (float)sim_params.pi;
 	m_re = (float)sim_params.re;
 	m_tau = (float)sim_params.tau;
-	m_tDeltaWriteVTK = (float)sim_params.tDeltaWriteVTK;
 	m_tEnd = (float)sim_params.tEnd;
 	m_ui = (float)sim_params.ui;
 	m_vi = (float)sim_params.vi;
@@ -177,7 +176,6 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_pi);
 	addFloatParam("m_re", " step=0.1 label='re' ", &m_re);
 	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_tau);
-	addFloatParam("m_tDeltaWriteVTK", " step=0.1 label='tDeltaWriteVTK' ", &m_tDeltaWriteVTK);
 	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_tEnd);
 	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_ui);
 	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_vi);

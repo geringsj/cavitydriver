@@ -157,11 +157,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\cavitybaker.cpp" />
+    <ClCompile Include="..\src\Bakery.cpp" />
+    <ClCompile Include="..\src\Boundary.cpp" />
     <ClCompile Include="..\src\CameraSystem.cpp" />
     <ClCompile Include="..\src\CavityRenderer.cpp" />
     <ClCompile Include="..\src\SimulationParameters.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\Bakery.hpp" />
+    <ClInclude Include="..\src\Boundary.hpp" />
     <ClInclude Include="..\src\CameraSystem.h" />
     <ClInclude Include="..\src\CavityRenderer.hpp" />
     <ClInclude Include="..\src\SimulationParameters.hpp" />
