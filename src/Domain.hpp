@@ -10,7 +10,7 @@
 
 typedef std::vector<Range> Ranges;
 
-#define for_vecrange(F,S,R) for(auto M : R)for_range(F,S,M)
+#define for_vecrange(F,S,R) for(auto& M : R)for_range(F,S,M)
 
 /** 
  * Implements the Domain we will be working on, managing dimensions, grids and properties.
@@ -93,12 +93,12 @@ public:
 	 * better have the user see what is done? */
 	Dimension getDimension() const { return m_dimension; }
 
-	Range getWholeInnerRange() { return m_whole_inner_range; }
-	Ranges* getInnerRanges() { return m_inner_ranges; };
-	Ranges getInnerRangeU() const { return m_inner_ranges[0]; };
-	Ranges getInnerRangeV() const { return m_inner_ranges[1]; };
+	Range const getWholeInnerRange() const { return m_whole_inner_range; }
+	Ranges const * getInnerRanges() const { return m_inner_ranges; };
+	Ranges const getInnerRangeU() const { return m_inner_ranges[0]; };
+	Ranges const getInnerRangeV() const { return m_inner_ranges[1]; };
 	//Ranges getInnerRangeW() const { return m_inner_ranges[2]; };
-	Ranges getInnerRangeP() const { return m_inner_ranges[3]; };
+	Ranges const getInnerRangeP() const { return m_inner_ranges[3]; };
 
 	Point getDelta() const { return m_delta; }
 

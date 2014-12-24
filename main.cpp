@@ -39,51 +39,51 @@ int main(int argc, char** argv)
 	Communication communication = Communication(global_dim);
 	if(communication.getRank() == 0)
 	log_info("[P%i] number of tasks: %i - going for a %ix%i processors grid - global inner: [(%i,%i),(%i,%i)]", 
-			communication.getRank(),
-			communication.getProcsCount(),
-			communication.getProcsGridDim().i,
-			communication.getProcsGridDim().j,
-			communication.getGlobalInnerRange().begin.i,
-			communication.getGlobalInnerRange().begin.j,
-			communication.getGlobalInnerRange().end.i,
-			communication.getGlobalInnerRange().end.j );
+		communication.getRank(),
+		communication.getProcsCount(),
+		communication.getProcsGridDim().i,
+		communication.getProcsGridDim().j,
+		communication.getGlobalInnerRange().begin.i,
+		communication.getGlobalInnerRange().begin.j,
+		communication.getGlobalInnerRange().end.i,
+		communication.getGlobalInnerRange().end.j );
 
 	log_info("[P%i] procs-grid position: (%i,%i) - local inner: [(%i,%i),(%i,%i)] - competences : %s%s%s%s",
-			communication.getRank(),
-			communication.getProcsGridPosition().i,
-			communication.getProcsGridPosition().j,
-			communication.getLocalInnerRange().begin.i,
-			communication.getLocalInnerRange().begin.j,
-			communication.getLocalInnerRange().end.i,
-			communication.getLocalInnerRange().end.j,
-			((communication.getBoundaryCompetence().Up) ?
-			("Up ") : ("")),
-			((communication.getBoundaryCompetence().Right) ?
-			("Right ") : ("")),
-			((communication.getBoundaryCompetence().Down) ?
-			("Down ") : ("")),
-			((communication.getBoundaryCompetence().Left) ?
-			("Left") : (""))
-			);
+		communication.getRank(),
+		communication.getProcsGridPosition().i,
+		communication.getProcsGridPosition().j,
+		communication.getLocalInnerRange().begin.i,
+		communication.getLocalInnerRange().begin.j,
+		communication.getLocalInnerRange().end.i,
+		communication.getLocalInnerRange().end.j,
+		((communication.getBoundaryCompetence().Up) ?
+		("Up ") : ("")),
+		((communication.getBoundaryCompetence().Right) ?
+		("Right ") : ("")),
+		((communication.getBoundaryCompetence().Down) ?
+		("Down ") : ("")),
+		((communication.getBoundaryCompetence().Left) ?
+		("Left") : (""))
+		);
 
 	Dimension local_dim = communication.getLocalDimension();
 
 	/* init domain, which holds all grids and knows about their dimensions */
 	Domain domain(local_dim, delta,
-			/* init boundary, for this we need the inner range of the local process
-			 * w.r.t. the range of the global domain. and the competences. */
-			Boundary(communication.getLocalInnerRange(),
-				communication.getBoundaryCompetence()),
+		/* init boundary, for this we need the inner range of the local process
+		 * w.r.t. the range of the global domain. and the competences. */
+		Boundary(communication.getLocalInnerRange(),
+			communication.getBoundaryCompetence()),
 		/* outer forces */
-			simparam.gx, simparam.gy,
-			/* initial grid values */
-			simparam.ui, simparam.vi, simparam.pi,
+		simparam.gx, simparam.gy,
+		/* initial grid values */
+		simparam.ui, simparam.vi, simparam.pi,
 		/* color pattern */
-			communication.getFirstCellColor());
+		communication.getFirstCellColor());
 
 	log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
-			communication.getRank(),
-			domain.getWholeInnerRange().end.i, domain.getWholeInnerRange().end.j,
+		communication.getRank(),
+		domain.getWholeInnerRange().end.i, domain.getWholeInnerRange().end.j,
 		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"),
 		domain.getInnerRangeP().size(),
 		domain.getInnerRangeU().size(),

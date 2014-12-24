@@ -1,4 +1,5 @@
 #include "Domain.hpp"
+#include "Debug.hpp"
 
 
 Domain::Domain(
@@ -28,31 +29,16 @@ Domain::Domain(
 		m_p(Dimension(dimension[0]+2,dimension[1]+2)), 
 		m_p_rhs(Dimension(dimension[0]+2,dimension[1]+2)),
 
-		m_velocities(dimension,boundary.getCompetence()),
-		m_preliminary_velocities_FGH(dimension,boundary.getCompetence()),
+		m_velocities(dimension,m_boundary.getCompetence()),
+		m_preliminary_velocities_FGH(dimension,m_boundary.getCompetence()),
 
 		m_force_gx(in_gx), m_force_gy(in_gy) // , m_force_gz(in_gz)
 {
 	m_inner_ranges[0] = m_boundary.getInnerRanges(Boundary::Grid::U);
 	m_inner_ranges[1] = m_boundary.getInnerRanges(Boundary::Grid::V);
-	//m_inner_ranges[2] = m_boundary.getInnerRanges(Boundary::Grid::V);
+	//m_inner_ranges[2] = m_boundary.getInnerRanges(Boundary::Grid::W);
 	m_inner_ranges[3] = m_boundary.getInnerRanges(Boundary::Grid::P);
 	m_whole_inner_range = m_boundary.getWholeInnerRange();
-
-	// /* set indices for end of inner of grids u, v, w and p individually */
-	// /* for now, everything < inner_begin and everything > inner_end 
-	//  * is border of the grid */
-	// for(uint d=0; d<DIMENSIONS; d++)
-	// 	for(uint e=0; e<DIMENSIONS; e++)
-	// 		inner_end[d][e] = dimension[e] + ((e==d)?(-boundary.getCompetence()[d]):(0)); 
-
-	// /* the pressure is fourth entry of the array and has symmetric dimensions */
-	// inner_end[3] = dimension; 
-
-	// m_inner_ranges[0] = Range(inner_begin, inner_end[0]);
-	// m_inner_ranges[1] = Range(inner_begin, inner_end[1]);
-	// m_inner_ranges[2] = Range(inner_begin, inner_end[2]);
-	// m_inner_ranges[3] = Range(inner_begin, inner_end[3]);
 
 	/* init all grids to start values given from outside */
 	for(uint d=0; d<DIMENSIONS; d++)

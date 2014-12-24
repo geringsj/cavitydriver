@@ -9,7 +9,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point delta,
-			const Ranges inner_range,
+			const Ranges& inner_range,
 			const Dimension globalDims)
 	{
 		return 
@@ -20,7 +20,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Ranges inner_range,
+			const Ranges& inner_range,
 			const Dimension globalDims)
 	{
 		Real numerator = 0.0;
@@ -91,7 +91,7 @@ namespace Solver
 		GridFunction& p = domain.p();
 		const GridFunction& rhs = domain.rhs();
 		const Delta delta = domain.getDelta();
-		const Ranges inner_range = domain.getInnerRangeP();
+		const Ranges& inner_range = domain.getInnerRangeP();
 
 		const Real dxx = pow(delta.x, 2.0);
 		const Real dyy = pow(delta.y, 2.0);

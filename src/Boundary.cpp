@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <list>
 
 void Boundary::applyBoundaries(
 		Grid grid, 
@@ -141,7 +142,7 @@ std::vector<Range> Boundary::getInnerRanges(
 			break;
 		case Grid::U:
 		case Grid::F:
-			return this->getInnerRanges(m_inner_extent, m_boundaries_U[0]);
+			return getInnerRanges(m_inner_extent, m_boundaries_U[0]);
 			break;
 		case Grid::V:
 		case Grid::G:
@@ -157,56 +158,43 @@ std::vector<Range> Boundary::getInnerRanges(
 		const Range inner_extent,
 		const std::vector<Entry> boundary) const
 {
-	std::vector<Range> ranges;
-	GridFunction pattern(Dimension(inner_extent.end.i+2, inner_extent.end.j+2));
+	Dimension pattern_dim(inner_extent.end.i+2, inner_extent.end.j+2);
+	GridFunction pattern(pattern_dim);
+	std::list<Index> cells;
 
-	/* mark inner cells as not reachable */
-	for_range(i,j,inner_extent)
+	/* mark all cells as not reachable */
+	for_range(i,j,Range(Index(0,0), Index(pattern_dim.i-1,pattern_dim.j-1)))
 		pattern(i,j) = -1.0;
-	/* mark all boundary cells as such */
-	for(auto cell : boundary)
-		pattern(cell.bposition.i, cell.bposition.j) = 0.0;
-	/* mark inner cells next to boundary as reachable */
+	/* mark all boundary and neighbour inner cells as such */
 	for(auto cell : boundary)
 	{
-		int i = cell.iposition.i; int j = cell.iposition.j;
-		pattern(i,j) = 1.0;
+		pattern(cell.iposition) = 1.0;
+		cells.push_back(cell.iposition);
 	}
+	for(auto cell : boundary)
+		pattern(cell.bposition) = 0.0;
+
 	/* propagate 1s */
-	bool haveReachableBegin = false;
-	for(int j=inner_extent.begin.j; j<=inner_extent.end.j; j++)
+	while(! cells.empty())
 	{
-		haveReachableBegin = false;
-		for(int i=inner_extent.begin.i; i<=inner_extent.end.i; i++)
+		Index ci = cells.front(); cells.pop_front();
+		for(int i : {1, -1})
+		for(int j : {1, -1})
 		{
-			if(pattern(i,j) > 0.0) /* at marked inner */
+			Index ni(ci.i+i, ci.j+j);
+			if( pattern(ni) == -1.0 && IndexIsInRange(ni,inner_extent)) 
+			/* cell reachable from current inner cell, 
+			 * not outside domain and not marked yet: add to list */
 			{
-				if(!haveReachableBegin) /* beginning after boundary */
-				{
-					haveReachableBegin = true;
-				}
-				else /* arriving at boundary */
-				{
-					haveReachableBegin = false;
-				}
-			}
-			else
-			if(pattern(i,j) == 0.0) /* at boundary */
-			{
-				haveReachableBegin = false;
-			}
-			else /* at blacklisted inner */
-			{
-				if(haveReachableBegin) /* have way to this blacklisted cell */
-				{
-					pattern(i,j) = 1.0;
-				}
+				pattern(ni) = 1.0;
+				cells.push_back(ni);
 			}
 		}
 	}
 
 	/* collect ranges of reachable inner cells */
-	haveReachableBegin = false;
+	std::list<Range> ranges;
+	bool haveReachableBegin = false;
 	Range lineRange;
 	for(int j=inner_extent.begin.j; j<=inner_extent.end.j; j++)
 	{
@@ -245,9 +233,31 @@ std::vector<Range> Boundary::getInnerRanges(
 		}
 	}
 
-	/* TODO: merge good Ranges to bigger cells ? */
+	/* merge fitting neighbour ranges to bigger ones */
+	std::vector<Range> vranges;
+	vranges.push_back( ranges.front() );
+	ranges.pop_front();
+	while(! ranges.empty())
+	{
+		if(
+			vranges.back().begin.i == ranges.front().begin.i &&
+			vranges.back().end.i == ranges.front().end.i &&
+			vranges.back().begin.j < ranges.front().begin.j &&
+			vranges.back().end.j+1 == ranges.front().end.j
+		  )
+			/* merge ranges */
+		{
+			vranges.back().end.j++;
+			ranges.pop_front();
+		}
+		else /* start new range to maybe append lines on */
+		{
+			vranges.push_back( ranges.front() );
+			ranges.pop_front();
+		}
+	}
 
-	return ranges;
+	return vranges;
 }
 
 void Boundary::initBoundaries(
@@ -255,14 +265,16 @@ void Boundary::initBoundaries(
 		std::vector<BoundaryPiece>& boundary_conditions)
 {
 	/* transfoprm boundaries to local Range [(1,1),(iMax,jMax)] */
-	Index negOffsetTo11
-		(1- localSubInnerPRange.begin.i, 1- localSubInnerPRange.begin.j);
+	Index negOffsetTo11(1-localSubInnerPRange.begin.i,1-localSubInnerPRange.begin.j);
 	Index nego = negOffsetTo11;
+
 	localSubInnerPRange.begin.i += nego.i;
 	localSubInnerPRange.begin.j += nego.j;
 	localSubInnerPRange.end.i += nego.i;
 	localSubInnerPRange.end.j += nego.j;
+
 	m_inner_extent = localSubInnerPRange;
+
 	for(auto& bpiece : boundary_conditions)
 	{
 		/* transform boundary to coordinates of local domain */
@@ -313,24 +325,25 @@ void Boundary::initBoundaries(
 	/* move boundary indices to be at boundary. 
 	 * up to this point boundary and inner indices are at the boundary cell */
 	for(auto& blist : 
-		{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0]} )
-		for(auto& entry : *blist)
+			{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0]} 
+		)
+	for(auto& entry : *blist)
+	{
+		switch(entry.direction)
 		{
-			switch(entry.direction)
-			{
-				case Direction::Up:
-					entry.bposition.j ++; break;
-				case Direction::Down:
-					entry.bposition.j --; break;
-				case Direction::Left:
-					entry.bposition.i --; break;
-				case Direction::Right:
-					entry.bposition.i ++; break;
-				default: break;
-			}
+			case Direction::Up:
+				entry.bposition.j ++; break;
+			case Direction::Down:
+				entry.bposition.j --; break;
+			case Direction::Left:
+				entry.bposition.i --; break;
+			case Direction::Right:
+				entry.bposition.i ++; break;
+			default: break;
 		}
+	}
 
-		/* sort boundary cells in column major order */
+	/* sort boundary cells in column major order */
 	for(auto& blist : 
 		{&(this->m_boundaries_U[0]),&(this->m_boundaries_V[0]),&(this->m_boundaries_P[0])})
 	if(! blist->empty())
@@ -345,7 +358,7 @@ void Boundary::initBoundaries(
 }
 
 Boundary::Boundary(
-		Range localSubInnerPRange, 
+		Range localSubInnerPRange,
 		Boundary::Competence competence)
 {
 	/* sadly, here we have to compute the boundary conditions ourself. 
@@ -391,14 +404,14 @@ Boundary::Boundary(
 			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
 			Index(
 				localSubInnerPRange.begin.i, 
-				localSubInnerPRange.end.j -(competence.Up)) ) ));
+				localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
 	if(competence.Right)
 	boundary_conditions.push_back(
 		BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::V, 0.0, Range(
 			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
 			Index(
 				localSubInnerPRange.end.i, 
-				localSubInnerPRange.end.j -(competence.Up)) ) ));
+				localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
 
 	/* add u boundaries: 1 at top, 0 everywhere else */
 	if(competence.Up)
@@ -406,14 +419,14 @@ Boundary::Boundary(
 		BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::U, 1.0, Range(
 			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
 			Index(
-				localSubInnerPRange.end.i -(competence.Right), 
+				localSubInnerPRange.end.i /*-(competence.Right)*/,
 				localSubInnerPRange.end.j) ) ));
 	if(competence.Down)
 	boundary_conditions.push_back(
 		BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::U, 0.0, Range(
 			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
 			Index(
-				localSubInnerPRange.end.i -(competence.Right), 
+				localSubInnerPRange.end.i /*-(competence.Right)*/,
 				localSubInnerPRange.begin.j) ) ));
 	if(competence.Left)
 	boundary_conditions.push_back(
