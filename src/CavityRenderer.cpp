@@ -266,10 +266,10 @@ bool CavityRenderer::createGLSLProgramms()
 	m_arrow_prgm.init();
 
 	std::string arrow_vertex = readShaderFile("./shader/arrowVertex.glsl");
-	if (!m_arrow_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_arrow_prgm.getLog(); return; };
+	if (!m_arrow_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
 
 	std::string arrow_fragment = readShaderFile("./shader/arrowFragment.glsl");
-	if (!m_arrow_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_arrow_prgm.getLog(); return; };
+	if (!m_arrow_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
 
 	m_arrow_prgm.bindAttribLocation(0, "in_position");
 

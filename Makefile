@@ -1,10 +1,8 @@
 
 CXX=g++
 #CXX=clang++
-CPPFLAGS=-Wall -g -Wextra -Isrc -std=c++11 
-#-Iexternal/include/
-LDFLAGS=
-#-ldl -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
+CPPFLAGS=-Wall -g -Wextra -Isrc -std=c++11 -Iexternal/include/
+LDFLAGS= -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
 
 SOURCES=$(wildcard src/**/*.cpp src/*.cpp)
 OBJECTS=$(patsubst %.cpp,%.o,$(SOURCES))
@@ -12,15 +10,15 @@ OBJECTS=$(patsubst %.cpp,%.o,$(SOURCES))
 TESTS_SRC=$(wildcard tests/*.cpp)
 TESTS_OBJ=$(patsubst tests/%.cpp,bin/%,$(TESTS_SRC))
 
-MAIN=main.cpp
-MAIN_BIN=./bin/main
+MAINS=$(wildcard cavity*.cpp)
+MAINS_BIN=$(patsubst %.cpp,bin/%,$(MAINS))
 
-all: build $(OBJECTS) $(MAIN_BIN)
+all: build $(OBJECTS) $(MAINS_BIN)
 
 tests: build $(OBJECTS) $(TESTS_OBJ)
 
 run: all
-	$(MAIN_BIN)
+	$(MAINS_BIN)
 
 mpi: CXX = mpic++
 mpi: CPPFLAGS += -DWITHMPI
@@ -38,8 +36,8 @@ build:
 	@mkdir -p out
 #@mkdir -p build
 
-$(MAIN_BIN): $(MAIN) $(OBJECTS)
-	$(CXX) $(CPPFLAGS) -o $(MAIN_BIN) $(MAIN) $(OBJECTS) $(LDFLAGS)
+$(MAINS_BIN): $(MAINS) $(OBJECTS)
+	$(CXX) $(CPPFLAGS) -o $@ $(patsubst bin/%,%.cpp,$@) $(OBJECTS) $(LDFLAGS)
 
 $(TESTS_OBJ): $(TESTS_SRC) $(OBJECTS)
 	$(CXX) $(CPPFLAGS) -o $@ $(patsubst bin/%,tests/%.cpp,$@) $(filter src%,$^) $(LDFLAGS)

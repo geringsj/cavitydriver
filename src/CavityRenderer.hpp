@@ -5,8 +5,8 @@
 #include <sstream>
 #include <vector>
 
-#include "glew.h"
-#include "glfw3.h"
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 
 #include "glowl/glowl.h"
 #include "AntTweakBar.h"
