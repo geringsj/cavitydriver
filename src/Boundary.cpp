@@ -6,36 +6,9 @@
 #include <functional>
 #include <list>
 
-void Boundary::applyBoundaries(
-		Grid grid, 
-		GridFunction& gf,
-		std::vector<Entry> boundary) const
-{
-	for(auto& b : boundary)
-	{
-		switch(b.condition)
-		{
-			case Condition::NOSLIP:
-				computeNOSLIP(gf, b.bposition, b.iposition, b.direction, grid);
-				break;
-			case Condition::INFLOW:
-				computeINFLOW(gf, b.bposition, b.iposition, b.direction, grid, 
-					b.condition_value);
-				break;
-			case Condition::OUTFLOW:
-				computeOUTFLOW(gf, b.bposition, b.iposition);
-				break;
-			case Condition::SLIP:
-				computeSLIP(gf, b.bposition, b.iposition, b.direction, grid);
-				break;
-			default:
-				break;
-		}
-	}
-}
 
 void Boundary::copyBoundaries(
-		std::vector<Entry> boundary, 
+		const std::vector<Entry> boundary, 
 		const GridFunction& source, 
 		GridFunction& target) const
 {
@@ -65,28 +38,26 @@ void Boundary::computeNOSLIP(
 	}
 }
 
-/* TODO: this is not correct yet! */
 void Boundary::computeSLIP(
-		GridFunction& g, 
-		const Index bindex, 
+		GridFunction& g,
+		const Index bindex,
 		const Index iindex, 
 		const Direction dir,
-		Grid grid) const
+		const Grid grid) const
 {
-	if(grid==Grid::V && 1==(int)dir /* ...? */) /* flow in U direction and we want to set V */
+	/* the dot-product condition of SLIP: (U,V) dot normalDirection = 0 */
+	if(grid==Grid::V && (dir==Direction::Up || dir==Direction::Down)) 
 	{
 		g(bindex) = 0;
+		return;
 	}
-	if(grid==Grid::U && 1 /* ...? */) /* flow in V direction and we want to set U */
+	if(grid==Grid::U && (dir==Direction::Right || dir==Direction::Left))
 	{
-		g(iindex) = 0;
+		g(bindex) = 0;
+		return;
 	}
-	if(grid==Grid::V)
-	{
-	}
-	if(grid==Grid::U)
-	{
-	}
+	/* derivative in normal direction must be zero => boundary == inner cell */
+	g(bindex) = g(iindex);
 }
 
 void Boundary::computeINFLOW(
@@ -138,15 +109,15 @@ std::vector<Range> Boundary::getInnerRanges(
 	switch(grid)
 	{
 		case Grid::P:
-			return getInnerRanges(m_inner_extent, m_boundaries_P[0]);
+			return getInnerRanges(m_inner_extent, m_boundaries_P);
 			break;
 		case Grid::U:
 		case Grid::F:
-			return getInnerRanges(m_inner_extent, m_boundaries_U[0]);
+			return getInnerRanges(m_inner_extent, m_boundaries_U);
 			break;
 		case Grid::V:
 		case Grid::G:
-			return getInnerRanges(m_inner_extent, m_boundaries_V[0]);
+			return getInnerRanges(m_inner_extent, m_boundaries_V);
 			break;
 		default:
 			return std::vector<Range>(); /* empty... */
@@ -156,7 +127,7 @@ std::vector<Range> Boundary::getInnerRanges(
 
 std::vector<Range> Boundary::getInnerRanges(
 		const Range inner_extent,
-		const std::vector<Entry> boundary) const
+		const std::vector<Entry> boundary[]) const
 {
 	Dimension pattern_dim(inner_extent.end.i+2, inner_extent.end.j+2);
 	GridFunction pattern(pattern_dim);
@@ -166,12 +137,14 @@ std::vector<Range> Boundary::getInnerRanges(
 	for_range(i,j,Range(Index(0,0), Index(pattern_dim.i-1,pattern_dim.j-1)))
 		pattern(i,j) = -1.0;
 	/* mark all boundary and neighbour inner cells as such */
-	for(auto cell : boundary)
+	for(int i : {0,1,2,3} )
+	for(auto cell : boundary[i])
 	{
 		pattern(cell.iposition) = 1.0;
 		cells.push_back(cell.iposition);
 	}
-	for(auto cell : boundary)
+	for(int i : {0,1,2,3} )
+	for(auto cell : boundary[i])
 		pattern(cell.bposition) = 0.0;
 
 	/* propagate 1s */
@@ -235,8 +208,11 @@ std::vector<Range> Boundary::getInnerRanges(
 
 	/* merge fitting neighbour ranges to bigger ones */
 	std::vector<Range> vranges;
-	vranges.push_back( ranges.front() );
-	ranges.pop_front();
+	if(! ranges.empty())
+	{
+		vranges.push_back( ranges.front() );
+		ranges.pop_front();
+	}
 	while(! ranges.empty())
 	{
 		if(
@@ -443,7 +419,7 @@ Boundary::Boundary(
 	/* *** */
 	initBoundaries(localSubInnerPRange, boundary_conditions);
 
-	/* TODO: sort by boundary type ? */
+	splitBoundaryTypes();
 }
 
 Boundary::Boundary(
@@ -454,7 +430,26 @@ Boundary::Boundary(
 
 	initBoundaries(localSubInnerPRange, boundary_conditions);
 
-	/* TODO: sort by boundary type ? */
+	splitBoundaryTypes();
+}
+
+void Boundary::splitBoundaryTypes()
+{
+	for(auto& bnds : {m_boundaries_U, m_boundaries_V, m_boundaries_P} )
+	{
+	for(auto e : bnds[0])
+		for(auto cond : {Condition::INFLOW, Condition::OUTFLOW, Condition::SLIP} )
+				if(e.condition == cond)
+				bnds[static_cast<int>(cond)].push_back(e);
+
+		bnds[0].erase( 
+				std::remove_if(bnds[0].begin(), bnds[0].end(), 
+					[](Boundary::Entry e)
+					{
+						return (e.condition != Condition::NOSLIP);
+					} ),
+				bnds[0].end() );
+	}
 }
 
 Boundary::~Boundary()
@@ -462,28 +457,44 @@ Boundary::~Boundary()
 }
 
 void Boundary::setBoundary(
-		Grid grid, 
+		const Grid grid, 
 		GridFunction& gf) const
 {
+	const std::vector<Entry>* boundaries;
 	switch(grid)
 	{
 		case Grid::U:
-			applyBoundaries(grid, gf, m_boundaries_U[0]);
-			break;
+				boundaries = &m_boundaries_U[0];
+				break;
 		case Grid::V:
-			applyBoundaries(grid, gf, m_boundaries_V[0]);
+				boundaries = &m_boundaries_V[0];
+				break;
 			break;
 		case Grid::P:
-			applyBoundaries(grid, gf, m_boundaries_P[0]);
+				boundaries = &m_boundaries_P[0];
 			break;
 		default:
+				boundaries = NULL;
 			break;
 	}
+
+	for(auto& b : boundaries[static_cast<int>(Condition::NOSLIP)])
+				computeNOSLIP(gf, b.bposition, b.iposition, b.direction, grid);
+
+	for(auto& b : boundaries[static_cast<int>(Condition::INFLOW)])
+				computeINFLOW(gf, b.bposition, b.iposition, b.direction, grid, 
+					b.condition_value);
+
+	for(auto& b : boundaries[static_cast<int>(Condition::OUTFLOW)])
+				computeOUTFLOW(gf, b.bposition, b.iposition);
+
+	for(auto& b : boundaries[static_cast<int>(Condition::SLIP)])
+				computeSLIP(gf, b.bposition, b.iposition, b.direction, grid);
 }
 
 /* for F and G */
 void Boundary::copyGridBoundary(
-		Grid grid, 
+		const Grid grid, 
 		const GridFunction& source, 
 		GridFunction& target) const
 {
@@ -492,10 +503,16 @@ void Boundary::copyGridBoundary(
 		case Grid::F:
 		case Grid::U:
 			copyBoundaries(m_boundaries_U[0], source, target);
+			copyBoundaries(m_boundaries_U[1], source, target);
+			copyBoundaries(m_boundaries_U[2], source, target);
+			copyBoundaries(m_boundaries_U[3], source, target);
 			break;
 		case Grid::G:
 		case Grid::V:
 			copyBoundaries(m_boundaries_V[0], source, target);
+			copyBoundaries(m_boundaries_V[1], source, target);
+			copyBoundaries(m_boundaries_V[2], source, target);
+			copyBoundaries(m_boundaries_V[3], source, target);
 			break;
 		default:
 			break;
