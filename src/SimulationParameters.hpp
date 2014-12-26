@@ -64,6 +64,9 @@ public:
 
 public:
 
+	/* TODO set defaults in cpp */
+	SimulationParameters() {}
+
 	SimulationParameters(std::string settingsfile);
 
 	/** Write the current state of the simulation parameters to stdout. 

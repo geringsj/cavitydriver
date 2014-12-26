@@ -4,6 +4,8 @@
 
 int main(int argc, char** argv)
 {
+	argc = argc*(**argv); // just to get rid of some warnings */
+
 	/**
 	 * This is just a test but the range should
 	 * match the inner range of p.

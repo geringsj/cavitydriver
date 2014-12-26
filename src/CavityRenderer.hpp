@@ -59,7 +59,7 @@ public:
 	void setWindowSize(int width, int height)
 		{ m_window_width=width; m_window_height = height; }
 
-	void getijMax(int& p_iMax, int& p_jMax){ p_iMax = m_iMax; p_jMax = m_jMax; }
+	void getijMax(int& p_iMax, int& p_jMax){ p_iMax = m_simparams.iMax; p_jMax = m_simparams.jMax; }
 
 private:
 	GLFWwindow* m_window; /**< Pointer to the window that glfw will use. */
@@ -69,34 +69,7 @@ private:
 	TwBar* bar;
 	float m_zoom;
 
-	/**
-	 * I'm very sorry but we can't do this:
-	 * SimulationParameters m_sim_params;
-	 * because SimulationParameters doesn't have
-	 * a default constructor (so far?). So we will
-	 * create a copy of each simparam value in here.
-	 * Just because it's late and i'm hungry.
-	 */
-	float m_alpha, m_deltaT, m_eps, m_gx, m_gy, m_KarmanAngle, 
-		m_KarmanObjectWidth,m_pi, m_re, m_tau, m_tEnd, 
-		m_ui, m_vi, m_xLength, m_yLength, m_omg, m_deltaVec;
-	int m_iterMax;
-	union{
-		int m_iMax;
-		int m_xCells;
-	};
-	union{
-		int m_jMax;
-		int m_yCells;
-	};
-	std::string m_name;
-	/**
-	 * And this also doesn't work because AntTweakBar,
-	 * apparently hates pointers and crashes for (no?)
-	 * good reason.
-	 */
-	//SimulationParameters* m_sim_params;
-
+	SimulationParameters m_simparams;
 
 	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
 
@@ -159,21 +132,47 @@ private:
 	/** Draw geometric shapes */
 	void drawGeometry();
 
-	void drawBoundaryCondition(Range range, Boundary::Grid grid_type, Boundary::Direction dir, Real condition_value, Boundary::Condition cond);
+	void drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece);
+		/* BoundaryPiece holds all of the following... */
+		//Boundary::Direction dir,
+		//Boundary::Condition cond,
+		//Boundary::Grid grid_type, 
+		//Real condition_value, 
+		//Range range
 
-	void reloadSimParams(SimulationParameters sim_params);
+	void reloadSimParams(SimulationParameters& sim_params);
 
 	/* Static GLFW callback functions - Primarily calls AntTweakBar functions */
 	inline static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-	{TwEventMouseButtonGLFW(button, action);}
+	{ 
+		/* get rid of stupid warnings: */
+		if( 1 || window || mods)
+		TwEventMouseButtonGLFW(button, action);
+	}
 	inline static void mousePositionCallback(GLFWwindow* window, double x, double y)
-	{TwMouseMotion(int(x), int(y));}
+	{
+		/* get rid of stupid warnings: */
+		if( 1 || window)
+		TwMouseMotion(int(x), int(y));
+	}
 	inline static void mouseWheelCallback(GLFWwindow* window, double x_offset, double y_offset)
-	{TwEventMouseWheelGLFW((int)y_offset);}
+	{
+		/* get rid of stupid warnings: */
+		if( 1 || window || x_offset)
+		TwEventMouseWheelGLFW((int)y_offset);
+	}
 	inline static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-	{TwEventKeyGLFW(key, action);}
+	{
+		/* get rid of stupid warnings: */
+		if(1 || window || scancode || mods)
+		TwEventKeyGLFW(key, action);
+	}
 	inline static void charCallback(GLFWwindow* window, int codepoint)
-	{TwEventCharGLFW(codepoint, GLFW_PRESS);}
+	{
+		/* get rid of stupid warnings: */
+		if(1 || window)
+		TwEventCharGLFW(codepoint, GLFW_PRESS);
+	}
 	inline static void windowResizeCallback(GLFWwindow* window, int width, int height)
 	{
 		CavityRenderer* painter = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
