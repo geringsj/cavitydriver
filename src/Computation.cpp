@@ -68,7 +68,7 @@ namespace Computation
 					1+D,1+Gdim);
 
 			/* the formula: */
-			for_range(i,j,domain.getInnerRanges()[D])
+			for_vecrange(i,j,domain.getInnerRanges()[D])
 			{
 				domain.getPreliminaryVelocity()[D]( i,j ) =
 					domain.getVelocity()[D]( i,j ) 
@@ -94,7 +94,7 @@ namespace Computation
 		auto Gyb = Derivatives::getDerivative(domain.G(),domain.getDelta(),
 				Derivatives::Direction::yb);
 
-		for_range(i,j,domain.getInnerRangeP())
+		for_vecrange(i,j,domain.getInnerRangeP())
 		{
 			domain.rhs()(i,j) = ( Fxb(i,j) + Gyb(i,j) )/deltaT;
 		}
@@ -110,7 +110,7 @@ namespace Computation
 			auto Pdf = Derivatives::getDerivative(domain.p(),domain.getDelta(),
 					(1+D)); /* D+1 ~ first forward derivative in (D+1) direction (1 => x) */
 
-			for_range(i,j,domain.getInnerRanges()[D])
+			for_vecrange(i,j,domain.getInnerRanges()[D])
 			{
 				domain.getVelocity()[D]( i,j ) =
 					domain.getPreliminaryVelocity()[D]( i,j ) - deltaT*Pdf(i,j);

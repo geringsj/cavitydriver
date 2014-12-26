@@ -39,7 +39,7 @@ public:
 		Up, Down, Left, Right
 	};
 	enum class Condition {
-		NOSLIP=0, INFLOW=1, SLIP=2, OUTFLOW=3
+		NOSLIP=0, INFLOW=1, OUTFLOW=2,SLIP=3
 	};
 	enum class Grid {
 		U, V, P, F, G /* , W, H */
@@ -60,36 +60,58 @@ public:
 	};
 
 private:
-	Competence competence;
+	Competence m_competence;
+	Range m_inner_extent;
 
 	struct Entry {
 		Direction direction;
 		Condition condition;
-		Index position;
+		Index bposition;
+		Index iposition;
 		Real condition_value;
+		Entry(
+			Direction direction, Condition condition,
+			Index bposition, Index iposition, Real condition_value) :
+			direction(direction), condition(condition),
+			bposition(bposition), iposition(iposition), 
+			condition_value(condition_value) {}
 	};
-	std::vector<Entry> m_boundaries_U;//[4];
-	std::vector<Entry> m_boundaries_V;//[4];
-	std::vector<Entry> m_boundaries_P;//[4];
+	std::vector<Entry> m_boundaries_U[4];
+	std::vector<Entry> m_boundaries_V[4];
+	std::vector<Entry> m_boundaries_P[4];
 
-	void computeNOSLIP(GridFunction& g, const Range range, const Direction dir) const;
-	void computeSLIP(GridFunction& g, const Range range, const Direction dir) const;
-	void computeINFLOW(
-			GridFunction& g, const Range range, 
-			const Real value, const Direction dir) const;
-	void computeOUTFLOW(GridFunction& g, const Range  range, const Direction dir) const;
+	void computeNOSLIP(GridFunction& g, const Index bindex, const Index iindex, const Direction dir, const Grid grid) const;
+	void computeSLIP(GridFunction& g, const Index bindex, const Index iindex, const Direction dir, const Grid grid) const;
+	void computeINFLOW(GridFunction& g, const Index bindex, const Index iindex, const Direction dir, const Grid grid, const Real value) const;
+	void computeOUTFLOW(GridFunction& g, const Index bindex, const Index iindex) const;
+
+	std::vector<Range> getInnerRanges(
+		const Range inner_extent,
+		const std::vector<Entry> boundary[]) const;
+
+	void initBoundaries(
+		Range localSubInnerPRange, 
+		std::vector<BoundaryPiece>& boundary_conditions);
+	void copyBoundaries(
+		const std::vector<Entry> boundary, 
+		const GridFunction& source, GridFunction& target) const;
+	void splitBoundaryTypes();
 
 public:
-	Boundary(Range localSubInnerPRange, Boundary::Competence competence=Competence());
+	Boundary(Range localSubInnerPRange, Boundary::Competence competence/*=Competence()*/);
 	Boundary(Range localSubInnerPRange, std::vector<BoundaryPiece> boundary_conditions);
 	~Boundary();
 
-	Boundary::Competence getCompetence(){ return competence; }
+	Boundary::Competence getCompetence() const { return m_competence; }
 
-	void setBoundary(Grid grid, GridFunction& gf) const;
+	void setBoundary(const Grid grid, GridFunction& gf) const;
 
 	/* for F and G */
-	void copyGridBoundary(Grid grid, const GridFunction& source, GridFunction& target) const;
+	void copyGridBoundary(
+			const Grid grid, const GridFunction& source, GridFunction& target) const;
+
+	std::vector<Range> getInnerRanges(const Grid grid) const;
+	Range getWholeInnerRange() const { return m_inner_extent; }
 };
 
 

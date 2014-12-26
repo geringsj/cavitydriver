@@ -50,12 +50,14 @@ public:
 	 * Provides write access to the grid via the [] operator.
 	 * @return Value at Index position ind, per reference.
 	 */
-	Real& operator[](const Index& ind);
+	Real& operator()(const Index& d);
+	//Real& operator[](const Index& ind);
 	/** 
 	 * Provides read access to the grid via the [] operator.
 	 * @return Value of grid at Index position ind, per value;
 	 */
-	Real operator[](const Index& ind) const;
+	Real operator()(const Index& d) const;
+	//Real operator[](const Index& ind) const;
 
 	/** 
 	 * Provides 2D write access to the grid via the () operator.
