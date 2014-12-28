@@ -5,7 +5,7 @@
 #include "Structs.hpp"
 #include "Boundary.hpp"
 
-#include <iostream>
+#include <string>
 
 /** Struct that holds all simulation parameters the program will use.
  * The struct holds methods to paese a struct file and construct a 
@@ -56,6 +56,15 @@ public:
 	Real KarmanAngle;
 	Real KarmanObjectWidth;
 
+	/* From the bakery we take the following semantics for 'ComplexGeometry':
+	 * DrivenCavity = 0
+	 * ChannelFlow = 1
+	 * ChannelFlowUpperHalf = 2
+	 * StepFlow = 3
+	 * ObstacleChannelFlow = 4
+	 */
+	int useComplexGeometry;
+
 	/* inner ranges of boundaries (including objects).
 	 * note: the ranges are from the inner-part of the domain and the direction
 	 * included in the piece struct tells in which direction from the cell the 
@@ -65,7 +74,7 @@ public:
 public:
 
 	/* TODO set defaults in cpp */
-	SimulationParameters() {}
+	SimulationParameters();
 
 	SimulationParameters(std::string settingsfile);
 
@@ -73,7 +82,12 @@ public:
 	*/
 	void writeToSTDOUT();
 
+	void writeSettingsFile(std::string settingsfile);
+
 	bool readInputfile(std::string settingsfile);
+
+private:
+	void init();
 };
 
 

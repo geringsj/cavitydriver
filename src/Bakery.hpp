@@ -5,22 +5,20 @@
 #include "GridFunction.hpp"
 #include "SimulationParameters.hpp"
 
-#include <iostream>
-
 /* the bakery gets input and computes stuff, which is saved in a 
  * SimulationParameters object */
 class Bakery {
 public:
 	enum class Setting {
-		DrivenCavity,
-		ChannelFlow,
-		ChannelFlowUpperHalf,
-		StepFlow,
-		ObstacleChannelFlow
+		DrivenCavity = 0,
+		ChannelFlow = 1,
+		ChannelFlowUpperHalf = 2,
+		StepFlow = 3,
+		ObstacleChannelFlow = 4
 	};
 
 private:
-	struct Vec2 {
+	struct vec2 {
 		Real x;
 		Real y;
 	};
@@ -30,8 +28,7 @@ private:
 
 	GridFunction m_field;
 
-	Vec2 m_object_corners[4];
-
+	vec2 m_object_corners[4];
 
 	void initSimParamsDrivenCavityDefault();
 

@@ -16,7 +16,7 @@
 
 int main(int argc, char** argv)
 {
-	argc = argc*(**argv); // just to get rid of some warnings */
+	argc = argc*(1+0*(**argv)); // just to get rid of some warnings */
 
 	/* time measurement variables */
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
@@ -26,7 +26,11 @@ int main(int argc, char** argv)
 	double t_frame_avg = 0.0;
 
 	/* init simulation parameters */
-	SimulationParameters simparam("inputvals");
+	std::string inputvals("inputvals");
+	if(argc == 2)
+		inputvals = std::string(argv[1]);
+	SimulationParameters simparam( inputvals );
+	//simparam.writeToSTDOUT();
 
 	/* init problem dimensions and grid spacing delta */
 	Dimension global_dim;
@@ -38,8 +42,12 @@ int main(int argc, char** argv)
 
 	/* init communication of processes */
 	Communication communication = Communication(global_dim);
+
 	if(communication.getRank() == 0)
-	log_info("[P%i] number of tasks: %i - going for a %ix%i processors grid - global inner: [(%i,%i),(%i,%i)]", 
+	log_info("[P%i] loading inputvals from file \"%s\"",
+		communication.getRank(), inputvals.c_str());
+	if(communication.getRank() == 0)
+	log_info("[P%i] tasks count: %i | doing %ix%i procs-grid | global inner: [(%i,%i),(%i,%i)]", 
 		communication.getRank(),
 		communication.getProcsCount(),
 		communication.getProcsGridDim().i,
@@ -49,7 +57,7 @@ int main(int argc, char** argv)
 		communication.getGlobalInnerRange().end.i,
 		communication.getGlobalInnerRange().end.j );
 
-	log_info("[P%i] procs-grid position: (%i,%i) - local inner: [(%i,%i),(%i,%i)] - competences : %s%s%s%s",
+	log_info("[P%i] procs-grid position: (%i,%i) | local inner: [(%i,%i),(%i,%i)] | competences : %s%s%s%s",
 		communication.getRank(),
 		communication.getProcsGridPosition().i,
 		communication.getProcsGridPosition().j,
@@ -57,15 +65,10 @@ int main(int argc, char** argv)
 		communication.getLocalInnerRange().begin.j,
 		communication.getLocalInnerRange().end.i,
 		communication.getLocalInnerRange().end.j,
-		((communication.getBoundaryCompetence().Up) ?
-		("Up ") : ("")),
-		((communication.getBoundaryCompetence().Right) ?
-		("Right ") : ("")),
-		((communication.getBoundaryCompetence().Down) ?
-		("Down ") : ("")),
-		((communication.getBoundaryCompetence().Left) ?
-		("Left") : (""))
-		);
+		((communication.getBoundaryCompetence().Up) ? ("Up ") : ("")),
+		((communication.getBoundaryCompetence().Right) ? ("Right ") : ("")),
+		((communication.getBoundaryCompetence().Down) ? ("Down ") : ("")),
+		((communication.getBoundaryCompetence().Left) ? ("Left") : ("")) );
 
 	Dimension local_dim = communication.getLocalDimension();
 
@@ -74,13 +77,16 @@ int main(int argc, char** argv)
 		/* init boundary, for this we need the inner range of the local process
 		 * w.r.t. the range of the global domain. and the competences. */
 		Boundary(communication.getLocalInnerRange(),
-			communication.getBoundaryCompetence()),
+			communication.getBoundaryCompetence(),
+			simparam.boundary_conditions),
 		/* outer forces */
 		simparam.gx, simparam.gy,
 		/* initial grid values */
 		simparam.ui, simparam.vi, simparam.pi,
 		/* color pattern */
 		communication.getFirstCellColor());
+
+	//simparam.writeSettingsFile("inputvals_"+simparam.name);
 
 	log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
 		communication.getRank(),
@@ -93,7 +99,7 @@ int main(int argc, char** argv)
 	/* next: omega and time parameters */
 	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
 	// concerning h, see: http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
-	if (simparam.xLength == simparam.yLength) 
+	if(simparam.xLength == simparam.yLength) /* TODO: what do with this? */
 		simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
 
 	Real t = 0.0, dt, res;
@@ -147,7 +153,7 @@ int main(int argc, char** argv)
 			//		domain.p(), domain.rhs(), delta, 
 			//		domain.getInnerRangeP(), global_dim);
 			res = Solver::computeSquaredResidual(
-					domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_dim);
+				domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_dim);
 			res = communication.getGlobalResidual(res);
 			it++;
 		} while (communication.checkGlobalFinishSOR
@@ -160,8 +166,8 @@ int main(int argc, char** argv)
 		/* write new line of current statistics to stdout */
 		if(communication.getRank() == 0)
 		{
-			printf("\r[INFO] - Round %i: t/tmax=%f | dt=%f | Solver: it=%i (max:%i) | res=%f (max:%f) %s",
-				step, t / simparam.tEnd, dt, it, simparam.iterMax, res, simparam.eps,
+			printf("[INFO] - Round %i: %.2f%% | dt=%f | Solver: it=%i / res=%f%s\r",
+				step, (t / simparam.tEnd)*100., dt, it, res, 
 				((t < simparam.tEnd)) ? ("") : ("\n"));
 			fflush( stdout );
 		}

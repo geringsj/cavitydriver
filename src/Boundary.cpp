@@ -93,7 +93,7 @@ void Boundary::computeOUTFLOW(
 	g(bindex) = g(iindex);
 }
 
-bool IndexIsInRange(Index index, Range range)
+static bool IndexIsInRange(Index index, Range range)
 {
 	return (
 		index.i >= range.begin.i &&
@@ -335,101 +335,94 @@ void Boundary::initBoundaries(
 
 Boundary::Boundary(
 		Range localSubInnerPRange,
-		Boundary::Competence competence)
+		Boundary::Competence competence,
+		std::vector<BoundaryPiece>& boundary_conditions)
 {
 	/* sadly, here we have to compute the boundary conditions ourself. 
 	 * for the driven cavity, as a fallback */
-	std::vector<BoundaryPiece> boundary_conditions;
+	// std::vector<BoundaryPiece> boundary_conditions;
 
-	/* add pressure boundary conditions: "copy inner to boundary" */
-	if(competence.Up)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Up, Condition::OUTFLOW, Grid::P, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
-	if(competence.Down)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Down, Condition::OUTFLOW, Grid::P, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
-	if(competence.Left)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Left, Condition::OUTFLOW, Grid::P, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
-	if(competence.Right)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::P, 0.0, Range(
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
-
-	/* add v boundaries: 0 everywhere */
-	if(competence.Up)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::V, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
-	if(competence.Down)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::V, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
-	if(competence.Left)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::V, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
-			Index(
-				localSubInnerPRange.begin.i, 
-				localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
-	if(competence.Right)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::V, 0.0, Range(
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
-			Index(
-				localSubInnerPRange.end.i, 
-				localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
-
-	/* add u boundaries: 1 at top, 0 everywhere else */
-	if(competence.Up)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::U, 1.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
-			Index(
-				localSubInnerPRange.end.i /*-(competence.Right)*/,
-				localSubInnerPRange.end.j) ) ));
-	if(competence.Down)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::U, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
-			Index(
-				localSubInnerPRange.end.i /*-(competence.Right)*/,
-				localSubInnerPRange.begin.j) ) ));
-	if(competence.Left)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::U, 0.0, Range(
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
-			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
-	if(competence.Right)
-	boundary_conditions.push_back(
-		BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::U, 0.0, Range(
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
-			Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
 	this->m_competence = competence;
 
-	/* *** */
+	if(boundary_conditions.size() == 0)
+	{
+		/* get missing boundary conditions for driven cavity */
+		/* add pressure boundary conditions: "copy inner to boundary" */
+		if(competence.Up)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Up, Condition::OUTFLOW, Grid::P, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+		if(competence.Down)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Down, Condition::OUTFLOW, Grid::P, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
+		if(competence.Left)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Left, Condition::OUTFLOW, Grid::P, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
+		if(competence.Right)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::P, 0.0, Range(
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+
+		/* add v boundaries: 0 everywhere */
+		if(competence.Up)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::V, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+		if(competence.Down)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::V, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
+		if(competence.Left)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::V, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(
+					localSubInnerPRange.begin.i, 
+					localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
+		if(competence.Right)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::V, 0.0, Range(
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
+				Index(
+					localSubInnerPRange.end.i, 
+					localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
+
+		/* add u boundaries: 1 at top, 0 everywhere else */
+		if(competence.Up)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::U, 1.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
+				Index(
+					localSubInnerPRange.end.i /*-(competence.Right)*/,
+					localSubInnerPRange.end.j) ) ));
+		if(competence.Down)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::U, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(
+					localSubInnerPRange.end.i /*-(competence.Right)*/,
+					localSubInnerPRange.begin.j) ) ));
+		if(competence.Left)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::U, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
+		if(competence.Right)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::U, 0.0, Range(
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+	}
+
 	initBoundaries(localSubInnerPRange, boundary_conditions);
-
-	splitBoundaryTypes();
-}
-
-Boundary::Boundary(
-		Range localSubInnerPRange, 
-		std::vector<BoundaryPiece> boundary_conditions)
-{
-	this->m_competence = Boundary::Competence(0,0,0,0);
-
-	initBoundaries(localSubInnerPRange, boundary_conditions);
-
 	splitBoundaryTypes();
 }
 

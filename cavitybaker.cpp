@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-	argc = argc*(**argv); // just to get rid of some warnings */
+	argc = argc*(1+0*(**argv)); // just to get rid of some warnings */
 
 	/**
 	 * This is just a test but the range should

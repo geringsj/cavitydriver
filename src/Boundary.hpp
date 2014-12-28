@@ -98,8 +98,11 @@ private:
 	void splitBoundaryTypes();
 
 public:
-	Boundary(Range localSubInnerPRange, Boundary::Competence competence/*=Competence()*/);
-	Boundary(Range localSubInnerPRange, std::vector<BoundaryPiece> boundary_conditions);
+	Boundary(
+		Range localSubInnerPRange, 
+		Boundary::Competence competence,
+		std::vector<BoundaryPiece>& boundary_conditions);
+
 	~Boundary();
 
 	Boundary::Competence getCompetence() const { return m_competence; }
