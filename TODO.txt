@@ -13,9 +13,9 @@ Vis team:
 -	CavityRenderer.cpp/hpp
 	* Check the arrow rendering and improve it
 	* Cleanup
-	* Make communication with Bakery possible
-	* Rename init(...) to initVis to match the naming
-	* Fill the bar in initVis with read only parameters
+	* Make communication with Bakery possible		[not quite done]
+	* Rename init(...) to initVis to match the naming	[done]
+	* Fill the bar in initVis with read only parameters	[done]
 Vis team
 
 -	main.cpp:

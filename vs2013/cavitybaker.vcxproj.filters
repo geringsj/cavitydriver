@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="shader">
+      <UniqueIdentifier>{3f41ed5e-c873-4800-9cd8-a742a7a81711}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\cavitybaker.cpp">
@@ -50,5 +53,19 @@
     <ClInclude Include="..\src\Boundary.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shader\gridFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\gridVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\arrowFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\arrowVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

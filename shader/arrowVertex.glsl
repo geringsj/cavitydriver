@@ -6,8 +6,12 @@ in vec4 in_position;
 
 out vec2 tex_coord;
 
-void main() {
-	vec2 madd = vec2(0.5f, 0.5f);
+void main() 
+{
+	// The texture coords are saved in the z and w component of the in_position
+	tex_coord = in_position.zw;
+	// Reset the z and w component
+	in_position.z = -1.0;
+	in_position.w = 1.0;
 	gl_Position = mvp_matrix * in_position;
-	tex_coord = in_position.xy * madd + madd;
 };

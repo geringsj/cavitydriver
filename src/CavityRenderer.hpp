@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <queue>
 
 #include "glew.h"
 #include "glfw3.h"
@@ -25,7 +26,7 @@ public:
 	 * Function to create the OpenGL context and creata a 
 	 * window. Also initializes the camera system.
 	 */
-	bool init(
+	bool initVis(
 		unsigned int window_width, /**< Width of the window in pixels [>=0]. */
 		unsigned int window_height, /**< Height of the window in pixels [>=0]. */
 		SimulationParameters& sim_params
@@ -68,6 +69,7 @@ private:
 	GLfloat m_window_background_colour[3];
 	TwBar* bar;
 	float m_zoom;
+	std::queue<SimulationParameters> comm;
 
 	/**
 	 * I'm very sorry but we can't do this:
@@ -128,13 +130,15 @@ private:
 		);
 
 	void addFloatParam(const char* name, const char* def, void* var,
+		std::string mode = "RW",
 		float min = std::numeric_limits<float>::min(),
-		float max = std::numeric_limits<float>::max(),
-		std::string mode = "RW");
+		float max = std::numeric_limits<float>::max()
+		);
 	void addIntParam(const char* name, const char* def, void* var, 
+		std::string mode = "RW",
 		int min = std::numeric_limits<int>::min(),
-		int max = std::numeric_limits<int>::max(),
-		std::string mode = "RW");
+		int max = std::numeric_limits<int>::max()
+		);
 	void addBoolParam(const char* name, const char* def, void* var, 
 		std::string mode = "RW");
 	void addVec3Param(const char* name, const char* def, void* var, 

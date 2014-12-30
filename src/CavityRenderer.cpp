@@ -33,7 +33,7 @@ CavityRenderer::~CavityRenderer()
 {
 }
 
-bool CavityRenderer::init(unsigned int window_width, unsigned int window_height, SimulationParameters& sim_params)
+bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_height, SimulationParameters& sim_params)
 {
 	m_window_width = window_width;
 	m_window_height = window_height;
@@ -66,8 +66,56 @@ bool CavityRenderer::init(unsigned int window_width, unsigned int window_height,
 	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, 1.0f, 999.0f);
+	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",1.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
+	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
+	m_alpha = (float)sim_params.alpha;
+	m_deltaT = (float)sim_params.deltaT;
+	m_deltaVec = (float)sim_params.deltaVec;
+	m_eps = (float)sim_params.eps;
+	m_gx = (float)sim_params.gx;
+	m_gy = (float)sim_params.gy;
+	m_iMax = (int)sim_params.iMax;
+	m_iterMax = (int)sim_params.iterMax;
+	m_jMax = (int)sim_params.jMax;
+	m_KarmanAngle = (float)sim_params.KarmanAngle;
+	m_KarmanObjectWidth = (float)sim_params.KarmanObjectWidth;
+	m_name = sim_params.name;
+	m_omg = (float)sim_params.omg;
+	m_pi = (float)sim_params.pi;
+	m_re = (float)sim_params.re;
+	m_tau = (float)sim_params.tau;
+	m_tEnd = (float)sim_params.tEnd;
+	m_ui = (float)sim_params.ui;
+	m_vi = (float)sim_params.vi;
+	m_xCells = (int)sim_params.xCells;
+	m_xLength = (float)sim_params.xLength;
+	m_yCells = (int)sim_params.yCells;
+	m_yLength = (float)sim_params.yLength;
+	printf("m_xLength: %f m_yLength: %f \n", m_xLength, m_yLength);
+	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_alpha, "RO");
+	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_deltaT, "RO");
+	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_deltaVec, "RO");
+	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_eps, "RO");
+	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_gx, "RO");
+	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_gy, "RO");
+	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_KarmanAngle, "RO");
+	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_KarmanObjectWidth, "RO");
+	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_pi, "RO");
+	addFloatParam("m_re", " step=0.1 label='re' ", &m_re, "RO");
+	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_tau, "RO");
+	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_tEnd, "RO");
+	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_ui, "RO");
+	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_vi, "RO");
+	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_xLength, "RO");
+	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_yLength, "RO");
+	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_omg, "RO");
+	addIntParam("m_iterMax", " label='iterMax' ", &m_iterMax, "RO");
+	addIntParam("m_iMax", " label='iMax' ", &m_iMax, "RO");
+	addIntParam("m_jMax", " label='jMax' ", &m_jMax, "RO");
+	addIntParam("m_xCells", " label='xCells' ", &m_xCells, "RO");
+	addIntParam("m_yCells", " label='yCells' ", &m_yCells, "RO");
+	addStringParam("m_name", " label='name' ", &m_name, "RO");
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
@@ -140,7 +188,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, 1.0f, 999.0f);
+	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, "RW", 1.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 	m_alpha = (float)sim_params.alpha;
@@ -266,10 +314,10 @@ bool CavityRenderer::createGLSLProgramms()
 	m_arrow_prgm.init();
 
 	std::string arrow_vertex = readShaderFile("./shader/arrowVertex.glsl");
-	if (!m_arrow_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_arrow_prgm.getLog(); return; };
+	if (!m_arrow_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
 
 	std::string arrow_fragment = readShaderFile("./shader/arrowFragment.glsl");
-	if (!m_arrow_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_arrow_prgm.getLog(); return; };
+	if (!m_arrow_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
 
 	m_arrow_prgm.bindAttribLocation(0, "in_position");
 
@@ -287,6 +335,8 @@ bool CavityRenderer::createGLSLProgramms()
 	m_grid_prgm.bindAttribLocation(0, "in_position");
 
 	m_grid_prgm.link();
+
+	return true;
 }
 
 void CavityRenderer::reloadSimParams(SimulationParameters sim_params)
@@ -345,6 +395,13 @@ void CavityRenderer::paint()
 
         /* Poll for and process events */
         glfwPollEvents();
+
+		/* Check for new simparams */
+		if (!comm.empty)
+		{
+			reloadSimParams(comm.front());
+			comm.pop();
+		}
     }
 
 	//TODO cleanup
@@ -479,10 +536,10 @@ void CavityRenderer::drawBoundaryCondition(Range range, Boundary::Grid grid_type
 		float top = pos[1] + y_length / 2.0f;
 
 		Gridvertex quad[] = {
-			Gridvertex(left, bottom, -1.0f, 1.0f),
-			Gridvertex(left, top, -1.0f, 1.0f),
-			Gridvertex(right, top, -1.0f, 1.0f),
-			Gridvertex(right, bottom, -1.0f, 1.0f)
+			Gridvertex(left, bottom, 0.0f, 0.0f),//-1.0f, 1.0f),
+			Gridvertex(left, top, 0.0f, 1.0f),//-1.0f, 1.0f),
+			Gridvertex(right, top, 1.0f, 1.0f),//-1.0f, 1.0f),
+			Gridvertex(right, bottom, 1.0f, 0.0f)//-1.0f, 1.0f)
 		};
 		unsigned int quad_index[] =
 		{
@@ -668,7 +725,7 @@ bool CavityRenderer::readPpmData(const char* filename, char* imageData, unsigned
 	return true;
 }
 
-void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, float min, float max, std::string mode)
+void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, std::string mode, float min, float max)
 {
 	if (mode == "RW")
 	{
@@ -682,7 +739,7 @@ void CavityRenderer::addFloatParam(const char* name, const char* def, void* var,
 	}
 }
 
-void CavityRenderer::addIntParam(const char* name, const char* def, void* var, int min, int max, std::string mode)
+void CavityRenderer::addIntParam(const char* name, const char* def, void* var, std::string mode, int min, int max)
 {
 	if (mode == "RW")
 	{
