@@ -9,14 +9,14 @@
 //#include "src/CavityPainter.hpp"
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 #include <chrono>
 
 
 int main(int argc, char** argv)
 {
-	argc = argc*(1+0*(**argv)); // just to get rid of some warnings */
+	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
 
 	/* time measurement variables */
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
@@ -97,7 +97,7 @@ int main(int argc, char** argv)
 		domain.getInnerRangeV().size() );
 
 	/* next: omega and time parameters */
-	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
+	Real h = 1.0 / std::fmin(simparam.xLength, simparam.yLength);// simparam.iMax;
 	// concerning h, see: http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
 	if(simparam.xLength == simparam.yLength) /* TODO: what do with this? */
 		simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
