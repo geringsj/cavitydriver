@@ -66,13 +66,13 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",1.0f, 999.0f);
+	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",0.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
-	Real test;
-	char _double[] = "double";
-	char _float[] = "float";
+	Real test; float __float; double __double;
+	const char* _double = typeid(__double).name();
+	const char* _float = typeid(__float).name();
 	if (strcmp(typeid(test).name(), _double) == 0)
 	{
 		addDoubleParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
@@ -191,13 +191,13 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, "RW", 1.0f, 999.0f);
+	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, "RW", 0.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
-	Real test;
-	char _double[] = "double";
-	char _float[] = "float";
+	Real test; float __float; double __double;
+	const char* _double = typeid(__double).name();
+	const char* _float = typeid(__float).name();
 	if (strcmp(typeid(test).name(), _double) == 0)
 	{
 		addDoubleParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
@@ -279,7 +279,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 		glm::vec3(1.0f, 0.0f, 0.0f));
 
 	createGLSLProgramms();
-
+	
 	for (auto b : sim_params.boundary_conditions)
 		drawBoundaryCondition(b);
 
@@ -341,6 +341,9 @@ void CavityRenderer::paint()
 		glViewport(0, 0, width, height);
 		
 		drawGridOverlay();
+		for (auto b : m_simparams.boundary_conditions)
+			drawBoundaryCondition(b);
+		
 
 		// Draw TB
 		TwDraw();
@@ -377,8 +380,6 @@ void CavityRenderer::createSingleGrid(Range innerRange, std::vector<unsigned int
 {
 	float x_length = m_simparams.xLength / (float)m_simparams.iMax;
 	float y_length = m_simparams.yLength / (float)m_simparams.jMax;
-
-	printf("m_xLength: %f m_yLength: %f \n", m_simparams.xLength, m_simparams.yLength);
 
 	float bottom_left_i = (float)innerRange.begin[0] - 1.0f;
 	float bottom_left_j = (float)innerRange.begin[1] - 1.0f;
@@ -467,59 +468,96 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 {
 	Range range(boundarypiece.range);
 	// Boundary::Grid grid_type(boundarypiece.gridtype);
-	// Boundary::Direction dir(boundarypiece.direction);
-	// Real condition_value(boundarypiece.condition_value);
+	Boundary::Direction dir(boundarypiece.direction);
+	Real condition_value(boundarypiece.condition_value);
 	// Boundary::Condition cond(boundarypiece.condition);
 
 	unsigned long begin_pos;
 	int x_dim, y_dim;
 	char* img_data;
 	readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
-	img_data = new char[x_dim * y_dim];
+	img_data = new char[x_dim * y_dim * 3];
 	readPpmData("arrow.ppm", img_data, begin_pos, x_dim, y_dim);
 
-	m_arrow.load(GL_RGB32F, 0, 0, GL_RGB, GL_FLOAT, img_data);
+	m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, img_data);
 
 	float x_length = m_simparams.xLength / (float)m_simparams.iMax;
 	float y_length = m_simparams.yLength / (float)m_simparams.jMax;
 	for_range(i, j, range)
 	{
-		float pos[] = { (float)i * x_length, (float)j * y_length };
+		float pos[] = { (float)i * x_length + x_length / 2.0f, (float)j * y_length + y_length/2.0f };
+	
+		float left = (pos[0] - x_length / 2.0f);
+		float bottom = (pos[1] - y_length / 2.0f);
+		float right = (pos[0] + x_length / 2.0f);
+		float top = (pos[1] + y_length / 2.0f);
 
-		float left = pos[0] - x_length / 2.0f; 
-		float bottom = pos[1] - y_length / 2.0f;
-		float right = pos[0] + x_length / 2.0f; 
-		float top = pos[1] + y_length / 2.0f;
+		std::vector<Gridvertex> quad;
+		switch (dir)
+		{
+		case Boundary::Direction::Up:
+			top *= condition_value;
+			quad = {
+				Gridvertex(left, bottom, 0.0f, 1.0f),
+				Gridvertex(left, top, 1.0f, 1.0f),
+				Gridvertex(right, top, 1.0f, 0.0f),
+				Gridvertex(right, bottom, 0.0f, 0.0f)
+			};
+			break;
+		case Boundary::Direction::Down:
+			bottom *= condition_value;
+			quad = {
+				Gridvertex(left, bottom, 1.0f, 1.0f),
+				Gridvertex(left, top, 0.0f, 1.0f),
+				Gridvertex(right, top, 0.0f, 0.0f),
+				Gridvertex(right, bottom, 1.0f, 0.0f)
+			};
+			break;
+		case Boundary::Direction::Left:
+			left *= condition_value;
+			quad = {
+				Gridvertex(left, bottom, 1.0f, 0.0f),
+				Gridvertex(left, top, 1.0f, 1.0f),
+				Gridvertex(right, top, 0.0f, 1.0f),
+				Gridvertex(right, bottom, 0.0f, 0.0f)
+			};
+			break;
+		case Boundary::Direction::Right:
+			right *= condition_value;
+			quad = {
+				Gridvertex(left, bottom, 0.0f, 0.0f),
+				Gridvertex(left, top, 0.0f, 1.0f),
+				Gridvertex(right, top, 1.0f, 1.0f),
+				Gridvertex(right, bottom, 1.0f, 0.0f)
+			};
+			break;
+		}
 
-		Gridvertex quad[] = {
-			Gridvertex(left, bottom, 0.0f, 0.0f),//-1.0f, 1.0f),
-			Gridvertex(left, top, 0.0f, 1.0f),//-1.0f, 1.0f),
-			Gridvertex(right, top, 1.0f, 1.0f),//-1.0f, 1.0f),
-			Gridvertex(right, bottom, 1.0f, 0.0f)//-1.0f, 1.0f)
-		};
 		unsigned int quad_index[] =
 		{
-			0, 1, 2, 3
+			1, 0, 3, 2
 		};
-		m_arrow_quad.bufferDataFromArray(quad, quad_index,
+		m_arrow_quad.bufferDataFromArray(quad.data(), quad_index,
 			(GLsizei)(4 * sizeof(Gridvertex)),
 			(GLsizei)(4 * sizeof(unsigned int)),
 			GL_QUADS);
-		m_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
+		m_arrow_quad.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
 
 		m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
 		m_arrow_prgm.use();
 		glEnable(GL_TEXTURE_2D);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glm::mat4 proj_mat = glm::perspective(45.0f, (float)m_window_width / (float)m_window_height, 0.1f, 1000.0f);
 		glm::mat4 model_mat = glm::mat4(1.0f);
 		glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
 		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
-		m_grid_prgm.setUniform("mvp_matrix", mvp_mat);
+		m_arrow_prgm.setUniform("mvp_matrix", mvp_mat);
 		m_arrow_prgm.setUniform("arrowTexture", 0);
 		glActiveTexture(GL_TEXTURE0);
 		m_arrow.bindTexture();
 
-		m_grid.draw();
+		m_arrow_quad.draw();
 	}	
 
 	delete(img_data);
