@@ -69,53 +69,30 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",1.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
-	m_alpha = (float)sim_params.alpha;
-	m_deltaT = (float)sim_params.deltaT;
-	m_deltaVec = (float)sim_params.deltaVec;
-	m_eps = (float)sim_params.eps;
-	m_gx = (float)sim_params.gx;
-	m_gy = (float)sim_params.gy;
-	m_iMax = (int)sim_params.iMax;
-	m_iterMax = (int)sim_params.iterMax;
-	m_jMax = (int)sim_params.jMax;
-	m_KarmanAngle = (float)sim_params.KarmanAngle;
-	m_KarmanObjectWidth = (float)sim_params.KarmanObjectWidth;
-	m_name = sim_params.name;
-	m_omg = (float)sim_params.omg;
-	m_pi = (float)sim_params.pi;
-	m_re = (float)sim_params.re;
-	m_tau = (float)sim_params.tau;
-	m_tEnd = (float)sim_params.tEnd;
-	m_ui = (float)sim_params.ui;
-	m_vi = (float)sim_params.vi;
-	m_xCells = (int)sim_params.xCells;
-	m_xLength = (float)sim_params.xLength;
-	m_yCells = (int)sim_params.yCells;
-	m_yLength = (float)sim_params.yLength;
-	printf("m_xLength: %f m_yLength: %f \n", m_xLength, m_yLength);
-	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_alpha, "RO");
-	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_deltaT, "RO");
-	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_deltaVec, "RO");
-	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_eps, "RO");
-	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_gx, "RO");
-	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_gy, "RO");
-	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_KarmanAngle, "RO");
-	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_KarmanObjectWidth, "RO");
-	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_pi, "RO");
-	addFloatParam("m_re", " step=0.1 label='re' ", &m_re, "RO");
-	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_tau, "RO");
-	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_tEnd, "RO");
-	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_ui, "RO");
-	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_vi, "RO");
-	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_xLength, "RO");
-	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_yLength, "RO");
-	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_omg, "RO");
-	addIntParam("m_iterMax", " label='iterMax' ", &m_iterMax, "RO");
-	addIntParam("m_iMax", " label='iMax' ", &m_iMax, "RO");
-	addIntParam("m_jMax", " label='jMax' ", &m_jMax, "RO");
-	addIntParam("m_xCells", " label='xCells' ", &m_xCells, "RO");
-	addIntParam("m_yCells", " label='yCells' ", &m_yCells, "RO");
-	addStringParam("m_name", " label='name' ", &m_name, "RO");
+
+	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
+	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT, "RO");
+	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec, "RO");
+	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps, "RO");
+	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx, "RO");
+	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy, "RO");
+	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle, "RO");
+	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth, "RO");
+	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi, "RO");
+	addFloatParam("m_re", " step=0.1 label='re' ", &m_simparams.re, "RO");
+	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau, "RO");
+	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd, "RO");
+	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui, "RO");
+	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi, "RO");
+	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength, "RO");
+	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength, "RO");
+	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg, "RO");
+	addIntParam("m_iterMax", " label='iterMax' ", &m_simparams.iterMax, "RO");
+	addIntParam("m_iMax", " label='iMax' ", &m_simparams.iMax, "RO");
+	addIntParam("m_jMax", " label='jMax' ", &m_simparams.jMax, "RO");
+	addIntParam("m_xCells", " label='xCells' ", &m_simparams.xCells, "RO");
+	addIntParam("m_yCells", " label='yCells' ", &m_simparams.yCells, "RO");
+	addStringParam("m_name", " label='name' ", &m_simparams.name, "RO");
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
@@ -192,7 +169,6 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
-	printf("m_xLength: %f m_yLength: %f \n", m_simparams.xLength, m_simparams.yLength);
 	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
 	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
 	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
@@ -325,11 +301,6 @@ void CavityRenderer::paint()
         glfwPollEvents();
 
 		/* Check for new simparams */
-		if (!comm.empty)
-		{
-			reloadSimParams(comm.front());
-			comm.pop();
-		}
     }
 
 	//TODO cleanup

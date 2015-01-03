@@ -69,7 +69,6 @@ private:
 	GLfloat m_window_background_colour[3];
 	TwBar* bar;
 	float m_zoom;
-	std::queue<SimulationParameters> comm;
 
 	SimulationParameters m_simparams;
 
