@@ -15,6 +15,7 @@
 #include "Structs.hpp"
 #include "CameraSystem.h"
 #include "SimulationParameters.hpp"
+#include "MTQueue.hpp"
 
 class CavityRenderer
 {
@@ -71,6 +72,7 @@ private:
 	float m_zoom;
 
 	SimulationParameters m_simparams;
+	MTQueue<SimulationParameters> m_simparam_queue;
 
 	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
 

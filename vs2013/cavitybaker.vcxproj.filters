@@ -59,6 +59,9 @@
     <ClInclude Include="..\src\GridFunction.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\MTQueue.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shader\gridFragment.glsl">

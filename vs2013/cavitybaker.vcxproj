@@ -170,6 +170,7 @@
     <ClInclude Include="..\src\CameraSystem.h" />
     <ClInclude Include="..\src\CavityRenderer.hpp" />
     <ClInclude Include="..\src\GridFunction.hpp" />
+    <ClInclude Include="..\src\MTQueue.hpp" />
     <ClInclude Include="..\src\SimulationParameters.hpp" />
   </ItemGroup>
   <ItemGroup>
