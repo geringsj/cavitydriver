@@ -29,7 +29,9 @@
 /** Define a c++11 compatible NULL pointer.
  * @def NULL
  */
+#ifndef NULL
 #define NULL nullptr
+#endif
 
 
 /** For convenience, define uint.

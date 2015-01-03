@@ -1,47 +1,43 @@
--- werte aus dem letzten jahr -- 
+-- Extended Inputvals for SimulationParameters.
+-- When a parameter is given more than once,
+-- the first occurrence of the parameter will be used.
+
+name="DefaultCavityDriverUsecase"
+
+useComplexGeometry=1
+
+-- Domain parameters
 xLength=1.0
 yLength=1.0
+
+iMax=128
+jMax=128
 
 iMax=64
 jMax=64
 
+-- Time and Simulation parameters
 tEnd=16.5
-deltaT=0.2
 tau=0.5
 deltaVec=0.2
+deltaT=0.1
 iterMax=100
 eps=0.001
 omg=1.7
 alpha=0.9
-re=1000
+re=10000
+
+-- Outside forces on the system
 gx=0.0
 gy=0.0
+
+-- Initial field values
 ui=0.0
 vi=0.0
 pi=0.0
-xProcs=2
-yProcs=2
 
+-- Karman Parameters
+KarmanAngle= 0130e2
+KarmanObjectWidth=	013.3
 
-
-
--- werte aus dem aktuellen jahr --
-
-xLength=1.0
-yLength=1.0
-iMax=80
-jMax=80
-re=1000
-omg=1.7
-tau=0.5
-tEnd=50
-eps=0.001
-alpha=0.9
-iterMax=100
-deltaT=0.1
-deltaVec=1.4
-gx=0
-gy=0
-ui=0
-vi=0
-pi=0
+BoundaryPieces=""

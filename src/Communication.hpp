@@ -72,6 +72,7 @@ public:
 	int getProcsCount() const { return m_numProcs; }
 
 	Dimension getProcsGridDim() const { return m_procsGrid_dim; }
+	Index getProcsGridPosition() const { return m_procsGrid_myPosition; }
 
 	Dimension getGlobalDimension() const { return m_globalDomain_dim; }
 	Range getGlobalInnerRange() const { return m_globalInnerRange; }

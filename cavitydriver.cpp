@@ -9,7 +9,6 @@
 //#include "src/CavityPainter.hpp"
 
 #define _USE_MATH_DEFINES
-#define _PAINT_STUFF
 #include <math.h>
 
 #include <chrono>
@@ -17,7 +16,7 @@
 
 int main(int argc, char** argv)
 {
-	argc = argc*(**argv); // just to get rid of some warnings */
+	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
 
 	/* time measurement variables */
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
@@ -27,7 +26,11 @@ int main(int argc, char** argv)
 	double t_frame_avg = 0.0;
 
 	/* init simulation parameters */
-	SimulationParameters simparam("inputvals");
+	std::string inputvals("inputvals");
+	if(argc == 2)
+		inputvals = std::string(argv[1]);
+	SimulationParameters simparam( inputvals );
+	//simparam.writeToSTDOUT();
 
 	/* init problem dimensions and grid spacing delta */
 	Dimension global_dim;
@@ -39,68 +42,64 @@ int main(int argc, char** argv)
 
 	/* init communication of processes */
 	Communication communication = Communication(global_dim);
+
+	if(communication.getRank() == 0)
+	log_info("[P%i] loading inputvals from file \"%s\"",
+		communication.getRank(), inputvals.c_str());
+	if(communication.getRank() == 0)
+	log_info("[P%i] tasks count: %i | doing %ix%i procs-grid | global inner: [(%i,%i),(%i,%i)]", 
+		communication.getRank(),
+		communication.getProcsCount(),
+		communication.getProcsGridDim().i,
+		communication.getProcsGridDim().j,
+		communication.getGlobalInnerRange().begin.i,
+		communication.getGlobalInnerRange().begin.j,
+		communication.getGlobalInnerRange().end.i,
+		communication.getGlobalInnerRange().end.j );
+
+	log_info("[P%i] procs-grid position: (%i,%i) | local inner: [(%i,%i),(%i,%i)] | competences : %s%s%s%s",
+		communication.getRank(),
+		communication.getProcsGridPosition().i,
+		communication.getProcsGridPosition().j,
+		communication.getLocalInnerRange().begin.i,
+		communication.getLocalInnerRange().begin.j,
+		communication.getLocalInnerRange().end.i,
+		communication.getLocalInnerRange().end.j,
+		((communication.getBoundaryCompetence().Up) ? ("Up ") : ("")),
+		((communication.getBoundaryCompetence().Right) ? ("Right ") : ("")),
+		((communication.getBoundaryCompetence().Down) ? ("Down ") : ("")),
+		((communication.getBoundaryCompetence().Left) ? ("Left") : ("")) );
+
 	Dimension local_dim = communication.getLocalDimension();
 
 	/* init domain, which holds all grids and knows about their dimensions */
-	/**
-	 * TODO Fix this, it's just quick and dirty!
-	 */
-	Index a = Index(1, 1);
-	Index b = Index(local_dim.i, local_dim.j);
-	Boundary bndry = Boundary(Range(a, b), communication.getBoundaryCompetence());
-	Domain domain(local_dim, delta, bndry);
-	//Domain domain(local_dim, delta,
-	//
-	//	/* outer forces */
-	//		simparam.gx, simparam.gy, 0.0,
-	//	/* boundaries and color pattern */
-	//		communication.getBoundaryCompetence(), communication.getFirstCellColor());
+	Domain domain(local_dim, delta,
+		/* init boundary, for this we need the inner range of the local process
+		 * w.r.t. the range of the global domain. and the competences. */
+		Boundary(communication.getLocalInnerRange(),
+			communication.getBoundaryCompetence(),
+			simparam.boundary_conditions),
+		/* outer forces */
+		simparam.gx, simparam.gy,
+		/* initial grid values */
+		simparam.ui, simparam.vi, simparam.pi,
+		/* color pattern */
+		communication.getFirstCellColor());
 
+	//simparam.writeSettingsFile("inputvals_"+simparam.name);
 
-	//#ifdef _PAINT_STUFF
-	//	CavityPainter paint;
-	//	if (paint.init(640, 480))
-	//	{
-	//		paint.createGrid(domain.getInnerRangeP());
-	//		paint.paint();
-	//	}
-	//#endif
-
-	log_info("process %i has competence over boundaries: %s %s %s %s",
-			communication.getRank(),
-			((communication.getBoundaryCompetence().Up) ?
-			("Up ") : ("")),
-			((communication.getBoundaryCompetence().Right) ?
-			("Right ") : ("")),
-			((communication.getBoundaryCompetence().Down) ?
-			("Down ") : ("")),
-			((communication.getBoundaryCompetence().Left) ?
-			("Left") : (""))
-			);
-	log_info("process %i has end indices: p=(%i,%i), u=(%i,%i), v=(%i,%i), firstColor=%s",
-			communication.getRank(),
-			domain.getInnerRangeP().end.i, domain.getInnerRangeP().end.j,
-			domain.getInnerRangeU().end.i, domain.getInnerRangeU().end.j,
-			domain.getInnerRangeV().end.i, domain.getInnerRangeV().end.j,
-		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"));
-	if(! communication.getRank())
-	log_info("global inner: [(%i,%i),(%i,%i)]", 
-			communication.getGlobalInnerRange().begin.i,
-			communication.getGlobalInnerRange().begin.j,
-			communication.getGlobalInnerRange().end.i,
-			communication.getGlobalInnerRange().end.j 
-			);
-	log_info("local inner: [(%i,%i),(%i,%i)]", 
-			communication.getLocalInnerRange().begin.i,
-			communication.getLocalInnerRange().begin.j,
-			communication.getLocalInnerRange().end.i,
-			communication.getLocalInnerRange().end.j 
-			);
+	log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
+		communication.getRank(),
+		domain.getWholeInnerRange().end.i, domain.getWholeInnerRange().end.j,
+		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"),
+		domain.getInnerRangeP().size(),
+		domain.getInnerRangeU().size(),
+		domain.getInnerRangeV().size() );
 
 	/* next: omega and time parameters */
-	Real h = 1.0 / simparam.iMax;// std::fmin(simparam.xLength, simparam.yLength);
+	Real h = 1.0 / std::fmin(simparam.xLength, simparam.yLength);// simparam.iMax;
 	// concerning h, see: http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
-	if (simparam.xLength == simparam.yLength) 
+	if(simparam.xLength == simparam.yLength) /* TODO: what do with this? */
 		simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
 
 	Real t = 0.0, dt, res;
@@ -114,12 +113,9 @@ int main(int argc, char** argv)
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
 
 	/* main loop */
-	while (t < simparam.tEnd)
+	while(t < simparam.tEnd)
 	{
 		t_frame_start = std::chrono::steady_clock::now();
-
-		if(communication.getRank() == 0)
-			log_info("- Round %i", step);
 
 		/* the magic starts here */
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
@@ -130,8 +126,6 @@ int main(int argc, char** argv)
 		dt = Computation::computeTimestepFromMaxVelocities
 			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
 		t += dt;
-		if(communication.getRank() == 0)
-			log_info("-- dt=%f | t/tmax=%f", dt, t / simparam.tEnd);
 
 		domain.setVelocitiesBoundaries();
 		communication.exchangeGridBoundaryValues(domain, Communication::Handle::Velocities);
@@ -159,7 +153,7 @@ int main(int argc, char** argv)
 			//		domain.p(), domain.rhs(), delta, 
 			//		domain.getInnerRangeP(), global_dim);
 			res = Solver::computeSquaredResidual(
-					domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_dim);
+				domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_dim);
 			res = communication.getGlobalResidual(res);
 			it++;
 		} while (communication.checkGlobalFinishSOR
@@ -169,9 +163,14 @@ int main(int argc, char** argv)
 		t_sor_avg += time_span.count();
 		//log_info("SOR solver time: %f seconds",time_span.count());
 
+		/* write new line of current statistics to stdout */
 		if(communication.getRank() == 0)
-			log_info("-- Solver done: it=%i (max:%i)| res=%f (max:%f)",
-						it, simparam.iterMax, res, simparam.eps);
+		{
+			printf("[INFO] - Round %i: %.2f%% | dt=%f | Solver: it=%i / res=%f%s\r",
+				step, (t / simparam.tEnd)*100., dt, it, res, 
+				((t < simparam.tEnd)) ? ("") : ("\n"));
+			fflush( stdout );
+		}
 		it = 0;
 
 		Computation::computeNewVelocities(domain, dt);
@@ -192,11 +191,13 @@ int main(int argc, char** argv)
 
 	std::chrono::steady_clock::time_point t_end = std::chrono::steady_clock::now();
 	time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_end-t_start);
-	log_info("Overall time: %f seconds",time_span.count());
 
-	/* output average time per frame and pressure computation per frame */
-	log_info("Average frame time: %f seconds",t_frame_avg / (double)(step-1));
-	log_info("Average SOR time: %f seconds",t_sor_avg / (double)(step-1));
+	/* output time: overall, per frame and pressure computation per frame */
+	log_info("[P%i] Overall time: %fs | avg. frame time: %fs | avg. SOR time: %fs",
+		communication.getRank(),
+		time_span.count(),
+		t_frame_avg / (double)(step-1),
+		t_sor_avg / (double)(step-1) );
 
 	/* end of magic */
 	return 0;

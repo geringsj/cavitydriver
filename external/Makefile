@@ -1,0 +1,35 @@
+
+all: dirs glowl anttweakbar glew glfw3 docopt
+
+.PHONY: dirs glowl anttweakbar
+
+dirs:
+	@mkdir -p include
+	@mkdir -p lib
+
+glowl:
+	if cd "glowl"; then echo "already have cloned glowl"; else git clone git://zuggerwad.de:~/glowl glowl; fi
+	make -C ./glowl/
+	cp ./glowl/libglowl.a ./lib/
+	cp -r ./glowl/include/glowl ./include/
+
+anttweakbar:
+	if cd "anttweakbar-code"; then echo "already have cloned anttweakbar"; else git clone git://git.code.sf.net/p/anttweakbar/code anttweakbar-code; fi
+	make -C ./anttweakbar-code/src
+	cp ./anttweakbar-code/lib/libAntTweakBar.{a,so*} ./lib/
+	cp ./anttweakbar-code/include/AntTweakBar.h ./include
+
+glew:
+
+glfw3:
+
+docopt:
+	if cd "docopt.cpp"; then echo "already have cloned docopt"; else git clone https://github.com/docopt/docopt.cpp; fi
+	g++ -c ./docopt.cpp/docopt.cpp -Wall -g -Wextra -O2 -std=c++11 -fPIC
+	ar rcs ./lib/libdocopt.a ./docopt.cpp/docopt.o
+	ranlib ./lib/libdocopt.a
+	cp ./docopt.cpp/docopt.h ./include
+
+clean:
+	rm -rf ./include ./lib
+

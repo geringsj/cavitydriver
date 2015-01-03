@@ -25,8 +25,8 @@ Communication::Communication(Dimension globalDomainDim)
 	m_numProcs = 1;
 	m_myRank = 0;
 #endif
-	if(m_myRank==0)
-		log_info("number of tasks=%i - my rank=%i", m_numProcs, m_myRank);
+	//if(m_myRank==0)
+	//	log_info("number of tasks=%i - my rank=%i", m_numProcs, m_myRank);
 
 	/* set mpi cartesian grid with dimension infos */
 	m_globalDomain_dim = globalDomainDim;
@@ -41,8 +41,8 @@ Communication::Communication(Dimension globalDomainDim)
 	}
 	m_procsGrid_dim.i = x_procs;
 	m_procsGrid_dim.j = y_procs;
-	if(m_myRank == 0)
-		log_info("going for a %ix%i processors grid", x_procs, y_procs);
+	//if(m_myRank == 0)
+	//	log_info("going for a %ix%i processors grid", x_procs, y_procs);
 	/* column-major order of processes in grid 
 	 * (only because we use this in GridFunction too)*/
 	m_procsGrid_myPosition.i = m_myRank / y_procs;
@@ -50,7 +50,7 @@ Communication::Communication(Dimension globalDomainDim)
 	/* disable processes which don't fit into grid */
 	if(m_myRank >= x_procs*y_procs)
 	{
-		log_info("process %i has no place in grid (at position [%i,%i])", 
+		log_info("[P%i] no place in processes grid. terminating. (at position [%i,%i])", 
 				m_myRank, m_procsGrid_myPosition.i, m_procsGrid_myPosition.j);
 		//m_myRank = -1;
 		/* return; ? */
@@ -74,7 +74,7 @@ Communication::Communication(Dimension globalDomainDim)
 		MPI_Comm_create(MPI_COMM_WORLD, new_group, (MPI_Comm*)mycom);
 		if (*(MPI_Comm*)mycom == MPI_COMM_NULL)
 		{
-		   log_info("Bye bye cruel world. (%i)", m_myRank);
+		   //log_info("Bye bye cruel world. (%i)", m_myRank);
 		   MPI_Finalize();
 		   exit(0);
 		}
@@ -92,8 +92,8 @@ Communication::Communication(Dimension globalDomainDim)
 		? (m_myRank-y_procs) : (-1);
 	m_rightRank = (m_procsGrid_myPosition.i+1 < x_procs) 
 		? (m_myRank+y_procs) : (-1);
-	log_info("rank=%i, right=%i, down=%i, left=%i, up=%i", 
-			m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
+	//log_info("rank=%i, right=%i, down=%i, left=%i, up=%i", 
+	//		m_myRank, m_rightRank, m_downRank, m_leftRank, m_upRank);
 
 	/* compute global/local dimensions, checkerboard colors and stuff */
 	int x_pcells = m_globalDomain_dim.i / m_procsGrid_dim.i;
@@ -140,10 +140,10 @@ Communication::Communication(Dimension globalDomainDim)
 	m_recvBuffer = NULL;
 #endif
 
-	log_info("rank=%i has offset=(%i,%i), mydims=(%i,%i), firstColor=%s, bufferSize=%i",
-			m_myRank, myOffsetToGlobalDomain.i, myOffsetToGlobalDomain.j,
-			m_myDomain_dim.i, m_myDomain_dim.j, 
-			(m_myDomainFirstCellColor==Color::Red)?("Red"):("Black"), m_bufferSize);
+	//log_info("rank=%i has offset=(%i,%i), mydims=(%i,%i), firstColor=%s, bufferSize=%i",
+	//		m_myRank, myOffsetToGlobalDomain.i, myOffsetToGlobalDomain.j,
+	//		m_myDomain_dim.i, m_myDomain_dim.j, 
+	//		(m_myDomainFirstCellColor==Color::Red)?("Red"):("Black"), m_bufferSize);
 }
 
 Communication::~Communication()
@@ -221,15 +221,15 @@ void Communication::exchangeGridBoundaryValues(
 	switch (grid)
 	{
 	case Communication::Handle::Pressure:
-		exchangeGridBoundaryValues(domain.p(), domain.getInnerRangeP());
+		exchangeGridBoundaryValues(domain.p(), domain.getWholeInnerRange());
 		break;
 	case Communication::Handle::Velocities:
-		exchangeGridBoundaryValues(domain.u(), domain.getInnerRangeU());
-		exchangeGridBoundaryValues(domain.v(), domain.getInnerRangeV());
+		exchangeGridBoundaryValues(domain.u(), domain.getWholeInnerRange());
+		exchangeGridBoundaryValues(domain.v(), domain.getWholeInnerRange());
 		break;
 	case Communication::Handle::PreliminaryVelocities:
-		exchangeGridBoundaryValues(domain.F(), domain.getInnerRangeU());
-		exchangeGridBoundaryValues(domain.G(), domain.getInnerRangeV());
+		exchangeGridBoundaryValues(domain.F(), domain.getWholeInnerRange());
+		exchangeGridBoundaryValues(domain.G(), domain.getWholeInnerRange());
 		break;
 	default:
 		break;

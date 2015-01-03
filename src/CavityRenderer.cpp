@@ -5,6 +5,8 @@
  */
 void TW_CALL Callback(void *clientData)
 {
+	if(clientData)
+		clientData=NULL;
 	// do something
 }
 
@@ -21,12 +23,6 @@ void TW_CALL Bake(void* clientData)
 
 CavityRenderer::CavityRenderer()
 {
-	/**
-	 * And this also doesn't work because AntTweakBar,
-	 * apparently hates pointers and crashes for (no?)
-	 * good reason.
-	 */
-	//m_sim_params = NULL;
 }
 
 CavityRenderer::~CavityRenderer()
@@ -37,8 +33,12 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 {
 	m_window_width = window_width;
 	m_window_height = window_height;
-	m_window_background_colour[0] = 0.2f;m_window_background_colour[1] = 0.2f;m_window_background_colour[2] = 0.2f;
-	m_zoom = 80.0f;
+	m_window_background_colour[0] = 0.2f;
+	m_window_background_colour[1] = 0.2f;
+	m_window_background_colour[2] = 0.2f;
+	m_zoom = 1.0f;
+
+	m_simparams = sim_params;
 
 	m_show_grid = true;
 
@@ -61,9 +61,9 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
 
 	// Create a tweak bar
-	bar = TwNewBar("TweakBar");
+	bar = TwNewBar("Cavity-TweakBar");
 	TwWindowSize(window_width, window_height);
-	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
+	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
 	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",1.0f, 999.0f);
@@ -120,10 +120,10 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
 	glfwSetWindowSizeCallback(m_window, (GLFWwindowposfun)windowResizeCallback);
-    glfwSetMouseButtonCallback(m_window, (GLFWmousebuttonfun)mouseButtonCallback);
-    glfwSetCursorPosCallback(m_window, (GLFWcursorposfun)mousePositionCallback);
-    glfwSetScrollCallback(m_window, (GLFWscrollfun)mouseWheelCallback);
-    glfwSetKeyCallback(m_window, (GLFWkeyfun)keyCallback);
+	glfwSetMouseButtonCallback(m_window, (GLFWmousebuttonfun)mouseButtonCallback);
+	glfwSetCursorPosCallback(m_window, (GLFWcursorposfun)mousePositionCallback);
+	glfwSetScrollCallback(m_window, (GLFWscrollfun)mouseWheelCallback);
+	glfwSetKeyCallback(m_window, (GLFWkeyfun)keyCallback);
 	glfwSetCharCallback(m_window, (GLFWcharfun)charCallback);
 
 	/*	Initialize glew */
@@ -142,8 +142,12 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	glGetError();
 
 
-	m_cam_sys = CameraSystem(glm::vec3(0.0f, 0.0f, m_zoom), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	
+	m_cam_sys = CameraSystem(
+		glm::vec3(0.0f, 0.0f, m_zoom),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f));
+
 	createGLSLProgramms();
 
 	return true;
@@ -151,18 +155,14 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 
 bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int window_height, SimulationParameters& sim_params)
 {
-	/**
-	 * And this also doesn't work because AntTweakBar,
-	 * apparently hates pointers and crashes for (no?)
-	 * good reason.
-	 */
-	//m_sim_params = new SimulationParameters(sim_params);
 	m_window_width = window_width;
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2f; m_window_background_colour[1] = 0.2f; m_window_background_colour[2] = 0.2f;
-	m_zoom = 1.1f;
+	m_zoom = 1.f;
 
 	m_show_grid = true;
+
+	m_simparams = sim_params;
 
 	/* Initialize the library */
 	if (!glfwInit()) return false;
@@ -183,93 +183,41 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
 
 	// Create a tweak bar
-	bar = TwNewBar("TweakBar");
+	bar = TwNewBar("CavityBaker-TweakBar");
 	TwWindowSize(window_width, window_height);
-	TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
+	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
 	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, "RW", 1.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
-	m_alpha = (float)sim_params.alpha;
-	m_deltaT = (float)sim_params.deltaT;
-	m_deltaVec = (float)sim_params.deltaVec;
-	m_eps = (float)sim_params.eps;
-	m_gx = (float)sim_params.gx;
-	m_gy = (float)sim_params.gy;
-	m_iMax = (int)sim_params.iMax;
-	m_iterMax = (int)sim_params.iterMax;
-	m_jMax = (int)sim_params.jMax;
-	m_KarmanAngle = (float)sim_params.KarmanAngle;
-	m_KarmanObjectWidth = (float)sim_params.KarmanObjectWidth;
-	m_name = sim_params.name;
-	m_omg = (float)sim_params.omg;
-	m_pi = (float)sim_params.pi;
-	m_re = (float)sim_params.re;
-	m_tau = (float)sim_params.tau;
-	m_tEnd = (float)sim_params.tEnd;
-	m_ui = (float)sim_params.ui;
-	m_vi = (float)sim_params.vi;
-	m_xCells = (int)sim_params.xCells;
-	m_xLength = (float)sim_params.xLength;
-	m_yCells = (int)sim_params.yCells;
-	m_yLength = (float)sim_params.yLength;
-	printf("m_xLength: %f m_yLength: %f \n", m_xLength, m_yLength);
-	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_alpha);
-	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_deltaT);
-	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_deltaVec);
-	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_eps);
-	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_gx);
-	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_gy);
-	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_KarmanAngle);
-	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_KarmanObjectWidth);
-	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_pi);
-	addFloatParam("m_re", " step=0.1 label='re' ", &m_re);
-	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_tau);
-	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_tEnd);
-	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_ui);
-	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_vi);
-	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_xLength);
-	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_yLength);
-	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_omg);
-	addIntParam("m_iterMax", " label='iterMax' ", &m_iterMax);
-	addIntParam("m_iMax", " label='iMax' ", &m_iMax);
-	addIntParam("m_jMax", " label='jMax' ", &m_jMax);
-	addIntParam("m_xCells", " label='xCells' ", &m_xCells);
-	addIntParam("m_yCells", " label='yCells' ", &m_yCells);
-	addStringParam("m_name", " label='name' ", &m_name);
 
-	addButtonParam("m_bake", " label='bake the parameter' ", Bake);
+	printf("m_xLength: %f m_yLength: %f \n", m_simparams.xLength, m_simparams.yLength);
+	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
+	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
+	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
+	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps);
+	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx);
+	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy);
+	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle);
+	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth);
+	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi);
+	addFloatParam("m_re", " step=0.1 label='re' ", &m_simparams.re);
+	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau);
+	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd);
+	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui);
+	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi);
+	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength);
+	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
+	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg);
+	addIntParam("m_iterMax", " label='iterMax' ", &m_simparams.iterMax);
+	addIntParam("m_iMax", " label='iMax' ", &m_simparams.iMax);
+	addIntParam("m_jMax", " label='jMax' ", &m_simparams.jMax);
+	addIntParam("m_xCells", " label='xCells' ", &m_simparams.xCells);
+	addIntParam("m_yCells", " label='yCells' ", &m_simparams.yCells);
+	addStringParam("m_name", " label='name' ", &m_simparams.name);
 
-	/**
-	 * And this also doesn't work because AntTweakBar,
-	 * apparently hates pointers and crashes for (no?)
-	 * good reason.
-	 */
-	//addFloatParam("m_alpha", " label='alpha' ", &m_sim_params->alpha);
-	//addFloatParam("m_deltaT", " label='deltaT' ", &m_sim_params->deltaT);
-	//addFloatParam("m_deltaVec", " label='deltaVec' ", &m_sim_params->deltaVec);
-	//addFloatParam("m_eps", " label='eps' ", &m_sim_params->eps);
-	//addFloatParam("m_gx", " label='gx' ", &m_sim_params->gx);
-	//addFloatParam("m_gy", " label='gy' ", &m_sim_params->gy);
-	//addFloatParam("m_KarmanAngle", " label='KarmanAngle' ", &m_sim_params->KarmanAngle);
-	//addFloatParam("m_KarmanObjectWidth", " label='KarmanObjectWidth' ", &m_sim_params->KarmanObjectWidth);
-	//addFloatParam("m_pi", " label='pi' ", &m_sim_params->pi);
-	//addFloatParam("m_re", " label='re' ", &m_sim_params->re);
-	//addFloatParam("m_tau", " label='tau' ", &m_sim_params->tau);
-	//addFloatParam("m_tDeltaWriteVTK", " label='tDeltaWriteVTK' ", &m_sim_params->tDeltaWriteVTK);
-	//addFloatParam("m_tEnd", " label='tEnd' ", &m_sim_params->tEnd);
-	//addFloatParam("m_ui", " label='ui' ", &m_sim_params->ui);
-	//addFloatParam("m_vi", " label='vi' ", &m_sim_params->vi);
-	//addFloatParam("m_xLength", " label='xLength' ", &m_sim_params->xLength);
-	//addFloatParam("m_yLength", " label='yLength' ", &m_sim_params->yLength);
-	//addFloatParam("m_omg", " label='omega' ", &m_sim_params->omg);
-	//addIntParam("m_iMax", " label='iMax' ", &m_sim_params->iMax);
-	//addIntParam("m_iterMax", " label='iterMax' ", &m_sim_params->iterMax);
-	//addIntParam("m_jMax", " label='jMax' ", &m_sim_params->jMax);
-	//addIntParam("m_xCells", " label='xCells' ", &m_sim_params->xCells);
-	//addIntParam("m_yCells", " label='yCells' ", &m_sim_params->yCells);
-	//addStringParam("m_name", " label='name' ", &m_sim_params->name);
+	addButtonParam("m_bake", " label='bake parameters' ", Bake);
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window, this);
@@ -296,14 +244,16 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	glGetError();
 
 
-	m_cam_sys = CameraSystem(glm::vec3(0.0f, 0.0f, m_zoom), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	m_cam_sys = CameraSystem(
+		glm::vec3(0.0f, 0.0f, m_zoom),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f));
 
 	createGLSLProgramms();
 
 	for (auto b : sim_params.boundary_conditions)
-	{
-		drawBoundaryCondition(b.range, b.gridtype, b.direction, b.condition_value, b.condition);
-	}
+		drawBoundaryCondition(b);
 
 	return true;
 }
@@ -336,49 +286,27 @@ bool CavityRenderer::createGLSLProgramms()
 
 	m_grid_prgm.link();
 
-	return true;
+	return true; /* return with great success */
 }
 
-void CavityRenderer::reloadSimParams(SimulationParameters sim_params)
+void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
 {
-	m_alpha = (float)sim_params.alpha;
-	m_deltaT = (float)sim_params.deltaT;
-	m_deltaVec = (float)sim_params.deltaVec;
-	m_eps = (float)sim_params.eps;
-	m_gx = (float)sim_params.gx;
-	m_gy = (float)sim_params.gy;
-	m_iMax = (int)sim_params.iMax;
-	m_iterMax = (int)sim_params.iterMax;
-	m_jMax = (int)sim_params.jMax;
-	m_KarmanAngle = (float)sim_params.KarmanAngle;
-	m_KarmanObjectWidth = (float)sim_params.KarmanObjectWidth;
-	m_name = sim_params.name;
-	m_omg = (float)sim_params.omg;
-	m_pi = (float)sim_params.pi;
-	m_re = (float)sim_params.re;
-	m_tau = (float)sim_params.tau;
-	m_tEnd = (float)sim_params.tEnd;
-	m_ui = (float)sim_params.ui;
-	m_vi = (float)sim_params.vi;
-	m_xCells = (int)sim_params.xCells;
-	m_xLength = (float)sim_params.xLength;
-	m_yCells = (int)sim_params.yCells;
-	m_yLength = (float)sim_params.yLength;
+	m_simparams = sim_params;
 
 	for (auto b : sim_params.boundary_conditions)
-	{
-		drawBoundaryCondition(b.range, b.gridtype, b.direction, b.condition_value, b.condition);
-	}
+		drawBoundaryCondition(b);
 }
 
 void CavityRenderer::paint()
 {
-
 	/* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(m_window))
-    {
+	while (!glfwWindowShouldClose(m_window))
+	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(m_window_background_colour[0], m_window_background_colour[1], m_window_background_colour[2], 1.0f);
+		glClearColor(
+			m_window_background_colour[0],
+			m_window_background_colour[1],
+			m_window_background_colour[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		int width, height;
 		glfwGetFramebufferSize(m_window, &width, &height);
@@ -390,8 +318,8 @@ void CavityRenderer::paint()
 		TwDraw();
 		// Draw TB
 
-        /* Swap front and back buffers */
-        glfwSwapBuffers(m_window);
+		/* Swap front and back buffers */
+		glfwSwapBuffers(m_window);
 
         /* Poll for and process events */
         glfwPollEvents();
@@ -424,25 +352,25 @@ bool CavityRenderer::createGrid(Range grid_size)
 
 void CavityRenderer::createSingleGrid(Range innerRange, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
 {
-	float x_length = m_xLength / (float)m_iMax;
-	float y_length = m_yLength / (float)m_jMax;
+	float x_length = m_simparams.xLength / (float)m_simparams.iMax;
+	float y_length = m_simparams.yLength / (float)m_simparams.jMax;
 
-	printf("m_xLength: %f m_yLength: %f \n", m_xLength, m_yLength);
+	printf("m_xLength: %f m_yLength: %f \n", m_simparams.xLength, m_simparams.yLength);
 
 	float bottom_left_i = (float)innerRange.begin[0] - 1.0f;
 	float bottom_left_j = (float)innerRange.begin[1] - 1.0f;
 
-	float bottom_right_i = bottom_left_i + m_xCells * x_length;
+	float bottom_right_i = bottom_left_i + m_simparams.xCells * x_length;
 	float bottom_right_j = bottom_left_j;
 
 	float top_right_i = bottom_right_i;
-	float top_right_j = bottom_right_j + m_yCells * y_length;
+	float top_right_j = bottom_right_j + m_simparams.yCells * y_length;
 
 	float top_left_i = bottom_left_i;
-	float top_left_j = bottom_left_j + m_yCells * y_length;
+	float top_left_j = bottom_left_j + m_simparams.yCells * y_length;
 
-	float right_shift = (m_xCells * x_length) / 2.0f;
-	float up_shift = (m_yCells * y_length) / 2.0f;
+	float right_shift = (m_simparams.xCells * x_length) / 2.0f;
+	float up_shift = (m_simparams.yCells * y_length) / 2.0f;
 
 	m_cam_sys.Translation(m_cam_sys.GetRightVector(), 0.0f - m_cam_sys.GetCamPos().x);
 	m_cam_sys.Translation(m_cam_sys.GetRightVector(), right_shift);
@@ -512,9 +440,14 @@ void CavityRenderer::drawGeometry()
 {
 }
 
-void CavityRenderer::drawBoundaryCondition(Range range, Boundary::Grid grid_type, 
-	Boundary::Direction dir, Real condition_value, Boundary::Condition cond)
+void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece)
 {
+	Range range(boundarypiece.range);
+	// Boundary::Grid grid_type(boundarypiece.gridtype);
+	// Boundary::Direction dir(boundarypiece.direction);
+	// Real condition_value(boundarypiece.condition_value);
+	// Boundary::Condition cond(boundarypiece.condition);
+
 	unsigned long begin_pos;
 	int x_dim, y_dim;
 	char* img_data;
@@ -524,8 +457,8 @@ void CavityRenderer::drawBoundaryCondition(Range range, Boundary::Grid grid_type
 
 	m_arrow.load(GL_RGB32F, 0, 0, GL_RGB, GL_FLOAT, img_data);
 
-	float x_length = m_xLength / (float)m_iMax;
-	float y_length = m_yLength / (float)m_jMax;
+	float x_length = m_simparams.xLength / (float)m_simparams.iMax;
+	float y_length = m_simparams.yLength / (float)m_simparams.jMax;
 	for_range(i, j, range)
 	{
 		float pos[] = { (float)i * x_length, (float)j * y_length };
