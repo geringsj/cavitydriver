@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <queue>
+#include <typeinfo>
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -107,6 +107,11 @@ private:
 		std::string mode = "RW",
 		float min = std::numeric_limits<float>::min(),
 		float max = std::numeric_limits<float>::max()
+		);
+	void addDoubleParam(const char* name, const char* def, void* var,
+		std::string mode = "RW",
+		double min = std::numeric_limits<double>::min(),
+		double max = std::numeric_limits<double>::max()
 		);
 	void addIntParam(const char* name, const char* def, void* var, 
 		std::string mode = "RW",

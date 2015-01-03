@@ -70,23 +70,49 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
-	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
-	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT, "RO");
-	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec, "RO");
-	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps, "RO");
-	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx, "RO");
-	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy, "RO");
-	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle, "RO");
-	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth, "RO");
-	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi, "RO");
-	addFloatParam("m_re", " step=0.1 label='re' ", &m_simparams.re, "RO");
-	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau, "RO");
-	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd, "RO");
-	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui, "RO");
-	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi, "RO");
-	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength, "RO");
-	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength, "RO");
-	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg, "RO");
+	Real test;
+	char _double[] = "double";
+	char _float[] = "float";
+	if (strcmp(typeid(test).name(), _double) == 0)
+	{
+		addDoubleParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
+		addDoubleParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT, "RO");
+		addDoubleParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec, "RO");
+		addDoubleParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps, "RO");
+		addDoubleParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx, "RO");
+		addDoubleParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy, "RO");
+		addDoubleParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle, "RO");
+		addDoubleParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth, "RO");
+		addDoubleParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi, "RO");
+		addDoubleParam("m_re", " step=0.1 label='re' ", &m_simparams.re, "RO");
+		addDoubleParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau, "RO");
+		addDoubleParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd, "RO");
+		addDoubleParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui, "RO");
+		addDoubleParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi, "RO");
+		addDoubleParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength, "RO");
+		addDoubleParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength, "RO");
+		addDoubleParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg, "RO");
+	}
+	if (strcmp(typeid(test).name(), _float) == 0)
+	{
+		addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
+		addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT, "RO");
+		addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec, "RO");
+		addFloatParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps, "RO");
+		addFloatParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx, "RO");
+		addFloatParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy, "RO");
+		addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle, "RO");
+		addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth, "RO");
+		addFloatParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi, "RO");
+		addFloatParam("m_re", " step=0.1 label='re' ", &m_simparams.re, "RO");
+		addFloatParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau, "RO");
+		addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd, "RO");
+		addFloatParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui, "RO");
+		addFloatParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi, "RO");
+		addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength, "RO");
+		addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength, "RO");
+		addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg, "RO");
+	}
 	addIntParam("m_iterMax", " label='iterMax' ", &m_simparams.iterMax, "RO");
 	addIntParam("m_iMax", " label='iMax' ", &m_simparams.iMax, "RO");
 	addIntParam("m_jMax", " label='jMax' ", &m_simparams.jMax, "RO");
@@ -169,23 +195,49 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
-	addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
-	addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
-	addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
-	addFloatParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps);
-	addFloatParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx);
-	addFloatParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy);
-	addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle);
-	addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth);
-	addFloatParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi);
-	addFloatParam("m_re", " step=0.1 label='re' ", &m_simparams.re);
-	addFloatParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau);
-	addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd);
-	addFloatParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui);
-	addFloatParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi);
-	addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength);
-	addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
-	addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg);
+	Real test;
+	char _double[] = "double";
+	char _float[] = "float";
+	if (strcmp(typeid(test).name(), _double) == 0)
+	{
+		addDoubleParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
+		addDoubleParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
+		addDoubleParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
+		addDoubleParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps);
+		addDoubleParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx);
+		addDoubleParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy);
+		addDoubleParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle);
+		addDoubleParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth);
+		addDoubleParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi);
+		addDoubleParam("m_re", " step=0.1 label='re' ", &m_simparams.re);
+		addDoubleParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau);
+		addDoubleParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd);
+		addDoubleParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui);
+		addDoubleParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi);
+		addDoubleParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength);
+		addDoubleParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
+		addDoubleParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg);
+	}
+	if (strcmp(typeid(test).name(), _float) == 0)
+	{
+		addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
+		addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
+		addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
+		addFloatParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps);
+		addFloatParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx);
+		addFloatParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy);
+		addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle);
+		addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth);
+		addFloatParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi);
+		addFloatParam("m_re", " step=0.1 label='re' ", &m_simparams.re);
+		addFloatParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau);
+		addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd);
+		addFloatParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui);
+		addFloatParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi);
+		addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength);
+		addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
+		addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg);
+	}
 	addIntParam("m_iterMax", " label='iterMax' ", &m_simparams.iterMax);
 	addIntParam("m_iMax", " label='iMax' ", &m_simparams.iMax);
 	addIntParam("m_jMax", " label='jMax' ", &m_simparams.jMax);
@@ -640,6 +692,20 @@ void CavityRenderer::addFloatParam(const char* name, const char* def, void* var,
 	if (mode == "RO")
 	{
 		TwAddVarRO(bar, name, TW_TYPE_FLOAT, var, def);
+	}
+}
+
+void CavityRenderer::addDoubleParam(const char* name, const char* def, void* var, std::string mode, double min, double max)
+{
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_DOUBLE, var, def);
+		TwSetParam(bar, name, "min", TW_PARAM_DOUBLE, 1, &min);
+		TwSetParam(bar, name, "max", TW_PARAM_DOUBLE, 1, &max);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_DOUBLE, var, def);
 	}
 }
 
