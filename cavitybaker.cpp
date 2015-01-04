@@ -5,10 +5,10 @@
 #include "src/Bakery.hpp"
 
 #include <string>
+#include <map>
 
 #if defined(__linux)
 	#include "external/include/docopt.h"
-#endif
 
 void getCLIDouble(Real& real, std::map<std::string, docopt::value>& args, std::string string)
 {
@@ -18,6 +18,7 @@ void getCLIInt(int& _int, std::map<std::string, docopt::value> args, std::string
 {
 	_int = (args[string].isString()) ? std::stoi(args[string].asString().c_str(),0) : (_int);
 }
+#endif
 
 void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
 {

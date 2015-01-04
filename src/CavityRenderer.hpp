@@ -62,6 +62,17 @@ public:
 		{ m_window_width=width; m_window_height = height; }
 
 	void getijMax(int& p_iMax, int& p_jMax){ p_iMax = m_simparams.iMax; p_jMax = m_simparams.jMax; }
+	void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
+	int getMaxBoundaryPiece() { return m_max_boundary_piece; }
+	void showBoundaryPiece(unsigned int index);
+	void addBoundaryPiece(Boundary::BoundaryPiece piece) { m_boundary_conditions.push_back(piece); }
+	void getBoundaryPieceParams(Boundary::Direction& dir, Boundary::Condition& cond,
+		Boundary::Grid& grid, Real& value, int& i_begin, int& i_end, int& j_begin, int& j_end)
+	{
+		dir = m_direction_enum; cond = m_condition_enum; grid = m_grid_enum; 
+		value = m_condition_value; i_begin = m_i_begin; i_end = m_i_end;
+		j_begin = m_j_begin; j_end = m_j_end;
+	}
 
 private:
 	GLFWwindow* m_window; /**< Pointer to the window that glfw will use. */
@@ -89,6 +100,18 @@ private:
 	Texture2D m_pressure_tx;
 	Texture2D m_velocity_tx;
 	bool m_show_field;
+
+	int m_nmbr_boundary_piece, m_max_boundary_piece;
+	Boundary::Direction m_direction_enum;
+	Boundary::Condition m_condition_enum;
+	Boundary::Grid m_grid_enum;
+	Real m_condition_value;
+	Range m_range;
+	int m_i_begin, m_i_end, m_j_begin, m_j_end;
+	std::vector<Boundary::BoundaryPiece> m_boundary_conditions;
+	bool m_modify_cond;
+	
+	void addBoundaryPieceToBar(std::string mode = "RW");
 
 	/** 
 	 * Function to create the data and index array for a grid
@@ -125,6 +148,9 @@ private:
 	void addButtonParam(const char* name, const char* def, TwButtonCallback callback);
 	void addStringParam(const char* name, const char* def, void* var, 
 		std::string mode = "RW");
+	void addEnumParam(const char* name, const char* def, void* var, TwEnumVal* _enum,
+		int size, std::string mode = "RW");
+	void modifyIntParam(const char* name, int min, int max);
 	void removeParam(const char* name);
 
 	/** Upload field data of a specified timestep to texture ojects */

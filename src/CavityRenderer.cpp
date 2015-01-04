@@ -10,6 +10,26 @@ void TW_CALL Callback(void *clientData)
 	// do something
 }
 
+void TW_CALL BoundaryPiece(void* clientData)
+{
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+	cr->setMaxBoundaryPiece(cr->getMaxBoundaryPiece() + 1);
+	Boundary::Direction dir;
+	Boundary::Condition cond;
+	Boundary::Grid grid;
+	Real value;
+	int i_begin;
+	int i_end;
+	int j_begin;
+	int j_end;
+	cr->getBoundaryPieceParams(dir, cond, grid, value, i_begin, i_end, j_begin, j_end);
+	Index begin = Index(i_begin, j_begin);
+	Index end = Index(i_end, j_end);
+	Range range = Range(begin, end);
+	cr->addBoundaryPiece(Boundary::BoundaryPiece(dir, cond, grid, value, range));
+	cr->showBoundaryPiece(cr->getMaxBoundaryPiece() - 1);
+}
+
 void TW_CALL Bake(void* clientData)
 {
 	CavityRenderer* cr = (CavityRenderer*)clientData;
@@ -119,6 +139,11 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	addIntParam("m_xCells", " label='xCells' ", &m_simparams.xCells, "RO");
 	addIntParam("m_yCells", " label='yCells' ", &m_simparams.yCells, "RO");
 	addStringParam("m_name", " label='name' ", &m_simparams.name, "RO");
+
+	TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
+	m_max_boundary_piece = 0;
+	addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
+	addBoundaryPieceToBar("RO");
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
@@ -245,7 +270,14 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addIntParam("m_yCells", " label='yCells' ", &m_simparams.yCells);
 	addStringParam("m_name", " label='name' ", &m_simparams.name);
 
+	TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
+	m_max_boundary_piece = 0;
+	addBoolParam("m_modify_cond", " label='Modify boundary piece' ", &m_modify_cond);
+	addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
+	addBoundaryPieceToBar("RW");
+
 	addButtonParam("m_bake", " label='bake parameters' ", Bake);
+	addButtonParam("m_boundarypiece", " label='Add boundary condition' ", BoundaryPiece);
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window, this);
@@ -320,6 +352,7 @@ bool CavityRenderer::createGLSLProgramms()
 void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
 {
 	m_simparams = sim_params;
+	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
 
 	for (auto b : sim_params.boundary_conditions)
 		drawBoundaryCondition(b);
@@ -341,8 +374,9 @@ void CavityRenderer::paint()
 		glViewport(0, 0, width, height);
 		
 		drawGridOverlay();
-		for (auto b : m_simparams.boundary_conditions)
-			drawBoundaryCondition(b);
+		showBoundaryPiece(m_nmbr_boundary_piece);
+		//for (auto b : m_simparams.boundary_conditions)
+		//	drawBoundaryCondition(b);
 		
 
 		// Draw TB
@@ -378,8 +412,8 @@ bool CavityRenderer::createGrid(Range grid_size)
 
 void CavityRenderer::createSingleGrid(Range innerRange, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
 {
-	float x_length = m_simparams.xLength / (float)m_simparams.iMax;
-	float y_length = m_simparams.yLength / (float)m_simparams.jMax;
+	float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
+	float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
 
 	float bottom_left_i = (float)innerRange.begin[0] - 1.0f;
 	float bottom_left_j = (float)innerRange.begin[1] - 1.0f;
@@ -481,8 +515,8 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 
 	m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, img_data);
 
-	float x_length = m_simparams.xLength / (float)m_simparams.iMax;
-	float y_length = m_simparams.yLength / (float)m_simparams.jMax;
+	float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
+	float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
 	for_range(i, j, range)
 	{
 		float pos[] = { (float)i * x_length + x_length / 2.0f, (float)j * y_length + y_length/2.0f };
@@ -496,7 +530,7 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 		switch (dir)
 		{
 		case Boundary::Direction::Up:
-			top *= condition_value;
+			top += (float)condition_value * y_length;
 			quad = {
 				Gridvertex(left, bottom, 0.0f, 1.0f),
 				Gridvertex(left, top, 1.0f, 1.0f),
@@ -505,7 +539,7 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 			};
 			break;
 		case Boundary::Direction::Down:
-			bottom *= condition_value;
+			bottom -= (float)condition_value * y_length;
 			quad = {
 				Gridvertex(left, bottom, 1.0f, 1.0f),
 				Gridvertex(left, top, 0.0f, 1.0f),
@@ -514,7 +548,7 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 			};
 			break;
 		case Boundary::Direction::Left:
-			left *= condition_value;
+			left -= (float)condition_value * x_length;
 			quad = {
 				Gridvertex(left, bottom, 1.0f, 0.0f),
 				Gridvertex(left, top, 1.0f, 1.0f),
@@ -523,7 +557,7 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 			};
 			break;
 		case Boundary::Direction::Right:
-			right *= condition_value;
+			right += (float)condition_value * x_length;
 			quad = {
 				Gridvertex(left, bottom, 0.0f, 0.0f),
 				Gridvertex(left, top, 0.0f, 1.0f),
@@ -719,6 +753,65 @@ bool CavityRenderer::readPpmData(const char* filename, char* imageData, unsigned
 	return true;
 }
 
+void CavityRenderer::addBoundaryPieceToBar(std::string mode)
+{
+	TwEnumVal direction_enum[] = {
+		{ (int)Boundary::Direction::Down, "Down" },
+		{ (int)Boundary::Direction::Left, "Left" },
+		{ (int)Boundary::Direction::Right, "Right" },
+		{ (int)Boundary::Direction::Up, "Up" }
+	};
+	m_direction_enum = Boundary::Direction::Down;
+	addEnumParam("Direction", "DirectionType", &m_direction_enum, direction_enum, 4, mode);
+
+	TwEnumVal condition_enum[] = {
+		{ (int)Boundary::Condition::NOSLIP, "NOSLIP" },
+		{ (int)Boundary::Condition::INFLOW, "INFLOW" },
+		{ (int)Boundary::Condition::OUTFLOW, "OUTFLOW" },
+		{ (int)Boundary::Condition::SLIP, "SLIP" }
+	};
+	m_condition_enum = Boundary::Condition::NOSLIP;
+	addEnumParam("Condition", "ConditionType", &m_condition_enum, condition_enum, 4, mode);
+
+	TwEnumVal grid_enum[] = {
+		{ (int)Boundary::Grid::U, "U" },
+		{ (int)Boundary::Grid::V, "V" },
+		{ (int)Boundary::Grid::P, "P" },
+		{ (int)Boundary::Grid::F, "F" },
+		{ (int)Boundary::Grid::G, "G" }
+	};
+	m_grid_enum = Boundary::Grid::U;
+	addEnumParam("Grid", "GridType", &m_grid_enum, grid_enum, 5, mode);
+	Real test; float __float; double __double;
+	const char* _double = typeid(__double).name();
+	const char* _float = typeid(__float).name();
+	if (strcmp(typeid(test).name(), _double) == 0)
+		addDoubleParam("m_condition_value", " step=0.1 label='Condition Value' ", &m_condition_value, mode);
+	if (strcmp(typeid(test).name(), _float) == 0)
+		addFloatParam("m_condition_value", " step=0.1 label='Condition Value' ", &m_condition_value, mode);
+	addIntParam("m_i_begin", " label='i begin' ", &m_i_begin, mode);
+	addIntParam("m_i_end", " label='i end' ", &m_i_end, mode);
+	addIntParam("m_j_begin", " label='j begin' ", &m_j_begin, mode);
+	addIntParam("m_j_end", " label='j end' ", &m_j_end, mode);
+}
+
+void CavityRenderer::showBoundaryPiece(unsigned int index)
+{
+	if (!m_boundary_conditions.empty() && !m_modify_cond)
+	{
+		m_direction_enum = m_boundary_conditions.at(index).direction;
+		m_condition_enum = m_boundary_conditions.at(index).condition;
+		m_grid_enum = m_boundary_conditions.at(index).gridtype;
+		m_condition_value = m_boundary_conditions.at(index).condition_value;
+		m_i_begin = m_boundary_conditions.at(index).range.begin[0];
+		m_j_begin = m_boundary_conditions.at(index).range.begin[1];
+		m_i_end = m_boundary_conditions.at(index).range.end[0];
+		m_j_end = m_boundary_conditions.at(index).range.end[1];
+
+		modifyIntParam("m_nmbr_boundary_piece", 0, m_max_boundary_piece - 1);
+	}
+}
+
 void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, std::string mode, float min, float max)
 {
 	if (mode == "RW")
@@ -800,6 +893,19 @@ void CavityRenderer::addStringParam(const char* name, const char* def, void* var
 	{
 		TwAddVarRO(bar, name, TW_TYPE_CDSTRING, var, def);
 	}
+}
+
+void CavityRenderer::addEnumParam(const char* name, const char* def, void* var, TwEnumVal* _enum, int size, std::string mode)
+{
+	TwType enumType = TwDefineEnum(def, _enum, size);
+	if (mode == "RW") TwAddVarRW(bar, name, enumType, var, NULL);
+	if (mode == "RO") TwAddVarRO(bar, name, enumType, var, NULL);
+}
+
+void CavityRenderer::modifyIntParam(const char* name, int min, int max)
+{
+	TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
+	TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
 }
 
 void CavityRenderer::removeParam(const char* name)
