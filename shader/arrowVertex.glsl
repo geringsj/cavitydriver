@@ -12,7 +12,7 @@ void main()
 	tex_coord = in_position.zw;
 	// Reset the z and w component
 	vec4 pos = vec4(in_position.x,in_position.y,-1.0,1.0);
-	in_position.z = -1.0;
-	in_position.w = 1.0;
+	//in_position.z = -1.0;
+	//in_position.w = 1.0;
 	gl_Position = mvp_matrix * pos;
 };

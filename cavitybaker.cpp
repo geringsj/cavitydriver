@@ -117,16 +117,30 @@ Options:
 	if( args["--name"] != docopt::value(std::string("\"\"")) )
 		simparam.name = args["--name"].asString();
 
+	/* overwrite those on pre-bakery processing, because
+	 * bakery uses them */
 	getCLIDouble(simparam.yLength, args, "--yLength");
 	getCLIDouble(simparam.xLength, args, "--xLength");
-
 	getCLIInt(simparam.iMax, args, "--iMax");
 	getCLIInt(simparam.jMax, args, "--jMax");
-
 	getCLIDouble(simparam.KarmanAngle, args, "--ka");
 	getCLIDouble(simparam.KarmanObjectWidth, args, "--kow");
 
-	/* TODO: rest of parameters */
+	/* overwrite those on post-bakery processing */
+	getCLIDouble(simparam.tau, args, "--tau");
+	getCLIDouble(simparam.tEnd, args, "--tEnd");
+	getCLIDouble(simparam.deltaT, args, "--deltaT");
+	getCLIDouble(simparam.deltaVec, args, "--deltaVec");
+	getCLIDouble(simparam.eps, args, "--eps");
+	getCLIDouble(simparam.omg, args, "--omg");
+	getCLIDouble(simparam.alpha, args, "--alpha");
+	getCLIDouble(simparam.re, args, "--re");
+	getCLIDouble(simparam.gx, args, "--gx");
+	getCLIDouble(simparam.gy, args, "--gy");
+	getCLIDouble(simparam.ui, args, "--ui");
+	getCLIDouble(simparam.vi, args, "--vi");
+	getCLIDouble(simparam.pi, args, "--pi");
+	getCLIInt(simparam.iterMax, args, "--iterMax");
 
 #else
 	/* on windows, default to GUI */
@@ -138,7 +152,8 @@ void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters
 {
 	newsp.name = clisp.name;
 
-	/* TODO: rest of parameters */
+	/* if user specifies another re than given in exercise sheet, use users re */
+	newsp.re = clisp.re;
 }
 
 int main(int argc, char** argv)

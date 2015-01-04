@@ -163,28 +163,6 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0);
 		}
 
-		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field)
-		{
-		/* set P */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
-			Boundary::Condition::OUTFLOW, 0.0, /* UP */
-			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
-		/* set U */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::U,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0);
-		/* set V */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::V,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0);
-		}
-
 		void getChannelFlowUpperHalf(SimulationParameters& simpams, Range inner)
 		{
 		/* set P */
@@ -203,6 +181,28 @@ namespace Bakery {
 		setOuterBoundaries(simpams, inner, Boundary::Grid::V,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::SLIP, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0);
+		}
+
+		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field)
+		{
+		/* set P */
+		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
+			Boundary::Condition::INFLOW, 1.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+		/* set U */
+		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::U,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0);
+		/* set V */
+		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::V,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0);
 		}
