@@ -4,14 +4,11 @@
 
 name="DefaultCavityDriverUsecase"
 
-useComplexGeometry=1
+useComplexGeometry=0
 
 -- Domain parameters
 xLength=1.0
 yLength=1.0
-
-iMax=128
-jMax=128
 
 iMax=64
 jMax=64
@@ -25,7 +22,7 @@ iterMax=100
 eps=0.001
 omg=1.7
 alpha=0.9
-re=10000
+re=1000
 
 -- Outside forces on the system
 gx=0.0

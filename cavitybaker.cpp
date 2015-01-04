@@ -160,6 +160,7 @@ int main(int argc, char** argv)
 	}
 
 	SimulationParameters newparam = Bakery::get(static_cast<Bakery::Setting>(setting), simparam);
+	newparam.useComplexGeometry = setting;
 
 	/* replace non-domain parameters in new simparams, to overwrite init-defaults */
 	overwritePostBakeryParams(newparam, simparam);
