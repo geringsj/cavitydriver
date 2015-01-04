@@ -10,6 +10,19 @@ void TW_CALL Callback(void *clientData)
 	// do something
 }
 
+void TW_CALL RemoveBoundaryPiece(void* clientData)
+{
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+	cr->setMaxBoundaryPiece(cr->getMaxBoundaryPiece() - 1);
+	cr->deleteBoundaryPiece(cr->getBoundaryPieceIndex());
+}
+
+void TW_CALL ModifyBoundaryPiece(void* clientData)
+{
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+	cr->modifyBoundaryPieceParams(cr->getBoundaryPieceIndex());
+}
+
 void TW_CALL BoundaryPiece(void* clientData)
 {
 	CavityRenderer* cr = (CavityRenderer*)clientData;
@@ -809,6 +822,21 @@ void CavityRenderer::showBoundaryPiece(unsigned int index)
 		m_j_end = m_boundary_conditions.at(index).range.end[1];
 
 		modifyIntParam("m_nmbr_boundary_piece", 0, m_max_boundary_piece - 1);
+	}
+}
+
+void CavityRenderer::modifyBoundaryPieceParams(unsigned int index)
+{
+	if (!m_boundary_conditions.empty())
+	{
+		m_boundary_conditions.at(index).direction = m_direction_enum;
+		m_boundary_conditions.at(index).condition = m_condition_enum;
+		m_boundary_conditions.at(index).gridtype = m_grid_enum;
+		m_boundary_conditions.at(index).condition_value = m_condition_value;
+		m_boundary_conditions.at(index).range.begin[0] = m_i_begin;
+		m_boundary_conditions.at(index).range.begin[1] = m_j_begin;
+		m_boundary_conditions.at(index).range.end[0] = m_i_end;
+		m_boundary_conditions.at(index).range.end[1] = m_j_end;
 	}
 }
 

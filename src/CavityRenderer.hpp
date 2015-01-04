@@ -64,8 +64,10 @@ public:
 	void getijMax(int& p_iMax, int& p_jMax){ p_iMax = m_simparams.iMax; p_jMax = m_simparams.jMax; }
 	void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
 	int getMaxBoundaryPiece() { return m_max_boundary_piece; }
+	int getBoundaryPieceIndex() { return m_nmbr_boundary_piece; }
 	void showBoundaryPiece(unsigned int index);
 	void addBoundaryPiece(Boundary::BoundaryPiece piece) { m_boundary_conditions.push_back(piece); }
+	void deleteBoundaryPiece(unsigned int index) { m_boundary_conditions.erase(m_boundary_conditions.begin() + index); }
 	void getBoundaryPieceParams(Boundary::Direction& dir, Boundary::Condition& cond,
 		Boundary::Grid& grid, Real& value, int& i_begin, int& i_end, int& j_begin, int& j_end)
 	{
@@ -73,6 +75,7 @@ public:
 		value = m_condition_value; i_begin = m_i_begin; i_end = m_i_end;
 		j_begin = m_j_begin; j_end = m_j_end;
 	}
+	void modifyBoundaryPieceParams(unsigned int index);
 
 private:
 	GLFWwindow* m_window; /**< Pointer to the window that glfw will use. */
