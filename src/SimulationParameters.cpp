@@ -38,7 +38,7 @@ void SimulationParameters::init()
 
 	/* extended simulation parameters */
 	this->name = std::string("");
-	this->KarmanAngle = 2.0 * M_PI / 8.0;
+	this->KarmanAngle = 2.0 * M_PI / 8.0; // 45°
 	this->KarmanObjectWidth = 1.5 * this->yLength / this->jMax;
 
 	this->useComplexGeometry = 0;

@@ -46,7 +46,7 @@ opt: all
 painter: LDFLAGS += -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
 painter: build $(PAINTER_BIN)
 
-baker: LDFLAGS += -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
+baker: LDFLAGS += -ldl -ldocopt -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
 baker: build $(BAKER_BIN)
 
 build:

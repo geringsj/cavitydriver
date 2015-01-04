@@ -28,7 +28,7 @@ docopt:
 	g++ -c ./docopt.cpp/docopt.cpp -Wall -g -Wextra -O2 -std=c++11 -fPIC
 	ar rcs ./lib/libdocopt.a ./docopt.cpp/docopt.o
 	ranlib ./lib/libdocopt.a
-	cp ./docopt.cpp/docopt.h ./include
+	cp ./docopt.cpp/docopt*.h ./include
 
 clean:
 	rm -rf ./include ./lib

@@ -99,8 +99,8 @@ int main(int argc, char** argv)
 	/* next: omega and time parameters */
 	Real h = 1.0 / std::fmin(simparam.xLength, simparam.yLength);// simparam.iMax;
 	// concerning h, see: http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
-	if(simparam.xLength == simparam.yLength) /* TODO: what do with this? */
-		simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
+	//if(simparam.xLength == simparam.yLength) /* TODO: what do with this? */
+	simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
 
 	Real t = 0.0, dt, res;
 	int it = 0, step=0;
