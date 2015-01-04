@@ -9,7 +9,7 @@
 //#include "src/CavityPainter.hpp"
 
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
 
 #include <chrono>
 

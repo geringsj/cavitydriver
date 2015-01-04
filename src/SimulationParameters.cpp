@@ -6,7 +6,8 @@
 #include <fstream>
 #include <sstream>
 
-#include <cmath>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 void SimulationParameters::init()
 {
@@ -223,9 +224,9 @@ static Boundary::BoundaryPiece readSingleBP(std::string& bps)
 		bps.erase(0, tpos + commadel.length());
 	}
 	tmp[tmppos++] = strtod( &bps[0] , 0);
-	Boundary::Direction dir(static_cast<Boundary::Direction>(tmp[0]));
-	Boundary::Condition cond(static_cast<Boundary::Condition>(tmp[1]));
-	Boundary::Grid grid(static_cast<Boundary::Grid>(tmp[2]));
+	Boundary::Direction dir(static_cast<Boundary::Direction>((int)tmp[0]));
+	Boundary::Condition cond(static_cast<Boundary::Condition>((int)tmp[1]));
+	Boundary::Grid grid(static_cast<Boundary::Grid>((int)tmp[2]));
 	Real condv(tmp[3]);
 	Range range(
 		Index(static_cast<int>(tmp[4]), static_cast<int>(tmp[5])),

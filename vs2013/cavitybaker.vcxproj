@@ -161,6 +161,7 @@
     <ClCompile Include="..\src\Boundary.cpp" />
     <ClCompile Include="..\src\CameraSystem.cpp" />
     <ClCompile Include="..\src\CavityRenderer.cpp" />
+    <ClCompile Include="..\src\GridFunction.cpp" />
     <ClCompile Include="..\src\SimulationParameters.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -168,7 +169,15 @@
     <ClInclude Include="..\src\Boundary.hpp" />
     <ClInclude Include="..\src\CameraSystem.h" />
     <ClInclude Include="..\src\CavityRenderer.hpp" />
+    <ClInclude Include="..\src\GridFunction.hpp" />
+    <ClInclude Include="..\src\MTQueue.hpp" />
     <ClInclude Include="..\src\SimulationParameters.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shader\arrowFragment.glsl" />
+    <None Include="..\shader\arrowVertex.glsl" />
+    <None Include="..\shader\gridFragment.glsl" />
+    <None Include="..\shader\gridVertex.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

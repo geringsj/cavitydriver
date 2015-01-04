@@ -49,5 +49,11 @@
     <None Include="..\shader\gridVertex.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\shader\arrowFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\arrowVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

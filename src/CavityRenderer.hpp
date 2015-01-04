@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <typeinfo>
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -14,6 +15,7 @@
 #include "Structs.hpp"
 #include "CameraSystem.h"
 #include "SimulationParameters.hpp"
+#include "MTQueue.hpp"
 
 class CavityRenderer
 {
@@ -25,7 +27,7 @@ public:
 	 * Function to create the OpenGL context and creata a 
 	 * window. Also initializes the camera system.
 	 */
-	bool init(
+	bool initVis(
 		unsigned int window_width, /**< Width of the window in pixels [>=0]. */
 		unsigned int window_height, /**< Height of the window in pixels [>=0]. */
 		SimulationParameters& sim_params
@@ -70,6 +72,7 @@ private:
 	float m_zoom;
 
 	SimulationParameters m_simparams;
+	MTQueue<SimulationParameters> m_simparam_queue;
 
 	CameraSystem m_cam_sys; /**< The camera system. Stores the camera data and can perform translation and rotation. */
 
@@ -101,13 +104,20 @@ private:
 		);
 
 	void addFloatParam(const char* name, const char* def, void* var,
+		std::string mode = "RW",
 		float min = std::numeric_limits<float>::min(),
-		float max = std::numeric_limits<float>::max(),
-		std::string mode = "RW");
+		float max = std::numeric_limits<float>::max()
+		);
+	void addDoubleParam(const char* name, const char* def, void* var,
+		std::string mode = "RW",
+		double min = std::numeric_limits<double>::min(),
+		double max = std::numeric_limits<double>::max()
+		);
 	void addIntParam(const char* name, const char* def, void* var, 
+		std::string mode = "RW",
 		int min = std::numeric_limits<int>::min(),
-		int max = std::numeric_limits<int>::max(),
-		std::string mode = "RW");
+		int max = std::numeric_limits<int>::max()
+		);
 	void addBoolParam(const char* name, const char* def, void* var, 
 		std::string mode = "RW");
 	void addVec3Param(const char* name, const char* def, void* var, 
