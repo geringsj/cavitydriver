@@ -38,7 +38,7 @@ public:
 	void pop(T& val)
 	{
 		std::unique_lock<std::mutex> lock(m_mutex);
-		m_cvar.wait(lock, [this]{return !m_queue.empty()});
+		m_cvar.wait(lock, [this]{return !m_queue.empty();});
 
 		val = std::move(m_queue.front());
 		m_queue.pop();
