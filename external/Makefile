@@ -25,7 +25,7 @@ glfw3:
 
 docopt:
 	if cd "docopt.cpp"; then echo "already have cloned docopt"; else git clone https://github.com/docopt/docopt.cpp; fi
-	g++ -c ./docopt.cpp/docopt.cpp -Wall -g -Wextra -O2 -std=c++11 -fPIC
+	g++ -c ./docopt.cpp/docopt.cpp -o ./docopt.cpp/docopt.o -Wall -g -Wextra -O2 -std=c++11 -fPIC
 	ar rcs ./lib/libdocopt.a ./docopt.cpp/docopt.o
 	ranlib ./lib/libdocopt.a
 	cp ./docopt.cpp/docopt*.h ./include

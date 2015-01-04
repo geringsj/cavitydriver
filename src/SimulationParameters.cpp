@@ -55,50 +55,67 @@ SimulationParameters::SimulationParameters() { this->init(); }
 
 void SimulationParameters::writeToSTDOUT()
 {
-	std::cout << "SimulationParameters: " << std::endl <<
-		"xLength=" <<
-		xLength << std::endl <<
-		"yLength=" <<
-		yLength << std::endl <<
-		"iMax=" <<
-		iMax << std::endl <<
-		"jMax=" <<
-		jMax << std::endl <<
-		"tEnd=" <<
-		tEnd << std::endl <<
-		"deltaT=" <<
-		deltaT << std::endl <<
-		"tau=" <<
-		tau << std::endl <<
-		"deltaVec=" <<
-		deltaVec << std::endl <<
-		"iterMax=" <<
-		iterMax << std::endl <<
-		"eps=" <<
-		eps << std::endl <<
-		"omg=" <<
-		omg << std::endl <<
-		"alpha=" <<
-		alpha << std::endl <<
-		"re=" <<
-		re << std::endl <<
-		"gx=" <<
-		gx << std::endl <<
-		"gy=" <<
-		gy << std::endl <<
-		"ui=" <<
-		ui << std::endl <<
-		"vi=" <<
-		vi << std::endl <<
-		"pi=" <<
-		pi << std::endl <<
-		"name=" << "\"" << name << "\"" << std::endl <<
-		"KarmanAngle=" <<
-		KarmanAngle << std::endl <<
-		"KarmanObjectWidth=" <<
-		KarmanObjectWidth << std::endl <<
-		"useComplexGeometry=" <<
-		useComplexGeometry << std::endl;
+	std::cout << "-- Extended Inputvals for SimulationParameters.\n";
+	std::cout << "-- When a parameter is given more than once,\n";
+	std::cout << "-- the first occurrence of the parameter in the file will be used.\n\n";
+
+	std::cout << "name=\"" << this->name << "\"\n\n";
+	std::cout << "useComplexGeometry=" << std::scientific << this->useComplexGeometry << " <- set to 0 for driven cavity\n\n";
+
+	std::cout << "-- Domain parameters\n";
+	std::cout << "xLength=" << std::scientific << this->xLength << "\n";
+	std::cout << "yLength=" << std::scientific << this->yLength << "\n";
+
+	std::cout << "iMax=" << std::scientific << this->iMax << "\n";
+	std::cout << "jMax=" << std::scientific << this->jMax << "\n\n";
+
+	std::cout << "-- Time and Simulation parameters\n";
+	std::cout << "tEnd=" << std::scientific << this->tEnd << "\n";
+	std::cout << "tau=" << std::scientific << this->tau << "\n";
+	std::cout << "deltaVec=" << std::scientific << this->deltaVec << "\n";
+	std::cout << "deltaT=" << std::scientific << this->deltaT << "\n";
+	std::cout << "iterMax=" << std::scientific << this->iterMax << "\n";
+	std::cout << "eps=" << std::scientific << this->eps << "\n";
+	std::cout << "omg=" << std::scientific << this->omg << "\n";
+	std::cout << "alpha=" << std::scientific << this->alpha << "\n";
+	std::cout << "re=" << std::scientific << this->re << "\n\n";
+
+
+	std::cout << "-- Outside forces on the system\n";
+	std::cout << "gx=" << std::scientific << this->gx << "\n";
+	std::cout << "gy=" << std::scientific << this->gy << "\n\n";
+
+	std::cout << "-- Initial field values\n";
+	std::cout << "ui=" << std::scientific << this->ui << "\n";
+	std::cout << "vi=" << std::scientific << this->vi << "\n";
+	std::cout << "pi=" << std::scientific << this->pi << "\n\n";
+
+	std::cout << "-- Karman Parameters\n";
+	std::cout << "KarmanAngle=" << std::scientific << this->KarmanAngle << "\n";
+	std::cout << "KarmanObjectWidth=" << std::scientific << this->KarmanObjectWidth << "\n\n";
+
+	std::cout << "-- do NOT edit this by hand! \n-- this is going to be parsed as information for boundary conditions when handling complex geometry\n";
+	std::cout << "BoundaryPieces=\"";
+	std::size_t curr = 0;
+	while(curr < this->boundary_conditions.size())
+	{
+		if(curr!=0)
+			std::cout << "|";
+
+		std::cout << std::scientific 
+			<< static_cast<int>(this->boundary_conditions[curr].direction) << ",";
+		std::cout << std::scientific 
+			<< static_cast<int>(this->boundary_conditions[curr].condition) << ",";
+		std::cout << std::scientific 
+			<< static_cast<int>(this->boundary_conditions[curr].gridtype) << ",";
+		std::cout << std::scientific << this->boundary_conditions[curr].condition_value << ",";
+		std::cout << std::scientific << this->boundary_conditions[curr].range.begin.i << ",";
+		std::cout << std::scientific << this->boundary_conditions[curr].range.begin.j << ",";
+		std::cout << std::scientific << this->boundary_conditions[curr].range.end.i << ",";
+		std::cout << std::scientific << this->boundary_conditions[curr].range.end.j;
+		curr++;
+	}
+	std::cout << "\"\n";
 }
 
 void SimulationParameters::writeSettingsFile(
