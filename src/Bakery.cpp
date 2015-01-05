@@ -163,28 +163,6 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0);
 		}
 
-		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field)
-		{
-		/* set P */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
-			Boundary::Condition::OUTFLOW, 0.0, /* UP */
-			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
-		/* set U */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::U,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0);
-		/* set V */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::V,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0);
-		}
-
 		void getChannelFlowUpperHalf(SimulationParameters& simpams, Range inner)
 		{
 		/* set P */
@@ -203,6 +181,28 @@ namespace Bakery {
 		setOuterBoundaries(simpams, inner, Boundary::Grid::V,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::SLIP, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0);
+		}
+
+		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field)
+		{
+		/* set P */
+		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
+			Boundary::Condition::INFLOW, 1.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+		/* set U */
+		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::U,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0,
+			Boundary::Condition::OUTFLOW, 0.0);
+		/* set V */
+		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::V,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0);
 		}
@@ -308,7 +308,7 @@ namespace Bakery {
 					{
 						/* move center to 0 */
 						object_corners[i].x -= simpams.KarmanObjectWidth/2.;
-						object_corners[i].y -= simpams.yLength/2.;
+						object_corners[i].y -= simpams.yLength/4.;
 
 						/* rotate by KarmanAngle */
 						Real minus90degrees = - 2.0 * M_PI / 4.0;
@@ -345,6 +345,7 @@ namespace Bakery {
 				field(i,j-1) = 1.0;
 				field(i+1,j-1) = 1.0;
 			}
+			//field.printSTDOUT();
 
 			/* collect object boundaries in inner */
 			for_range(i,j,inner)

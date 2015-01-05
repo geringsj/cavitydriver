@@ -48,12 +48,12 @@ void Boundary::computeSLIP(
 	/* the dot-product condition of SLIP: (U,V) dot normalDirection = 0 */
 	if(grid==Grid::V && (dir==Direction::Up || dir==Direction::Down)) 
 	{
-		g(bindex) = 0;
+		g(bindex) = 0.0;
 		return;
 	}
 	if(grid==Grid::U && (dir==Direction::Right || dir==Direction::Left))
 	{
-		g(bindex) = 0;
+		g(bindex) = 0.0;
 		return;
 	}
 	/* derivative in normal direction must be zero => boundary == inner cell */
