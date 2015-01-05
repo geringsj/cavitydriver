@@ -97,6 +97,7 @@ private:
 	Texture2D m_arrow;
 	GLSLProgram m_arrow_prgm;
 	Mesh m_arrow_quad;
+	bool load_img;
 
 	Mesh m_field_quad;
 	GLSLProgram m_field_prgm;

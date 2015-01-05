@@ -154,7 +154,9 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	addStringParam("m_name", " label='name' ", &m_simparams.name, "RO");
 
 	TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
-	m_max_boundary_piece = 0;
+	for (auto b : sim_params.boundary_conditions)
+		m_boundary_conditions.push_back(b);
+	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
 	addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
 	addBoundaryPieceToBar("RO");
 
@@ -190,6 +192,8 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 		glm::vec3(1.0f, 0.0f, 0.0f));
 
 	createGLSLProgramms();
+
+	load_img = true;
 
 	return true;
 }
@@ -284,7 +288,9 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addStringParam("m_name", " label='name' ", &m_simparams.name);
 
 	TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
-	m_max_boundary_piece = 0;
+	for (auto b : sim_params.boundary_conditions)
+		m_boundary_conditions.push_back(b);
+	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
 	addBoolParam("m_modify_cond", " label='Modify boundary piece' ", &m_modify_cond);
 	addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
 	addBoundaryPieceToBar("RW");
@@ -327,9 +333,8 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 		glm::vec3(1.0f, 0.0f, 0.0f));
 
 	createGLSLProgramms();
-	
-	for (auto b : sim_params.boundary_conditions)
-		drawBoundaryCondition(b);
+
+	load_img = true;
 
 	return true;
 }
@@ -369,9 +374,6 @@ void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
 {
 	m_simparams = sim_params;
 	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
-
-	for (auto b : sim_params.boundary_conditions)
-		drawBoundaryCondition(b);
 }
 
 void CavityRenderer::paint()
@@ -391,8 +393,6 @@ void CavityRenderer::paint()
 		
 		drawGridOverlay();
 		showBoundaryPiece(m_nmbr_boundary_piece);
-		//for (auto b : m_simparams.boundary_conditions)
-		//	drawBoundaryCondition(b);
 		
 
 		// Draw TB
@@ -522,27 +522,37 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 	Real condition_value(boundarypiece.condition_value);
 	// Boundary::Condition cond(boundarypiece.condition);
 
-	unsigned long begin_pos;
-	int x_dim, y_dim;
-	char* img_data;
-	readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
-	img_data = new char[x_dim * y_dim * 3];
-	readPpmData("arrow.ppm", img_data, begin_pos, x_dim, y_dim);
+	if (load_img)
+	{
+		unsigned long begin_pos;
+		int x_dim, y_dim;
+		char* m_img_data;
+		readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
+		m_img_data = new char[x_dim * y_dim * 3];
+		readPpmData("arrow.ppm", m_img_data, begin_pos, x_dim, y_dim);
 
-	m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, img_data);
+		m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
+
+		delete(m_img_data); 
+		load_img = false;
+	}
 
 	float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
 	float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
+	std::vector<Gridvertex> quad;
+	unsigned int quad_index[] =
+	{
+		1, 0, 3, 2
+	};
 	for_range(i, j, range)
 	{
-		float pos[] = { (float)i * x_length + x_length / 2.0f, (float)j * y_length + y_length/2.0f };
+		float pos[] = { (float)(i-1) * x_length + x_length / 2.0f, (float)(j-1) * y_length + y_length/2.0f };
 	
 		float left = (pos[0] - x_length / 2.0f);
 		float bottom = (pos[1] - y_length / 2.0f);
 		float right = (pos[0] + x_length / 2.0f);
 		float top = (pos[1] + y_length / 2.0f);
-
-		std::vector<Gridvertex> quad;
+	
 		switch (dir)
 		{
 		case Boundary::Direction::Up:
@@ -582,17 +592,13 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 			};
 			break;
 		}
-
-		unsigned int quad_index[] =
-		{
-			1, 0, 3, 2
-		};
+	
 		m_arrow_quad.bufferDataFromArray(quad.data(), quad_index,
 			(GLsizei)(4 * sizeof(Gridvertex)),
 			(GLsizei)(4 * sizeof(unsigned int)),
 			GL_QUADS);
 		m_arrow_quad.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
-
+	
 		m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
 		m_arrow_prgm.use();
 		glEnable(GL_TEXTURE_2D);
@@ -606,11 +612,9 @@ void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece
 		m_arrow_prgm.setUniform("arrowTexture", 0);
 		glActiveTexture(GL_TEXTURE0);
 		m_arrow.bindTexture();
-
+	
 		m_arrow_quad.draw();
 	}	
-
-	delete(img_data);
 }
 
 const std::string CavityRenderer::readShaderFile(const char* const path)
