@@ -16,6 +16,8 @@ private:
 	Domain& domain;
 
 	const Communication* const communication;
+
+	std::vector<std::vector<Point>> m_particles;
 	
 	void checkOutputPath();
 	
@@ -23,6 +25,8 @@ private:
 
 	void writeVTKMasterFile();
 	void writeVTKSlaveFile();
+
+	void writeVTPSingleFile();
 
 public:
 
