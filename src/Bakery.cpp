@@ -244,7 +244,7 @@ namespace Bakery {
 						0.0, Range(ind,ind) ) );
 			simpams.boundary_conditions.push_back(
 					Boundary::BoundaryPiece(
-						dir, Boundary::Condition::NOSLIP, Boundary::Grid::P,
+						dir, Boundary::Condition::OUTFLOW/*NOSLIP*/, Boundary::Grid::P,
 						0.0, Range(ind,ind) ) );
 		}
 	}

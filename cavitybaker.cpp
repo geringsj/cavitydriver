@@ -5,7 +5,6 @@
 #include "src/Bakery.hpp"
 
 #include <string>
-#include <map>
 
 #if defined(__linux)
 	#include "external/include/docopt.h"
@@ -175,7 +174,14 @@ int main(int argc, char** argv)
 		std::cout << "Invalid SETTING parameter.\n";
 		exit(EXIT_FAILURE);
 	}
-
+	setting = 3;
+	simparam.iMax = 192;
+	/**
+	 * Karman:
+	 * Re: 1000, max iter: 5000
+	 * Step:
+	 * Re: 1000, max iter:  100
+	 */
 	SimulationParameters newparam = Bakery::get(static_cast<Bakery::Setting>(setting), simparam);
 	newparam.useComplexGeometry = setting;
 
@@ -183,6 +189,7 @@ int main(int argc, char** argv)
 	overwritePostBakeryParams(newparam, simparam);
 
 	/* maybe give simparams to gui - gui feedback? */
+	newparam.name = "test";
 
 	if(gui)
 	{
