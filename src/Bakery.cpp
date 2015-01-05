@@ -308,7 +308,7 @@ namespace Bakery {
 					{
 						/* move center to 0 */
 						object_corners[i].x -= simpams.KarmanObjectWidth/2.;
-						object_corners[i].y -= simpams.yLength/2.;
+						object_corners[i].y -= simpams.yLength/4.;
 
 						/* rotate by KarmanAngle */
 						Real minus90degrees = - 2.0 * M_PI / 4.0;
@@ -345,6 +345,7 @@ namespace Bakery {
 				field(i,j-1) = 1.0;
 				field(i+1,j-1) = 1.0;
 			}
+			//field.printSTDOUT();
 
 			/* collect object boundaries in inner */
 			for_range(i,j,inner)

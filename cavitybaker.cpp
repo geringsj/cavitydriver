@@ -71,7 +71,7 @@ Options:
                     is used. Specified in radiant. [default: 0.7854]
   --kow=FLOAT       Width of object for Karman Vortex Street SETTING. 
                     Will be ignored if other SETTING than 'ObstacleChannelFlow' 
-                    is used. [default: 1.5*yLength/jMax]
+                    is used. [default: 2.5*5.0*this->xLength/this->iMax]
 )";
 
 	std::map<std::string, docopt::value> args = 
@@ -125,7 +125,8 @@ Options:
 	getCLIInt(simparam.iMax, args, "--iMax");
 	getCLIInt(simparam.jMax, args, "--jMax");
 	getCLIDouble(simparam.KarmanAngle, args, "--ka");
-	getCLIDouble(simparam.KarmanObjectWidth, args, "--kow");
+	if(args["--kow"].asString() != "2.5*5.0*this->xLength/this->iMax")
+		getCLIDouble(simparam.KarmanObjectWidth, args, "--kow");
 
 	/* overwrite those on post-bakery processing */
 	getCLIDouble(simparam.tau, args, "--tau");
