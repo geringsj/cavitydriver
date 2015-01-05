@@ -289,8 +289,11 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
 	addBoundaryPieceToBar("RW");
 
-	addButtonParam("m_bake", " label='bake parameters' ", Bake);
 	addButtonParam("m_boundarypiece", " label='Add boundary condition' ", BoundaryPiece);
+	addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
+	addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
+
+	addButtonParam("m_bake", " label='bake parameters' ", Bake);
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window, this);
@@ -822,6 +825,7 @@ void CavityRenderer::showBoundaryPiece(unsigned int index)
 		m_j_end = m_boundary_conditions.at(index).range.end[1];
 
 		modifyIntParam("m_nmbr_boundary_piece", 0, m_max_boundary_piece - 1);
+		drawBoundaryCondition(m_boundary_conditions.at(index));
 	}
 }
 
