@@ -14,7 +14,7 @@ namespace Bakery {
 		ObstacleChannelFlow = 4
 	};
 
-	SimulationParameters get(Setting setting, SimulationParameters simpams);
+	SimulationParameters get(Setting setting, Real inflowVal, SimulationParameters simpams);
 };
 
 

@@ -177,7 +177,7 @@ void VTKOutput::writeVTKFile(Real timestep)
 #else
 	this->writeVTKSingleFile();
 	this->writeParticleVTPFile(timestep);
-	this->writeStreamlineVTPFile(timestep);
+	this->writeStreamlineVTPFile();
 #endif
 	this->framestep++;
 }

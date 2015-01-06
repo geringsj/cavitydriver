@@ -119,7 +119,7 @@ namespace Bakery {
 				grid, valueR, Range(Index(i,j),Index(i,j)) ));
 		}
 
-		void getDrivenCavity(SimulationParameters& simpams, Range inner)
+		void getDrivenCavity(SimulationParameters& simpams, Range inner, Real inflowVal)
 		{
 		/* set P */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::P,
@@ -129,7 +129,7 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
-			Boundary::Condition::INFLOW, 1.0,
+			Boundary::Condition::INFLOW, inflowVal,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0);
@@ -141,14 +141,14 @@ namespace Bakery {
 			Boundary::Condition::NOSLIP, 0.0);
 		}
 
-		void getChannelFlow(SimulationParameters& simpams, Range inner)
+		void getChannelFlow(SimulationParameters& simpams, Range inner, Real inflowVal)
 		{
 		/* set P */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::P,
 			Boundary::Condition::OUTFLOW, 0.0, /* UP */
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
+			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
@@ -163,14 +163,14 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0);
 		}
 
-		void getChannelFlowUpperHalf(SimulationParameters& simpams, Range inner)
+		void getChannelFlowUpperHalf(SimulationParameters& simpams, Range inner, Real inflowVal)
 		{
 		/* set P */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::P,
 			Boundary::Condition::OUTFLOW, 0.0, /* UP */
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
+			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
@@ -185,14 +185,14 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0);
 		}
 
-		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field)
+		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field, Real inflowVal)
 		{
 		/* set P */
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
 			Boundary::Condition::OUTFLOW, 0.0, /* UP */
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
+			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
@@ -249,7 +249,10 @@ namespace Bakery {
 		}
 	}
 
-	SimulationParameters get(const Setting setting, SimulationParameters simpams)
+	SimulationParameters get(
+		const Setting setting, 
+		Real inflowVal, 
+		SimulationParameters simpams)
 	{
 		simpams.boundary_conditions.clear();
 
@@ -258,17 +261,17 @@ namespace Bakery {
 		switch(setting)
 		{
 			case Setting::DrivenCavity:
-				getDrivenCavity(simpams, inner);
+				getDrivenCavity(simpams, inner, inflowVal);
 				break;
 			case Setting::ChannelFlow:
 				if(simpams.xLength < 5.0*simpams.yLength)
 					simpams.xLength = 5.0 * simpams.yLength;
-				getChannelFlow(simpams, inner);
+				getChannelFlow(simpams, inner, inflowVal);
 				break;
 			case Setting::ChannelFlowUpperHalf:
 				if(simpams.xLength < 2.0*5.0*simpams.yLength)
 					simpams.xLength = 2.0*5.0 * simpams.yLength;
-				getChannelFlowUpperHalf(simpams, inner);
+				getChannelFlowUpperHalf(simpams, inner, inflowVal);
 				break;
 			case Setting::StepFlow:
 				if(simpams.xLength < 5.0*simpams.yLength)
@@ -366,7 +369,7 @@ namespace Bakery {
 			}
 
 			/* add missing domain boundaries depending on case (maybe do somewhere before?) */
-			getChannelFlowObstacle(simpams, inner, field);
+			getChannelFlowObstacle(simpams, inner, field, inflowVal);
 		}
 
 		return simpams;

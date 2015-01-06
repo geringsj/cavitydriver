@@ -108,7 +108,7 @@ int main(int argc, char** argv)
 
 	/* write initial state of velocities and pressure */
 	VTKOutput vtkoutput(domain, "out", communication);
-	vtkoutput.writeVTKFile();
+	vtkoutput.writeVTKFile(0.0);
 	Real nextVTKWrite = 0.0;
 
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
@@ -180,7 +180,7 @@ int main(int argc, char** argv)
 		if(nextVTKWrite > simparam.deltaVec)
 		{
 			nextVTKWrite = 0.0;
-			vtkoutput.writeVTKFile();
+			vtkoutput.writeVTKFile(dt);
 		}
 		step++;
 

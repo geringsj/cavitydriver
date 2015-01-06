@@ -1,11 +1,14 @@
-#include "src/CavityRenderer.hpp"
+//#include "src/CavityRenderer.hpp"
 #include "src/SimulationParameters.hpp"
 #include "src/Debug.hpp"
 
 #include "src/Bakery.hpp"
 
 #include <string>
+#include <iostream>
 
+
+#ifdef __linux__
 #include "optionparser.h"
 static option::ArgStatus NonEmpty(const option::Option& option, bool msg)
 {
@@ -117,9 +120,11 @@ void getMaybeCLIInt(int& _int, option::Option* options, optionIndex ind)
 	if(options[ind])
 		_int = std::stoi(options[ind].arg,0);
 }
+#endif
 
 void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
 {
+#ifdef __linux__
   argc-=(argc>0); argv+=(argc>0); // skip program name argv if present
   option::Stats  stats(usage, argc, argv);
   option::Option* options = new option::Option[stats.options_max];
@@ -215,6 +220,7 @@ void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, 
 
 	delete[] options;
 	delete[] buffer;
+#endif
 }
 
 void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters& clisp)
@@ -232,9 +238,35 @@ int main(int argc, char** argv)
 	SimulationParameters simparam;
 	bool gui = false;
 	int setting = -1;
+	Real inflowVal = 0.0;
+
+	/* TODO: 
+	 * please set simparam.* parameters manually here: */
+	setting = 4;
+	inflowVal = 0.025;
+	simparam.xLength = 1.0;
+	simparam.yLength = 5.0;
+	simparam.iMax = 60;
+	simparam.jMax = 60 * 5;
+	simparam.re = 1000;
+	simparam.iterMax = 500;
 
 	/* parse cli values: use gui? inputvals-filename? what other values to set? */
-	initCLI(setting, gui, simparam, argc, argv);
+	initCLI(setting, gui, simparam, argc, argv); /* disabled in windows */
+
+	switch(setting)
+	{
+		case 0: /* Driven Cavity */
+			inflowVal = 1.0;
+		case 1: /* ChannelFlow */
+		case 2: /* ChannelFlow Upper Half */
+		case 3: /* Step Flow */
+		case 4: /* Karman Object Street */
+			inflowVal = 0.5;
+			break;
+		default: /* all other: fail */
+			break;
+	}
 
 	/* let bakery create boundaries 'n stuff using start simparams */
 
@@ -244,7 +276,7 @@ int main(int argc, char** argv)
 	 * Step:
 	 * Re: 1000, max iter:  100
 	 */
-	SimulationParameters newparam = Bakery::get(static_cast<Bakery::Setting>(setting), simparam);
+	SimulationParameters newparam = Bakery::get(static_cast<Bakery::Setting>(setting), inflowVal, simparam);
 	newparam.useComplexGeometry = setting;
 
 	/* replace non-domain parameters in new simparams, to overwrite init-defaults */
@@ -252,24 +284,24 @@ int main(int argc, char** argv)
 
 	/* maybe give simparams to gui - gui feedback? */
 
-	if(gui)
-	{
-		/**
-		 * This is just a test but the range should
-		 * match the inner range of p.
-		 */
-		Index begin = Index(1, 1);
-		Index end = Index(newparam.iMax, newparam.jMax);
-		Range range = Range(begin, end);
+	//if(gui)
+	//{
+	//	/**
+	//	 * This is just a test but the range should
+	//	 * match the inner range of p.
+	//	 */
+	//	Index begin = Index(1, 1);
+	//	Index end = Index(newparam.iMax, newparam.jMax);
+	//	Range range = Range(begin, end);
 
-		CavityRenderer cavity_renderer;
-		if (cavity_renderer.initBakeryVis(640, 480, newparam))
-		{
-			cavity_renderer.createGrid(range);
-			cavity_renderer.paint();
-		}
-		/* TODO: get/verwrite newparams from gui */
-	}
+	//	CavityRenderer cavity_renderer;
+	//	if (cavity_renderer.initBakeryVis(640, 480, newparam))
+	//	{
+	//		cavity_renderer.createGrid(range);
+	//		cavity_renderer.paint();
+	//	}
+	//	/* TODO: get/verwrite newparams from gui */
+	//}
 
 	if(newparam.name == "")
 	{
