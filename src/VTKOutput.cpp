@@ -11,6 +11,14 @@ VTKOutput::VTKOutput(
 	:framestep(0), output_path(outputpath), domain(domain), communication(NULL)
 {
 	this->checkOutputPath();
+
+	// add empty particle groups based on domain size
+	//	Real delta_y = this->domain.getDelta().y;
+	int dim_y = this->domain.getDimension().j;
+
+	for(int i=0; i<dim_y/2; i++)
+		m_particles.push_back(std::vector<Point>());
+
 }
 
 VTKOutput::VTKOutput(
@@ -20,6 +28,13 @@ VTKOutput::VTKOutput(
 	:framestep(0), output_path(outputpath), domain(domain), communication(&comm)
 {
 	this->checkOutputPath();
+
+	// add empty particle groups based on domain size
+	//	Real delta_y = this->domain.getDelta().y;
+	int dim_y = this->domain.getDimension().j;
+
+	for(int i=0; i < (dim_y/2); i++)
+		m_particles.push_back(std::vector<Point>());
 }
 
 VTKOutput::~VTKOutput()
@@ -161,6 +176,7 @@ void VTKOutput::writeVTKFile()
 	this->writeVTKSlaveFile();
 #else
 	this->writeVTKSingleFile();
+	this->writeParticleVTPFile();
 #endif
 	this->framestep++;
 }
@@ -253,8 +269,6 @@ void VTKOutput::writeVTKMasterFile()
 	os << "</PRectilinearGrid>" << std::endl;
 	os << "</VTKFile>" << std::endl;
 }
-
-
 
 void VTKOutput::writeVTKSlaveFile()
 {
@@ -450,3 +464,132 @@ void VTKOutput::writeVTKSlaveFile()
 	os << "</VTKFile>" << std::endl;
 }
 
+
+void VTKOutput::writeParticleVTPFile()
+{
+	// some interesting values
+	Real dx = this->domain.getDelta().x;
+	Real dy = this->domain.getDelta().y;
+
+	// compute new positions for existing particles
+	for(auto& particle_group : m_particles)
+	{
+		for(auto& particle : particle_group)
+		{
+			// step1: find grid cell
+			int i = (int)(particle.x/dx)+1;
+			int j = (int)((particle.y+(dy/2.0))/dy)+1;
+
+			// step2: find neighbour cells
+			Real x_1 = (Real)(i-1) * dx;
+			Real x_2 = (Real)i * dx;
+			Real y_1 = (Real)(j-1)*dy-(dy/2.0);
+			Real y_2 = (Real)(j)*dy-(dy/2.0);
+
+			// step3: bilinear interpolation
+			Real u,v;
+
+			u = 1.0/(dx*dy) * ( (x_2 - particle.x)*(y_2 - particle.y) * domain.u()(i-1,j-1) +
+								(particle.x - x_1)*(y_2 - particle.y) * domain.u()(i,j-1) +
+								(x_2 - particle.x)*(particle.y - y_1) * domain.u()(i-1,j) +
+								(particle.x - x_1)*(particle.y - y_1) * domain.u()(i,j) );
+
+			v = 1.0/(dx*dy) * ( (x_2 - particle.x)*(y_2 - particle.y) * domain.v()(i-1,j-1) +
+								(particle.x - x_1)*(y_2 - particle.y) * domain.v()(i,j-1) +
+								(x_2 - particle.x)*(particle.y - y_1) * domain.v()(i-1,j) +
+								(particle.x - x_1)*(particle.y - y_1) * domain.v()(i,j) );
+
+			particle.x += 0.05 * u; //TODO timestep
+			particle.y += 0.05 * v; //TODO timestep
+		}
+	}
+
+	// add new particles at start position
+	Real start_x = this->domain.getDelta().x;
+	Real start_y = 0.0;
+	for(auto& particle_group : m_particles)
+	{
+		start_y += 2.0* (this->domain.getDelta().y);
+
+		particle_group.push_back(Point(start_x,start_y,0.0));
+	}
+
+
+	/* generate filename with current framestep */
+	std::string filename;
+  	filename.append("./");
+  	filename.append (this->output_path);
+  	filename.append("/");
+  	filename.append ("particles_");
+  	filename.append (std::to_string(this->framestep));
+  	filename.append (".vtp");
+
+  	/* open stream for VTK XML data */
+  	std::filebuf fb;
+  	fb.open (const_cast < char *>(filename.c_str ()), std::ios::out);
+  	std::ostream os (&fb);
+
+	os 
+	<< "<VTKFile type=\"PolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">" << std::endl
+	<< "<PolyData>" << std::endl;
+	
+	for(auto& particle_group : m_particles)
+	{
+		os
+		<< "<Piece NumberOfPoints=\""<< particle_group.size() <<"\" "
+		<< "NumberOfVerts=\""<< particle_group.size() <<"\" "
+		<< "NumberOfLines=\""<< particle_group.size()-1<<"\""
+		<<"\>"
+		<<std::endl;
+
+		os
+		<< "<Points>" <<std::endl
+		<< "<DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">" <<std::endl;
+
+		for(auto& particle : particle_group)
+		{
+			os
+			<< particle.x <<" "<< particle.y <<" "<< particle.z <<std::endl;
+		}
+
+		os
+		<< "</DataArray>" <<std::endl
+		<< "</Points>" <<std::endl;
+
+		os
+		<< "<Verts>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">" <<std::endl;
+		for(long i=0; i<particle_group.size(); i++)
+			os<< i <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">" <<std::endl;
+		for(long i=1; i<=particle_group.size(); i++)
+			os<< i <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "</Verts>" <<std::endl;
+
+		os
+		<< "<Lines>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">" <<std::endl;
+		for(long i=0; i<particle_group.size(); i++)
+			os<< i <<" "<< i+1 <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">" <<std::endl;
+		for(long i=2; i<=(particle_group.size()*2); i=i+2)
+			os<< i <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "</Lines>" <<std::endl;
+
+		os
+		<< "</Piece>" <<std::endl;
+	}
+
+	os
+	<< "</PolyData>" << std::endl
+	<< "</VTKFile>" << std::endl;
+	fb.close ();
+}
