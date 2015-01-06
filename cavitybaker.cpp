@@ -120,10 +120,10 @@ void getMaybeCLIInt(int& _int, option::Option* options, optionIndex ind)
 
 void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
 {
-  argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
+  argc-=(argc>0); argv+=(argc>0); // skip program name argv if present
   option::Stats  stats(usage, argc, argv);
   option::Option* options = new option::Option[stats.options_max];
-  option::Option* buffer  = new option::Option[stats.buffer_max];
+  option::Option* buffer  = new option::Option[stats.buffer_max*100]; /* !! */
   option::Parser parse(true, usage, argc, argv, options, buffer);
 
 	if(parse.error())

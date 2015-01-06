@@ -468,10 +468,6 @@ void VTKOutput::writeVTKSlaveFile()
 
 void VTKOutput::writeParticleVTPFile()
 {
-	// some interesting values
-	Real dx = this->domain.getDelta().x;
-	Real dy = this->domain.getDelta().y;
-
 	// compute new positions for existing particles
 	for(auto& particle_group : m_particles)
 	{
@@ -520,7 +516,7 @@ void VTKOutput::writeParticleVTPFile()
 		<< "<Piece NumberOfPoints=\""<< particle_group.size() <<"\" "
 		<< "NumberOfVerts=\""<< particle_group.size() <<"\" "
 		<< "NumberOfLines=\""<< particle_group.size()-1<<"\""
-		<<"\>"
+		<<">"
 		<<std::endl;
 
 		os
@@ -540,12 +536,12 @@ void VTKOutput::writeParticleVTPFile()
 		os
 		<< "<Verts>" <<std::endl
 		<< "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">" <<std::endl;
-		for(long i=0; i<particle_group.size(); i++)
+		for(long i=0; i<(long)particle_group.size(); i++)
 			os<< i <<std::endl;
 		os
 		<< "</DataArray>" <<std::endl
 		<< "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">" <<std::endl;
-		for(long i=1; i<=particle_group.size(); i++)
+		for(long i=1; i<=(long)particle_group.size(); i++)
 			os<< i <<std::endl;
 		os
 		<< "</DataArray>" <<std::endl
@@ -554,12 +550,12 @@ void VTKOutput::writeParticleVTPFile()
 		os
 		<< "<Lines>" <<std::endl
 		<< "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">" <<std::endl;
-		for(long i=0; i<particle_group.size(); i++)
+		for(long i=0; i<(long)particle_group.size(); i++)
 			os<< i <<" "<< i+1 <<std::endl;
 		os
 		<< "</DataArray>" <<std::endl
 		<< "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">" <<std::endl;
-		for(long i=2; i<=(particle_group.size()*2); i=i+2)
+		for(long i=2; i<=(long)(particle_group.size()*2); i=i+2)
 			os<< i <<std::endl;
 		os
 		<< "</DataArray>" <<std::endl
@@ -614,7 +610,7 @@ void VTKOutput::writeStreamlineVTPFile()
 			Point p_new(p.x + scaling*u, p.y + scaling*v,0.0);
 			streamline.push_back(p_new);
 
-			if(streamline.size() > std::max(dim_x,dim_y))
+			if((int)streamline.size() > std::max(dim_x,dim_y))
 				break;
 		}
 	}
@@ -642,7 +638,7 @@ void VTKOutput::writeStreamlineVTPFile()
 		os
 		<< "<Piece NumberOfPoints=\""<< streamline.size() <<"\" "
 		<< "NumberOfLines=\""<< streamline.size()-1<<"\""
-		<<"\>"
+		<<">"
 		<<std::endl;
 
 		os
@@ -662,12 +658,12 @@ void VTKOutput::writeStreamlineVTPFile()
 		os
 		<< "<Lines>" <<std::endl
 		<< "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">" <<std::endl;
-		for(long i=0; i<streamline.size(); i++)
+		for(long i=0; i<(long)streamline.size(); i++)
 			os<< i <<" "<< i+1 <<std::endl;
 		os
 		<< "</DataArray>" <<std::endl
 		<< "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">" <<std::endl;
-		for(long i=2; i<=(streamline.size()*2); i=i+2)
+		for(long i=2; i<=(long)(streamline.size()*2); i=i+2)
 			os<< i <<std::endl;
 		os
 		<< "</DataArray>" <<std::endl
