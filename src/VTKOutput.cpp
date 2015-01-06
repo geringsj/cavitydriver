@@ -176,7 +176,7 @@ void VTKOutput::writeVTKFile()
 	this->writeVTKSlaveFile();
 #else
 	this->writeVTKSingleFile();
-	this->writeVTPSingleFile();
+	this->writeParticleVTPFile();
 #endif
 	this->framestep++;
 }
@@ -465,7 +465,7 @@ void VTKOutput::writeVTKSlaveFile()
 }
 
 
-void VTKOutput::writeVTPSingleFile()
+void VTKOutput::writeParticleVTPFile()
 {
 	// some interesting values
 	Real dx = this->domain.getDelta().x;
@@ -538,7 +538,7 @@ void VTKOutput::writeVTPSingleFile()
 		os
 		<< "<Piece NumberOfPoints=\""<< particle_group.size() <<"\" "
 		<< "NumberOfVerts=\""<< particle_group.size() <<"\" "
-		//<< "NumberOfLines=\""<< particle_group.size()-1
+		<< "NumberOfLines=\""<< particle_group.size()-1<<"\""
 		<<"\>"
 		<<std::endl;
 
@@ -569,6 +569,20 @@ void VTKOutput::writeVTPSingleFile()
 		os
 		<< "</DataArray>" <<std::endl
 		<< "</Verts>" <<std::endl;
+
+		os
+		<< "<Lines>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">" <<std::endl;
+		for(long i=0; i<particle_group.size(); i++)
+			os<< i <<" "<< i+1 <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">" <<std::endl;
+		for(long i=2; i<=(particle_group.size()*2); i=i+2)
+			os<< i <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "</Lines>" <<std::endl;
 
 		os
 		<< "</Piece>" <<std::endl;

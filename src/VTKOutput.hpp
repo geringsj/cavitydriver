@@ -26,7 +26,8 @@ private:
 	void writeVTKMasterFile();
 	void writeVTKSlaveFile();
 
-	void writeVTPSingleFile();
+	void writeParticleVTPFile();
+	void writeStreamlineVTPFile();
 
 public:
 
