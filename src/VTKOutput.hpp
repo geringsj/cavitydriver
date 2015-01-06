@@ -1,9 +1,12 @@
 #ifndef VTKWriter_hpp
 #define VTKWriter_hpp
 
+#define NOMINMAX // this is for the windows folks
+
 #include "Domain.hpp"
 #include "Communication.hpp"
 
+#include <algorithm>
 #include <string>
 
 class VTKOutput{
@@ -28,6 +31,8 @@ private:
 
 	void writeParticleVTPFile();
 	void writeStreamlineVTPFile();
+
+	void interpolateUV(Point p, Real& u, Real& v);
 
 public:
 

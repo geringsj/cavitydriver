@@ -177,6 +177,7 @@ void VTKOutput::writeVTKFile()
 #else
 	this->writeVTKSingleFile();
 	this->writeParticleVTPFile();
+	this->writeStreamlineVTPFile();
 #endif
 	this->framestep++;
 }
@@ -476,28 +477,8 @@ void VTKOutput::writeParticleVTPFile()
 	{
 		for(auto& particle : particle_group)
 		{
-			// step1: find grid cell
-			int i = (int)(particle.x/dx)+1;
-			int j = (int)((particle.y+(dy/2.0))/dy)+1;
-
-			// step2: find neighbour cells
-			Real x_1 = (Real)(i-1) * dx;
-			Real x_2 = (Real)i * dx;
-			Real y_1 = (Real)(j-1)*dy-(dy/2.0);
-			Real y_2 = (Real)(j)*dy-(dy/2.0);
-
-			// step3: bilinear interpolation
 			Real u,v;
-
-			u = 1.0/(dx*dy) * ( (x_2 - particle.x)*(y_2 - particle.y) * domain.u()(i-1,j-1) +
-								(particle.x - x_1)*(y_2 - particle.y) * domain.u()(i,j-1) +
-								(x_2 - particle.x)*(particle.y - y_1) * domain.u()(i-1,j) +
-								(particle.x - x_1)*(particle.y - y_1) * domain.u()(i,j) );
-
-			v = 1.0/(dx*dy) * ( (x_2 - particle.x)*(y_2 - particle.y) * domain.v()(i-1,j-1) +
-								(particle.x - x_1)*(y_2 - particle.y) * domain.v()(i,j-1) +
-								(x_2 - particle.x)*(particle.y - y_1) * domain.v()(i-1,j) +
-								(particle.x - x_1)*(particle.y - y_1) * domain.v()(i,j) );
+			interpolateUV(particle,u,v);
 
 			particle.x += 0.05 * u; //TODO timestep
 			particle.y += 0.05 * v; //TODO timestep
@@ -592,4 +573,140 @@ void VTKOutput::writeParticleVTPFile()
 	<< "</PolyData>" << std::endl
 	<< "</VTKFile>" << std::endl;
 	fb.close ();
+}
+
+void VTKOutput::writeStreamlineVTPFile()
+{
+	int dim_x = this->domain.getDimension().i;
+	int dim_y = this->domain.getDimension().j;
+	Real dx = this->domain.getDelta().x;
+	Real dy = this->domain.getDelta().y;
+	// verrrryyy average cell size
+	Real cell_size = std::sqrt(dx*dx + dy*dy);
+	Real domain_size_x = (Real)dim_x * dx;
+	Real domain_size_y = (Real)dim_y * dy;
+
+	std::vector<std::vector<Point>> streamlines;
+
+	for(int i=0; i<dim_y/2; i++)
+		streamlines.push_back(std::vector<Point>());
+
+	// build streamlines
+	Real start_x = dx;
+	Real start_y = 0.0;
+	for(auto& streamline : streamlines)
+	{
+		start_y += 2.0*dy;
+		streamline.push_back(Point(start_x,start_y,0.0));
+
+		while( 0.0 < streamline.back().x && streamline.back().x < domain_size_x &&
+				0.0 < streamline.back().y && streamline.back().y < domain_size_y )
+		{
+			Point p = streamline.back();
+			Real u,v;
+			interpolateUV(p,u,v);
+
+			if(!((u+v)>0.0))
+				break;
+
+			Real scaling = cell_size / std::sqrt(u*u + v*v);
+
+			Point p_new(p.x + scaling*u, p.y + scaling*v,0.0);
+			streamline.push_back(p_new);
+
+			if(streamline.size() > std::max(dim_x,dim_y))
+				break;
+		}
+	}
+
+	/* generate filename with current framestep */
+	std::string filename;
+  	filename.append("./");
+  	filename.append (this->output_path);
+  	filename.append("/");
+  	filename.append ("streamlines_");
+  	filename.append (std::to_string(this->framestep));
+  	filename.append (".vtp");
+
+  	/* open stream for VTK XML data */
+  	std::filebuf fb;
+  	fb.open (const_cast < char *>(filename.c_str ()), std::ios::out);
+  	std::ostream os (&fb);
+
+	os 
+	<< "<VTKFile type=\"PolyData\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">" << std::endl
+	<< "<PolyData>" << std::endl;
+	
+	for(auto& streamline : streamlines)
+	{
+		os
+		<< "<Piece NumberOfPoints=\""<< streamline.size() <<"\" "
+		<< "NumberOfLines=\""<< streamline.size()-1<<"\""
+		<<"\>"
+		<<std::endl;
+
+		os
+		<< "<Points>" <<std::endl
+		<< "<DataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\" format=\"ascii\">" <<std::endl;
+
+		for(auto& vertex : streamline)
+		{
+			os
+			<< vertex.x <<" "<< vertex.y <<" "<< vertex.z <<std::endl;
+		}
+
+		os
+		<< "</DataArray>" <<std::endl
+		<< "</Points>" <<std::endl;
+
+		os
+		<< "<Lines>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"connectivity\" format=\"ascii\">" <<std::endl;
+		for(long i=0; i<streamline.size(); i++)
+			os<< i <<" "<< i+1 <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "<DataArray type=\"Int64\" Name=\"offsets\" format=\"ascii\">" <<std::endl;
+		for(long i=2; i<=(streamline.size()*2); i=i+2)
+			os<< i <<std::endl;
+		os
+		<< "</DataArray>" <<std::endl
+		<< "</Lines>" <<std::endl;
+
+		os
+		<< "</Piece>" <<std::endl;
+	}
+
+	os
+	<< "</PolyData>" << std::endl
+	<< "</VTKFile>" << std::endl;
+	fb.close ();
+}
+
+void VTKOutput::interpolateUV(Point p, Real& u, Real& v)
+{
+	Real dx = this->domain.getDelta().x;
+	Real dy = this->domain.getDelta().y;
+
+	// step1: find grid cell
+	int i = (int)(p.x/dx)+1;
+	int j = (int)((p.y+(dy/2.0))/dy)+1;
+
+	// step2: find neighbour cells
+	Real x_1 = (Real)(i-1) * dx;
+	Real x_2 = (Real)i * dx;
+	Real y_1 = (Real)(j-1)*dy-(dy/2.0);
+	Real y_2 = (Real)(j)*dy-(dy/2.0);
+
+	// step3: bilinear interpolation
+
+	u = 1.0/(dx*dy) * ( (x_2 - p.x)*(y_2 - p.y) * domain.u()(i-1,j-1) +
+						(p.x - x_1)*(y_2 - p.y) * domain.u()(i,j-1) +
+						(x_2 - p.x)*(p.y - y_1) * domain.u()(i-1,j) +
+						(p.x - x_1)*(p.y - y_1) * domain.u()(i,j) );
+
+	v = 1.0/(dx*dy) * ( (x_2 - p.x)*(y_2 - p.y) * domain.v()(i-1,j-1) +
+						(p.x - x_1)*(y_2 - p.y) * domain.v()(i,j-1) +
+						(x_2 - p.x)*(p.y - y_1) * domain.v()(i-1,j) +
+						(p.x - x_1)*(p.y - y_1) * domain.v()(i,j) );
 }
