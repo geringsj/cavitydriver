@@ -168,7 +168,7 @@ void VTKOutput::writeVTKSingleFile()
 }
 
 
-void VTKOutput::writeVTKFile()
+void VTKOutput::writeVTKFile(Real timestep)
 {
 #ifdef WITHMPI
 	if(this->communication->getRank() == 0)
@@ -176,8 +176,8 @@ void VTKOutput::writeVTKFile()
 	this->writeVTKSlaveFile();
 #else
 	this->writeVTKSingleFile();
-	this->writeParticleVTPFile();
-	this->writeStreamlineVTPFile();
+	this->writeParticleVTPFile(timestep);
+	this->writeStreamlineVTPFile(timestep);
 #endif
 	this->framestep++;
 }
@@ -466,7 +466,7 @@ void VTKOutput::writeVTKSlaveFile()
 }
 
 
-void VTKOutput::writeParticleVTPFile()
+void VTKOutput::writeParticleVTPFile(Real timestep)
 {
 	// compute new positions for existing particles
 	for(auto& particle_group : m_particles)
@@ -476,8 +476,8 @@ void VTKOutput::writeParticleVTPFile()
 			Real u,v;
 			interpolateUV(particle,u,v);
 
-			particle.x += 0.05 * u; //TODO timestep
-			particle.y += 0.05 * v; //TODO timestep
+			particle.x += timestep * u;
+			particle.y += timestep * v;
 		}
 	}
 

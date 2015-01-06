@@ -29,7 +29,7 @@ private:
 	void writeVTKMasterFile();
 	void writeVTKSlaveFile();
 
-	void writeParticleVTPFile();
+	void writeParticleVTPFile(Real timestep);
 	void writeStreamlineVTPFile();
 
 	void interpolateUV(Point p, Real& u, Real& v);
@@ -40,7 +40,7 @@ public:
 	VTKOutput(Domain& domain, const std::string outputpath, const Communication& comm);
 	~VTKOutput();
 
-	void writeVTKFile();
+	void writeVTKFile(Real timestep);
 };
 
 #endif
