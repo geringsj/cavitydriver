@@ -1,5 +1,5 @@
 
-all: dirs glowl anttweakbar glew glfw3 docopt
+all: dirs glowl anttweakbar glew glfw3 optionparser
 
 .PHONY: dirs glowl anttweakbar
 
@@ -29,6 +29,10 @@ docopt:
 	ar rcs ./lib/libdocopt.a ./docopt.cpp/docopt.o
 	ranlib ./lib/libdocopt.a
 	cp ./docopt.cpp/docopt*.h ./include
+
+optionparser:
+	wget -P ./include/ http://optionparser.sourceforge.net/optionparser.h
+#cp ./optionparser-1.3/src/optionparser.h ./include/
 
 clean:
 	rm -rf ./include ./lib

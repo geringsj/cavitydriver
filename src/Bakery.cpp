@@ -123,10 +123,10 @@ namespace Bakery {
 		{
 		/* set P */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::P,
-			Boundary::Condition::OUTFLOW, 0.0, /* UP */
-			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+			Boundary::Condition::NOSLIP, 0.0, /* UP */ /* TODO */
+			Boundary::Condition::NOSLIP, 0.0, /* DOWN */ /* TODO */
+			Boundary::Condition::NOSLIP, 0.0, /* LEFT */ /* TODO */
+			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */ /* TODO */
 		/* set U */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
 			Boundary::Condition::INFLOW, 1.0,
@@ -145,10 +145,10 @@ namespace Bakery {
 		{
 		/* set P */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::P,
-			Boundary::Condition::OUTFLOW, 0.0, /* UP */
-			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+			Boundary::Condition::NOSLIP, 0.0, /* UP */ /* TODO */
+			Boundary::Condition::NOSLIP, 0.0, /* DOWN */ /* TODO */
+			Boundary::Condition::INFLOW, 1.0, /* LEFT */ /* TODO */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */ /* TODO */
 		/* set U */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
@@ -167,10 +167,10 @@ namespace Bakery {
 		{
 		/* set P */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::P,
-			Boundary::Condition::OUTFLOW, 0.0, /* UP */
-			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */ /* TODO */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */ /* TODO */
+			Boundary::Condition::INFLOW, 1.0, /* LEFT */ /* TODO */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */ /* TODO */
 		/* set U */
 		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
@@ -189,10 +189,10 @@ namespace Bakery {
 		{
 		/* set P */
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
-			Boundary::Condition::OUTFLOW, 0.0, /* UP */
-			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, 1.0, /* LEFT */
-			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */ /* TODO */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */ /* TODO */
+			Boundary::Condition::INFLOW, 1.0, /* LEFT */ /* TODO */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */ /* TODO */
 		/* set U */
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
@@ -244,7 +244,7 @@ namespace Bakery {
 						0.0, Range(ind,ind) ) );
 			simpams.boundary_conditions.push_back(
 					Boundary::BoundaryPiece(
-						dir, Boundary::Condition::OUTFLOW/*NOSLIP*/, Boundary::Grid::P,
+						dir, Boundary::Condition::OUTFLOW, Boundary::Grid::P, /* TODO */
 						0.0, Range(ind,ind) ) );
 		}
 	}

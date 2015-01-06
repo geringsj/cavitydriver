@@ -6,23 +6,46 @@
 
 #include <string>
 
-#if defined(__linux)
-	#include "external/include/docopt.h"
+#include "optionparser.h"
+static option::ArgStatus NonEmpty(const option::Option& option, bool msg)
+{
+  if (option.arg != 0 && option.arg[0] != 0)
+    return option::ARG_OK;
 
-void getCLIDouble(Real& real, std::map<std::string, docopt::value>& args, std::string string)
-{
-	real = (args[string].isString()) ? std::strtod(args[string].asString().c_str(),0) : (real);
+  if (msg) log_err("Option \"%s\" requires a non-empty argument",option.name);
+  return option::ARG_ILLEGAL;
 }
-void getCLIInt(int& _int, std::map<std::string, docopt::value> args, std::string string)
+enum optionIndex
+{ 
+	UNKNOWN,
+	HELP,
+	GUI,
+	NAME,
+	XLENGTH,
+	YLENGTH,
+	IMAX,
+	JMAX,
+	TAU,
+	TEND,
+	DELTAT,
+	DELTAVEC,
+	EPS,
+	OMG,
+	ALPHA,
+	ITERMAX,
+	RE,
+	GX,
+	GY,
+	UI,
+	VI,
+	PI,
+	KA,
+	KOW
+};
+const option::Descriptor usage[] =
 {
-	_int = (args[string].isString()) ? std::stoi(args[string].asString().c_str(),0) : (_int);
-}
-#endif
-
-void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
-{
-#if defined(__linux)
-	static const char USAGE[] = R"(
+	{UNKNOWN, 0, "", "", option::Arg::None, 
+R"(
 Usage: cavitybaker SETTING [options]
 
 SETTING:
@@ -32,121 +55,166 @@ SETTING:
    ChannelFlow (CF , 1)
    ChannelFlowUpperHalf (CFUH , 2)
    StepFlow (SF , 3)
-   ObstacleChannelFlow (OCF , 4)
+   ObstacleChannelFlow (OCF , KarmanStreet , KS , 4)
 
-Options:
-  -h --help         Show this message.
-  --gui             Opens the OpenGL user interface for interactive
-                    parameters input. Only available when program was
-                    compiled with OpenGL support.
-  --name=STRING     Name of the file in which the configuration parameters
-                    will be saved. If an empty string is given, the 
-                    parameters file will be written to stdout. [default: ""]
-  --xLength=FLOAT   Length of domain in x-direction. [default: 1.0]
-  --yLength=FLOAT   Length of domain in y-direction. [default: 1.0]
-  --iMax=INT        Number of cells the discrete grid will have 
-                    in x-direction. [default: 64]
-  --jMax=INT        Number of cells the discrete grid will have 
-                    in y-direction. [default: 64]
-  --tau=FLOAT       Scaling factor for timestep computations 
-                    in (0,1]. [default: 0.5]
-  --tEnd=FLOAT      Length of simulation in seconds. [default: 16.5]
-  --deltaT=FLOAT    Timestep size. Will be ignored.[default: 0.1]
-  --deltaVec=FLOAT  Time between two VTK Outputs of current 
-                    state of simulation. [default: 0.2]
-  --eps=FLOAT       Upper bound for residual for SOR solver. [default: 0.001]
-  --omg=FLOAT       Omega factor for SOR calculation. [default: 1.7]
-  --alpha=FLOAT     Mixing factor for Donor-Cell scheme 
-                    for next velocities. [default: 0.9]
-  --iterMax=INT     Maximum number of iterations for SOR solver. [default: 100]
-  --re=INT          Reynolds number to be used. [default: 1000]
-  --gx=FLOAT        External force in x direction. [default: 0.0]
-  --gy=FLOAT        External force in y direction. [default: 0.0]
-  --ui=FLOAT        Constant initial value for U-velocity field. [default: 0.0]
-  --vi=FLOAT        Constant initial value for V-velocity field. [default: 0.0]
-  --pi=FLOAT        Constant initial value for Pressure field. [default: 0.0]
-  --ka=FLOAT        Angle of object for Karman Vortex Street SETTING. 
-                    Will be ignored if other SETTING than 'ObstacleChannelFlow' 
-                    is used. Specified in radiant. [default: 0.7854]
-  --kow=FLOAT       Width of object for Karman Vortex Street SETTING. 
-                    Will be ignored if other SETTING than 'ObstacleChannelFlow' 
-                    is used. [default: 2.5*5.0*this->xLength/this->iMax]
-)";
+Options:)" },
+	{HELP, 0, "h", "help", option::Arg::None,
+"  -h --help  	Show this message." },
+ {GUI, 0, "g", "gui", option::Arg::None,
+"  -g --gui  \tOpens the OpenGL user interface for interactive parameters input. Only available when program was compiled with OpenGL support." },
+ {NAME, 0, "", "name", NonEmpty, 
+"  --name=STRING  \tName of the file in which the configuration parameters will be saved. If no name is given, the parameters file will be written to stdout." },
 
-	std::map<std::string, docopt::value> args = 
-		docopt::docopt(USAGE, { argv + 1, argv + argc });
+ {XLENGTH, 0, "", "xLength", NonEmpty,
+"  --xLength=FLOAT  \tLength of domain in x-direction." },
+ {YLENGTH, 0, "", "yLength", NonEmpty,
+"  --yLength=FLOAT  \tLength of domain in y-direction." },
+ {IMAX, 0, "", "iMax", NonEmpty,
+"  --iMax=INT  \tNumber of cells the discrete grid will have in x-direction." },
+ {JMAX, 0, "", "jMax", NonEmpty,
+"  --jMax=INT  \tNumber of cells the discrete grid will have in y-direction." },
+ {TAU, 0, "", "tau", NonEmpty,
+"  --tau=FLOAT  \tScaling factor for timestep computations in (0,1]." },
+ {TEND, 0, "", "tEnd", NonEmpty,
+"  --tEnd=FLOAT  \tLength of simulation in seconds." },
+ {DELTAT, 0, "", "deltaT", NonEmpty,
+"  --deltaT=FLOAT  \tTimestep size. Will be ignored." },
+ {DELTAVEC, 0, "", "deltaVec", NonEmpty,
+"  --deltaVec=FLOAT  \tTime between two VTK Outputs of current state of simulation." },
+ {EPS, 0, "", "", NonEmpty,
+"  --eps=FLOAT  \tUpper bound for residual for SOR solver." },
+ {OMG, 0,  "", "omg", NonEmpty,
+"  --omg=FLOAT  \tOmega factor for SOR calculation." },
+ {ALPHA, 0, "", "alpha", NonEmpty,
+"  --alpha=FLOAT  \tMixing factor for Donor-Cell scheme for next velocities." },
+ {ITERMAX, 0, "", "iterMax", NonEmpty,
+"  --iterMax=INT  \tMaximum number of iterations for SOR solver." },
+ {RE, 0, "", "re", NonEmpty,
+"  --re=INT  \tReynolds number to be used." },
+ {GX, 0, "", "gx", NonEmpty,
+"  --gx=FLOAT  \tExternal force in x direction." },
+ {GY, 0, "", "gy", NonEmpty,
+"  --gy=FLOAT  \tExternal force in y direction." },
+ {UI, 0, "", "ui", NonEmpty,
+"  --ui=FLOAT  \tConstant initial value for U-velocity field." },
+ {VI, 0, "", "vi", NonEmpty,
+"  --vi=FLOAT  \tConstant initial value for V-velocity field." },
+ {PI, 0, "", "pi", NonEmpty,
+"  --pi=FLOAT  \tConstant initial value for Pressure field." },
+ {KA, 0, "", "ka", NonEmpty,
+"  --ka=FLOAT  \tAngle of object for Karman Vortex Street SETTING specified in radiant. Will be ignored if other SETTING than 'ObstacleChannelFlow is used." },
+ {KOW, 0, "", "kow", NonEmpty,
+"  --kow=FLOAT  \tWidth of object for Karman Vortex Street SETTING. Will be ignored if other SETTING than 'ObstacleChannelFlow is used." }
+};
 
-	/* move cli domain params into a start simparams */
-	//for(auto const& arg : args)
-	//	std::cout << arg.first << " is " <<  arg.second << "- isString:"<<arg.second.isString()<<std::endl;
+void getMaybeCLIDouble(Real& real, option::Option* options, optionIndex ind)
+{
+	if(options[ind])
+		real = std::strtod(options[ind].arg,0);
+}
+void getMaybeCLIInt(int& _int, option::Option* options, optionIndex ind)
+{
+	if(options[ind])
+		_int = std::stoi(options[ind].arg,0);
+}
 
+void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
+{
+  argc-=(argc>0); argv+=(argc>0); // skip program name argv[0] if present
+  option::Stats  stats(usage, argc, argv);
+  option::Option* options = new option::Option[stats.options_max];
+  option::Option* buffer  = new option::Option[stats.buffer_max];
+  option::Parser parse(true, usage, argc, argv, options, buffer);
+
+	if(parse.error())
+	{
+		std::cout << "An options-parser error occurred.\n";
+		exit(EXIT_FAILURE);
+	}
+
+
+	if(options[HELP])
+	{
+		option::printUsage(std::cout, usage);
+		exit(EXIT_SUCCESS);
+	}
+	if(argc == 0 || !parse.nonOptionsCount())
+	{
+		std::cout << "Missing SETTING parameter. Call with '--help' for options.\n";
+		exit(EXIT_FAILURE);
+	}
+
+	std::string settingstr = std::string(parse.nonOption(0));
 	if(
-		args["SETTING"] == docopt::value(std::string("DrivenCavity")) ||
-		args["SETTING"] == docopt::value(std::string("DC")) ||
-		args["SETTING"] == docopt::value(std::string("0"))
+			"0" == settingstr ||
+			"DrivenCavity" == settingstr ||
+			"DC" == settingstr
 		)
-		setting = 0;
-	else if(
-		args["SETTING"] == docopt::value(std::string("ChannelFlow")) ||
-		args["SETTING"] == docopt::value(std::string("CF")) ||
-		args["SETTING"] == docopt::value(std::string("1"))
+ 	setting = 0;
+	if(
+			"1" == settingstr ||
+			"ChannelFlow" == settingstr ||
+			"CF" == settingstr
 		)
-		setting = 1;
-	else if(
-		args["SETTING"] == docopt::value(std::string("ChannelFlowUpperHalf")) ||
-		args["SETTING"] == docopt::value(std::string("CFUH")) ||
-		args["SETTING"] == docopt::value(std::string("2"))
+ 	setting = 1;
+	if(
+			"2" == settingstr ||
+			"ChannelFlowUpperHalf" == settingstr ||
+			"CFUH" == settingstr
 		)
-		setting = 2;
-	else if(
-		args["SETTING"] == docopt::value(std::string("StepFlow")) ||
-		args["SETTING"] == docopt::value(std::string("SF")) ||
-		args["SETTING"] == docopt::value(std::string("3"))
+ 	setting = 2;
+	if(
+			"3" == settingstr ||
+			"StepFlow" == settingstr ||
+			"SF" == settingstr
 		)
-		setting = 3;
-	else if(
-		args["SETTING"] == docopt::value(std::string("ObstacleChannelFlow")) ||
-		args["SETTING"] == docopt::value(std::string("OCF")) ||
-		args["SETTING"] == docopt::value(std::string("4"))
+ 	setting = 3;
+	if(
+			"4" == settingstr ||
+			"ObstacleChannelFlow" == settingstr ||
+			"OCF" == settingstr ||
+			"KarmanStreet" == settingstr ||
+			"KS" == settingstr
 		)
-		setting = 4;
-	else setting = -1;
+ 	setting = 4;
 
-	gui = args["--gui"].asBool();
+	gui = static_cast<bool>(options[GUI].count());
+	if(!gui && (setting < 0 || setting > 4))
+	{
+		std::cout << "Invalid SETTING parameter. Call with '--help' for options.\n";
+		exit(EXIT_FAILURE);
+	}
 
-	if( args["--name"] != docopt::value(std::string("\"\"")) )
-		simparam.name = args["--name"].asString();
+	if(options[NAME])
+		simparam.name = std::string(options[NAME].arg);
 
 	/* overwrite those on pre-bakery processing, because
 	 * bakery uses them */
-	getCLIDouble(simparam.yLength, args, "--yLength");
-	getCLIDouble(simparam.xLength, args, "--xLength");
-	getCLIInt(simparam.iMax, args, "--iMax");
-	getCLIInt(simparam.jMax, args, "--jMax");
-	getCLIDouble(simparam.KarmanAngle, args, "--ka");
-	if(args["--kow"].asString() != "2.5*5.0*this->xLength/this->iMax")
-		getCLIDouble(simparam.KarmanObjectWidth, args, "--kow");
+	getMaybeCLIDouble(simparam.yLength, options, YLENGTH);
+	getMaybeCLIDouble(simparam.xLength, options, XLENGTH);
+	getMaybeCLIInt(simparam.iMax, options, IMAX);
+	getMaybeCLIInt(simparam.jMax, options, JMAX);
+	getMaybeCLIDouble(simparam.KarmanAngle, options, KA);
+	getMaybeCLIDouble(simparam.KarmanObjectWidth, options, KOW);
 
 	/* overwrite those on post-bakery processing */
-	getCLIDouble(simparam.tau, args, "--tau");
-	getCLIDouble(simparam.tEnd, args, "--tEnd");
-	getCLIDouble(simparam.deltaT, args, "--deltaT");
-	getCLIDouble(simparam.deltaVec, args, "--deltaVec");
-	getCLIDouble(simparam.eps, args, "--eps");
-	getCLIDouble(simparam.omg, args, "--omg");
-	getCLIDouble(simparam.alpha, args, "--alpha");
-	getCLIDouble(simparam.re, args, "--re");
-	getCLIDouble(simparam.gx, args, "--gx");
-	getCLIDouble(simparam.gy, args, "--gy");
-	getCLIDouble(simparam.ui, args, "--ui");
-	getCLIDouble(simparam.vi, args, "--vi");
-	getCLIDouble(simparam.pi, args, "--pi");
-	getCLIInt(simparam.iterMax, args, "--iterMax");
+	getMaybeCLIDouble(simparam.tau, options, TAU);
+	getMaybeCLIDouble(simparam.tEnd, options, TEND);
+	getMaybeCLIDouble(simparam.deltaT, options, DELTAT);
+	getMaybeCLIDouble(simparam.deltaVec, options, DELTAVEC);
+	getMaybeCLIDouble(simparam.eps, options, EPS);
+	getMaybeCLIDouble(simparam.omg, options, OMG);
+	getMaybeCLIDouble(simparam.alpha, options, ALPHA);
+	getMaybeCLIDouble(simparam.re, options, RE);
+	getMaybeCLIDouble(simparam.gx, options, GX);
+	getMaybeCLIDouble(simparam.gy, options, GY);
+	getMaybeCLIDouble(simparam.ui, options, UI);
+	getMaybeCLIDouble(simparam.vi, options, VI);
+	getMaybeCLIDouble(simparam.pi, options, PI);
+	getMaybeCLIInt(simparam.iterMax, options, ITERMAX);
 
-#else
-	/* on windows, default to GUI */
-	gui = true;
-#endif
+	delete[] options;
+	delete[] buffer;
 }
 
 void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters& clisp)
@@ -163,19 +231,13 @@ int main(int argc, char** argv)
 
 	SimulationParameters simparam;
 	bool gui = false;
-	int setting = 0;
+	int setting = -1;
 
 	/* parse cli values: use gui? inputvals-filename? what other values to set? */
 	initCLI(setting, gui, simparam, argc, argv);
 
 	/* let bakery create boundaries 'n stuff using start simparams */
-	if(setting < 0 || setting > 4)
-	{
-		std::cout << "Invalid SETTING parameter.\n";
-		exit(EXIT_FAILURE);
-	}
-	setting = 3;
-	simparam.iMax = 192;
+
 	/**
 	 * Karman:
 	 * Re: 1000, max iter: 5000
@@ -189,7 +251,6 @@ int main(int argc, char** argv)
 	overwritePostBakeryParams(newparam, simparam);
 
 	/* maybe give simparams to gui - gui feedback? */
-	newparam.name = "test";
 
 	if(gui)
 	{
