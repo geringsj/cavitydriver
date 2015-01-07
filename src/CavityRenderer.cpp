@@ -160,6 +160,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	m_cam_sys.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
 
 	m_show_grid = true;
+	m_show_boundary_cells = true;
 
 	m_simparams = sim_params;
 
@@ -282,6 +283,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	// Create resources
 	if(!createGLSLPrograms()) { return false; }
 	if(!createOverlayGrid()) { return false; }
+	if(!createBoundaryCell()) { return false; }
 	if(!createTextures()) { return false; }
 	if(!createFramebuffers()) { return false; }
 
@@ -317,6 +319,20 @@ bool CavityRenderer::createGLSLPrograms()
 
 	m_grid_prgm.link();
 
+	/* Boundary cells program*/
+	m_boundary_cell_prgm.init();
+
+	std::string boundary_vertex_shdr = readShaderFile("./shader/boundaryCellVertex.glsl");
+	if (!m_boundary_cell_prgm.compileShaderFromString(&boundary_vertex_shdr, GL_VERTEX_SHADER)) { std::cout << m_boundary_cell_prgm.getLog(); return false; };
+
+	std::string boundary_fragment_shdr = readShaderFile("./shader/boundaryCellFragment.glsl");
+	if (!m_boundary_cell_prgm.compileShaderFromString(&boundary_fragment_shdr, GL_FRAGMENT_SHADER)) { std::cout << m_boundary_cell_prgm.getLog(); return false; };
+
+	m_boundary_cell_prgm.bindAttribLocation(0, "in_position");
+	m_boundary_cell_prgm.bindAttribLocation(1, "in_uv");
+
+	m_boundary_cell_prgm.link();
+
 	return true; /* return with great success */
 }
 
@@ -345,9 +361,9 @@ bool CavityRenderer::createOverlayGrid()
 
 	//why is this in here ?
 	//m_cam_sys.Translation(m_cam_sys.GetRightVector(), 0.0f - m_cam_sys.GetCamPos().x);
-	//m_cam_sys.Translation(m_cam_sys.GetRightVector(), right_shift);
+	m_cam_sys.Translation(m_cam_sys.GetRightVector(), right_shift);
 	//m_cam_sys.Translation(m_cam_sys.GetUpVector(), 0.0f - m_cam_sys.GetCamPos().y);
-	//m_cam_sys.Translation(m_cam_sys.GetUpVector(), up_shift);
+	m_cam_sys.Translation(m_cam_sys.GetUpVector(), up_shift);
 
 	vertex_array.push_back(Gridvertex(bottom_left_i, bottom_left_j, -1.0f, 1.0f));
 	index_array.push_back(0);
@@ -393,6 +409,29 @@ bool CavityRenderer::createOverlayGrid()
 	return true;
 }
 
+bool CavityRenderer::createBoundaryCell()
+{
+	// Create mesh for boundary cells
+	float dx = (float)m_simparams.xLength / (float)m_simparams.iMax;
+	float dy = (float)m_simparams.yLength / (float)m_simparams.jMax;
+
+	dx /= 4.0;
+	dy /= 4.0;
+
+	std::array< VertexUV, 4 > vertex_array = {{ VertexUV(-dx,-dy,-1.0,0.0,0.0),
+											VertexUV(-dx,dy,-1.0,0.0,1.0),
+											VertexUV(dx,dy,-1.0,1.0,1.0),
+											VertexUV(dx,-dy,-1.0,1.0,0.0) }};
+
+	std::array< GLuint, 6 > index_array = {{ 0,2,1,2,0,3 }};
+
+	if(!(m_boundary_cell.bufferDataFromArray(vertex_array.data(),index_array.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
+	m_boundary_cell.setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(VertexUV),0);
+	m_boundary_cell.setVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(VertexUV),(GLvoid*) (sizeof(float)*3));
+
+	return true;
+}
+
 bool CavityRenderer::createTextures()
 {
 	unsigned long begin_pos;
@@ -404,13 +443,22 @@ bool CavityRenderer::createTextures()
 	
 	if(!m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
 	
-	delete(m_img_data);
+	delete[] m_img_data;
+
+	readPpmHeader("boundary_cell.ppm", begin_pos, x_dim, y_dim);
+	m_img_data = new char[x_dim * y_dim * 3];
+	readPpmData("boundary_cell.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	
+	if(!m_boundary_cell_tx.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
+	
+	delete[] m_img_data;
 
 	return true;
 }
 
 bool CavityRenderer::createFramebuffers()
 {
+	//TODO create all framebuffers based on window width and height
 	return true;
 }
 
@@ -438,9 +486,6 @@ void CavityRenderer::paint()
 		if(m_show_field)
 			drawField();
 
-		if(m_show_grid)
-			drawOverlayGrid();
-
 		if(m_show_boundary_glyphs)
 			drawBoundaryGlyphs();
 
@@ -449,6 +494,9 @@ void CavityRenderer::paint()
 
 		if(m_show_geometry)
 			drawGeometry();
+
+		if(m_show_grid)
+			drawOverlayGrid();
 		
 
 		// Merge layers, do additional post processing. Output to primary framebuffer
@@ -489,8 +537,6 @@ void CavityRenderer::paint()
 
 void CavityRenderer::drawOverlayGrid()
 {
-	//m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
-
 	m_grid_prgm.use();
 	glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
 	glm::mat4 model_mat = glm::mat4(1.0f);
@@ -511,6 +557,32 @@ void CavityRenderer::drawGeometry()
 
 void CavityRenderer::drawBoundaryCells()
 {
+	m_boundary_cell_prgm.use();
+	
+	glEnable(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE0);
+	m_boundary_cell_prgm.setUniform("boundary_tx2D",0);
+	m_boundary_cell_tx.bindTexture();
+
+	for(auto& boundary_piece : m_simparams.boundary_conditions)
+	{
+		Range range(boundary_piece.range);
+		float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
+		float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
+
+		for_range(i, j, range)
+		{
+			float pos[] = { (float)(i-1) * x_length/1.0 + x_length / 2.0f, (float)(j-1) * y_length/1.0 + y_length/2.0f };
+
+			glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
+			glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(pos[0],pos[1],0.0));
+			glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
+			glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+			m_boundary_cell_prgm.setUniform("mvp_matrix", mvp_mat);
+			
+			m_boundary_cell.draw();
+		}
+	}
 }
 
 void CavityRenderer::drawBoundaryGlyphs()

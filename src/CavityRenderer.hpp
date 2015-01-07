@@ -1,6 +1,7 @@
 #ifndef CavityRenderer_hpp
 #define CavityRenderer_hpp
 
+#include <array>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -216,6 +217,8 @@ private:
 	bool createGLSLPrograms();
 	/** Create overlay grid (really just a grid made of lines) */
 	bool createOverlayGrid();
+
+	bool createBoundaryCell();
 
 	bool createTextures();
 

@@ -322,7 +322,11 @@ int main(int argc, char** argv)
 		{
 			SimulationParameters received_params;
 			if(inbox.tryPop(received_params,std::chrono::milliseconds(500)))
+			{
 				std::cout<<"I got the goods!"<<std::endl;
+
+				newparam = Bakery::get(static_cast<Bakery::Setting>(setting), inflowVal, received_params);
+			}
 
 			auto status = render_execution.wait_for(std::chrono::seconds(0));
 			if(status == std::future_status::ready)

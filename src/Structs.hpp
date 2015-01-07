@@ -218,4 +218,14 @@ struct Gridvertex {
 	float x, y, z, w;
 };
 
+struct VertexUV
+{
+	VertexUV() : m_x(0), m_y(0), m_z(0), m_u(0), m_v(0) {}
+	VertexUV(float x, float y, float z, float u, float v)
+		: m_x(x), m_y(y), m_z(z), m_u(u), m_v(v) {}
+
+	float m_x,m_y,m_z;
+	float m_u,m_v;
+};
+
 #endif
