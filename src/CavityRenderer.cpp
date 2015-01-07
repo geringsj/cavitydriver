@@ -1,60 +1,10 @@
 #include "CavityRenderer.hpp"
 
-/**
- * Example for a callback function that is used in addButtonParam
- */
-void TW_CALL Callback(void *clientData)
-{
-	if(clientData)
-		clientData=NULL;
-	// do something
-}
+/* Static tweak bar callback definitions. Implementation see further down. */
+void TW_CALL Bake(void* clientData);
 
-void TW_CALL RemoveBoundaryPiece(void* clientData)
-{
-	CavityRenderer* cr = (CavityRenderer*)clientData;
-	cr->setMaxBoundaryPiece(cr->getMaxBoundaryPiece() - 1);
-	cr->deleteBoundaryPiece(cr->getBoundaryPieceIndex());
-}
-
-void TW_CALL ModifyBoundaryPiece(void* clientData)
-{
-	CavityRenderer* cr = (CavityRenderer*)clientData;
-	cr->modifyBoundaryPieceParams(cr->getBoundaryPieceIndex());
-}
-
-void TW_CALL BoundaryPiece(void* clientData)
-{
-	CavityRenderer* cr = (CavityRenderer*)clientData;
-	cr->setMaxBoundaryPiece(cr->getMaxBoundaryPiece() + 1);
-	Boundary::Direction dir;
-	Boundary::Condition cond;
-	Boundary::Grid grid;
-	Real value;
-	int i_begin;
-	int i_end;
-	int j_begin;
-	int j_end;
-	cr->getBoundaryPieceParams(dir, cond, grid, value, i_begin, i_end, j_begin, j_end);
-	Index begin = Index(i_begin, j_begin);
-	Index end = Index(i_end, j_end);
-	Range range = Range(begin, end);
-	cr->addBoundaryPiece(Boundary::BoundaryPiece(dir, cond, grid, value, range));
-	cr->showBoundaryPiece(cr->getMaxBoundaryPiece() - 1);
-}
-
-void TW_CALL Bake(void* clientData)
-{
-	CavityRenderer* cr = (CavityRenderer*)clientData;
-	Index begin = Index(1, 1);
-	int iMax, jMax;
-	cr->getijMax(iMax, jMax);
-	Index end = Index(iMax,jMax);
-	Range new_range = Range(begin, end);
-	cr->createGrid(new_range);
-}
-
-CavityRenderer::CavityRenderer()
+CavityRenderer::CavityRenderer(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationParameters>& outbox)
+	: m_inbox(inbox), m_outbox(outbox)
 {
 }
 
@@ -62,14 +12,13 @@ CavityRenderer::~CavityRenderer()
 {
 }
 
-bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_height, SimulationParameters& sim_params)
+bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int window_height, SimulationParameters& sim_params)
 {
 	m_window_width = window_width;
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2f;
 	m_window_background_colour[1] = 0.2f;
 	m_window_background_colour[2] = 0.2f;
-	m_zoom = 1.0f;
 
 	m_simparams = sim_params;
 
@@ -99,7 +48,7 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",0.0f, 999.0f);
+	//addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",0.0f, 999.0f);
 	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
 	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
@@ -154,11 +103,11 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 	addStringParam("m_name", " label='name' ", &m_simparams.name, "RO");
 
 	TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
-	for (auto b : sim_params.boundary_conditions)
-		m_boundary_conditions.push_back(b);
-	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
-	addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
-	addBoundaryPieceToBar("RO");
+	//for (auto b : sim_params.boundary_conditions)
+	//	m_boundary_conditions.push_back(b);
+	//m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
+	//addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
+	//addBoundaryPieceToBar("RO");
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
@@ -186,14 +135,12 @@ bool CavityRenderer::initVis(unsigned int window_width, unsigned int window_heig
 
 
 	m_cam_sys = CameraSystem(
-		glm::vec3(0.0f, 0.0f, m_zoom),
+		glm::vec3(0.0f, 0.0f, 1.0),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f));
 
-	createGLSLProgramms();
-
-	load_img = true;
+	createGLSLPrograms();
 
 	return true;
 }
@@ -203,7 +150,6 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	m_window_width = window_width;
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2f; m_window_background_colour[1] = 0.2f; m_window_background_colour[2] = 0.2f;
-	m_zoom = 1.f;
 
 	m_show_grid = true;
 
@@ -214,7 +160,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 
 	/* Create a windowed mode window and its OpenGL context */
 	glfwWindowHint(GLFW_SAMPLES, 8);
-	m_window = glfwCreateWindow(window_width, window_height, "Cavity", NULL, NULL);
+	m_window = glfwCreateWindow(window_width, window_height, "CavityBaker", NULL, NULL);
 	if (!m_window)
 	{
 		//std::cout<<"Couldn't create glfw window."<<std::endl;
@@ -228,37 +174,41 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
 
 	// Create a tweak bar
-	bar = TwNewBar("CavityBaker-TweakBar");
+	bar = TwNewBar("CavityBaker-Settings");
 	TwWindowSize(window_width, window_height);
 	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
 	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
-	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	addFloatParam("m_zoom", " step=0.1 label='Zoom' ", &m_zoom, "RW", 0.0f, 999.0f);
-	addBoolParam("m_show_grid", " label='Show grid' ", &m_show_grid);
-	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
+	addIntParam("m_window_width", "label='Window width' group='Window' ", &m_window_width, "RO");
+	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
+	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
+	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
+	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_show_grid);
+	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_grid_colour, " label='Grid color' group='Grid' ");
+
+	//TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
 	Real test; float __float; double __double;
 	const char* _double = typeid(__double).name();
 	const char* _float = typeid(__float).name();
 	if (strcmp(typeid(test).name(), _double) == 0)
 	{
-		addDoubleParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
-		addDoubleParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
-		addDoubleParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
-		addDoubleParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps);
-		addDoubleParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx);
-		addDoubleParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy);
-		addDoubleParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle);
-		addDoubleParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth);
-		addDoubleParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi);
-		addDoubleParam("m_re", " step=0.1 label='re' ", &m_simparams.re);
-		addDoubleParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau);
-		addDoubleParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd);
-		addDoubleParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui);
-		addDoubleParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi);
-		addDoubleParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength);
-		addDoubleParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
-		addDoubleParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg);
+		addDoubleParam("m_alpha", " step=0.1 label='alpha' group='Simulation Parameters' ", &m_simparams.alpha);
+		addDoubleParam("m_deltaT", " step=0.1 label='deltaT' group='Simulation Parameters' ", &m_simparams.deltaT);
+		addDoubleParam("m_deltaVec", " step=0.1 label='deltaVec' group='Simulation Parameters' ", &m_simparams.deltaVec);
+		addDoubleParam("m_eps", " step=0.001 label='eps' group='Simulation Parameters' ", &m_simparams.eps);
+		addDoubleParam("m_gx", " step=0.1 label='gx' group='Simulation Parameters' ", &m_simparams.gx);
+		addDoubleParam("m_gy", " step=0.1 label='gy' group='Simulation Parameters' ", &m_simparams.gy);
+		addDoubleParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' group='Simulation Parameters' ", &m_simparams.KarmanAngle);
+		addDoubleParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' group='Simulation Parameters' ", &m_simparams.KarmanObjectWidth);
+		addDoubleParam("m_pi", " step=0.1 label='pi' group='Simulation Parameters' ", &m_simparams.pi);
+		addDoubleParam("m_re", " step=0.1 label='re' group='Simulation Parameters' ", &m_simparams.re);
+		addDoubleParam("m_tau", " step=0.1 label='tau' group='Simulation Parameters' ", &m_simparams.tau);
+		addDoubleParam("m_tEnd", " step=0.1 label='tEnd' group='Simulation Parameters' ", &m_simparams.tEnd);
+		addDoubleParam("m_ui", " step=0.1 label='ui' group='Simulation Parameters' ", &m_simparams.ui);
+		addDoubleParam("m_vi", " step=0.1 label='vi' group='Simulation Parameters' ", &m_simparams.vi);
+		addDoubleParam("m_xLength", " step=0.1 label='xLength' group='Simulation Parameters' ", &m_simparams.xLength);
+		addDoubleParam("m_yLength", " step=0.1 label='yLength' group='Simulation Parameters' ", &m_simparams.yLength);
+		addDoubleParam("m_omg", " step=0.1 label='omega' group='Simulation Parameters' ", &m_simparams.omg);
 	}
 	if (strcmp(typeid(test).name(), _float) == 0)
 	{
@@ -280,26 +230,26 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 		addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
 		addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg);
 	}
-	addIntParam("m_iterMax", " label='iterMax' ", &m_simparams.iterMax);
-	addIntParam("m_iMax", " label='iMax' ", &m_simparams.iMax);
-	addIntParam("m_jMax", " label='jMax' ", &m_simparams.jMax);
-	addIntParam("m_xCells", " label='xCells' ", &m_simparams.xCells);
-	addIntParam("m_yCells", " label='yCells' ", &m_simparams.yCells);
-	addStringParam("m_name", " label='name' ", &m_simparams.name);
+	addIntParam("m_iterMax", " label='iterMax' group='Simulation Parameters' ", &m_simparams.iterMax);
+	addIntParam("m_iMax", " label='iMax' group='Simulation Parameters' ", &m_simparams.iMax);
+	addIntParam("m_jMax", " label='jMax' group='Simulation Parameters' ", &m_simparams.jMax);
+	addIntParam("m_xCells", " label='xCells' group='Simulation Parameters' ", &m_simparams.xCells);
+	addIntParam("m_yCells", " label='yCells' group='Simulation Parameters' ", &m_simparams.yCells);
+	addStringParam("m_name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
 
-	TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
-	for (auto b : sim_params.boundary_conditions)
-		m_boundary_conditions.push_back(b);
-	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
-	addBoolParam("m_modify_cond", " label='Modify boundary piece' ", &m_modify_cond);
-	addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
-	addBoundaryPieceToBar("RW");
+	//TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
+	//for (auto b : sim_params.boundary_conditions)
+	//	m_boundary_conditions.push_back(b);
+	//m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
+	//addBoolParam("m_modify_cond", " label='Modify boundary piece' ", &m_modify_cond);
+	//addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
+	//addBoundaryPieceToBar("RW");
 
-	addButtonParam("m_boundarypiece", " label='Add boundary condition' ", BoundaryPiece);
-	addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
-	addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
+	//addButtonParam("m_boundarypiece", " label='Add boundary condition' ", BoundaryPiece);
+	//addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
+	//addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
 
-	addButtonParam("m_bake", " label='bake parameters' ", Bake);
+	addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window, this);
@@ -327,31 +277,33 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 
 
 	m_cam_sys = CameraSystem(
-		glm::vec3(0.0f, 0.0f, m_zoom),
+		glm::vec3(0.0f, 0.0f, 1.0),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f));
 
-	createGLSLProgramms();
-
-	load_img = true;
+	// Create resources
+	if(!createGLSLPrograms()) { return false; }
+	if(!createOverlayGrid()) { return false; }
+	if(!createTextures()) { return false; }
 
 	return true;
 }
 
-bool CavityRenderer::createGLSLProgramms()
+
+bool CavityRenderer::createGLSLPrograms()
 {
 	/* Arrow texture programm */
 	m_arrow_prgm.init();
-
+	
 	std::string arrow_vertex = readShaderFile("./shader/arrowVertex.glsl");
 	if (!m_arrow_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
-
+	
 	std::string arrow_fragment = readShaderFile("./shader/arrowFragment.glsl");
 	if (!m_arrow_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
-
+	
 	m_arrow_prgm.bindAttribLocation(0, "in_position");
-
+	
 	m_arrow_prgm.link();
 
 	/* Grid programm */
@@ -370,11 +322,100 @@ bool CavityRenderer::createGLSLProgramms()
 	return true; /* return with great success */
 }
 
-void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
+bool CavityRenderer::createOverlayGrid()
 {
-	m_simparams = sim_params;
-	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
+	std::vector<unsigned int> index_array;
+	std::vector<Gridvertex> vertex_array;
+
+	float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
+	float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
+
+	float bottom_left_i = 0.0f;
+	float bottom_left_j = 0.0f;
+
+	float bottom_right_i = bottom_left_i + m_simparams.xCells * x_length;
+	float bottom_right_j = bottom_left_j;
+
+	float top_right_i = bottom_right_i;
+	float top_right_j = bottom_right_j + m_simparams.yCells * y_length;
+
+	float top_left_i = bottom_left_i;
+	float top_left_j = bottom_left_j + m_simparams.yCells * y_length;
+
+	float right_shift = (m_simparams.xCells * x_length) / 2.0f;
+	float up_shift = (m_simparams.yCells * y_length) / 2.0f;
+
+	//why is this in here ?
+	//m_cam_sys.Translation(m_cam_sys.GetRightVector(), 0.0f - m_cam_sys.GetCamPos().x);
+	//m_cam_sys.Translation(m_cam_sys.GetRightVector(), right_shift);
+	//m_cam_sys.Translation(m_cam_sys.GetUpVector(), 0.0f - m_cam_sys.GetCamPos().y);
+	//m_cam_sys.Translation(m_cam_sys.GetUpVector(), up_shift);
+
+	vertex_array.push_back(Gridvertex(bottom_left_i, bottom_left_j, -1.0f, 1.0f));
+	index_array.push_back(0);
+	vertex_array.push_back(Gridvertex(bottom_right_i, bottom_right_j, -1.0f, 1.0f));
+	index_array.push_back(1);
+	vertex_array.push_back(Gridvertex(top_right_i, top_right_j, -1.0f, 1.0f));
+	index_array.push_back(2);
+	vertex_array.push_back(Gridvertex(top_left_i, top_left_j, -1.0f, 1.0f));
+	index_array.push_back(3);
+
+	index_array.push_back(0);
+	index_array.push_back(3);
+	index_array.push_back(1);
+	index_array.push_back(2);
+
+	//LEFT RIGHT
+	float left = bottom_left_i;
+	float right = bottom_right_i;
+	unsigned int index_value = 4;
+	for (float j = bottom_left_j; j <= top_left_j; j=j+y_length)
+	{
+		vertex_array.push_back(Gridvertex(left, j, -1.0f, 1.0f));
+		index_array.push_back(index_value); index_value++;
+		vertex_array.push_back(Gridvertex(right, j, -1.0f, 1.0f));
+		index_array.push_back(index_value); index_value++;
+	}
+	//TOP BOTTOM
+	float bottom = bottom_right_j;
+	float top = top_right_j;
+	for (float i = bottom_left_i; i <= bottom_right_i; i=i+x_length)
+	{
+		vertex_array.push_back(Gridvertex(i, bottom, -1.0f, 1.0f));
+		index_array.push_back(index_value); index_value++;
+		vertex_array.push_back(Gridvertex(i, top, -1.0f, 1.0f));
+		index_array.push_back(index_value); index_value++;
+	}
+	
+	if(!m_grid.bufferDataFromArray(vertex_array.data(),index_array.data(),
+		(GLsizei)(vertex_array.size()*sizeof(Gridvertex)),(GLsizei)(index_array.size()*sizeof(unsigned int)),GL_LINES))
+		return false;
+	m_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
+
+	return true;
 }
+
+bool CavityRenderer::createTextures()
+{
+	unsigned long begin_pos;
+	int x_dim, y_dim;
+	char* m_img_data;
+	readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
+	m_img_data = new char[x_dim * y_dim * 3];
+	readPpmData("arrow.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	
+	if(!m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
+	
+	delete(m_img_data);
+
+	return true;
+}
+
+//void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
+//{
+//	m_simparams = sim_params;
+//	m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
+//}
 
 void CavityRenderer::paint()
 {
@@ -383,21 +424,45 @@ void CavityRenderer::paint()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(
-			m_window_background_colour[0],
-			m_window_background_colour[1],
-			m_window_background_colour[2], 1.0f);
+		m_window_background_colour[0],
+		m_window_background_colour[1],
+		m_window_background_colour[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		int width, height;
 		glfwGetFramebufferSize(m_window, &width, &height);
 		glViewport(0, 0, width, height);
+
+		if(m_show_field)
+			drawField();
+
+		if(m_show_grid)
+			drawOverlayGrid();
+
+		if(m_show_boundary_glyphs)
+			drawBoundaryGlyphs();
+
+		if(m_show_boundary_cells)
+			drawBoundaryCells();
+
+		if(m_show_geometry)
+			drawGeometry();
 		
-		drawGridOverlay();
-		showBoundaryPiece(m_nmbr_boundary_piece);
-		
+
+		// Merge layers, do additional post processing. Output to primary framebuffer
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glClearColor(
+		//	m_window_background_colour[0],
+		//	m_window_background_colour[1],
+		//	m_window_background_colour[2], 1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//int width, height;
+		//glfwGetFramebufferSize(m_window, &width, &height);
+		//glViewport(0, 0, width, height);
+
+		postProcessing();
 
 		// Draw TB
 		TwDraw();
-		// Draw TB
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(m_window);
@@ -413,100 +478,21 @@ void CavityRenderer::paint()
 	glfwTerminate();
 }
 
-bool CavityRenderer::createGrid(Range grid_size)
+void CavityRenderer::drawOverlayGrid()
 {
-	std::vector<unsigned int> index_array;
-	std::vector<Gridvertex> vertex_array;
-	createSingleGrid(grid_size, index_array, vertex_array);
-	
-	m_grid.bufferDataFromArray(vertex_array.data(),index_array.data(),
-		(GLsizei)(vertex_array.size()*sizeof(Gridvertex)),(GLsizei)(index_array.size()*sizeof(unsigned int)),GL_LINES);
-	m_grid.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
+	//m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
 
-	return true;
-}
-
-void CavityRenderer::createSingleGrid(Range innerRange, std::vector<unsigned int>& index, std::vector<Gridvertex>& data)
-{
-	float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
-	float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
-
-	float bottom_left_i = (float)innerRange.begin[0] - 1.0f;
-	float bottom_left_j = (float)innerRange.begin[1] - 1.0f;
-
-	float bottom_right_i = bottom_left_i + m_simparams.xCells * x_length;
-	float bottom_right_j = bottom_left_j;
-
-	float top_right_i = bottom_right_i;
-	float top_right_j = bottom_right_j + m_simparams.yCells * y_length;
-
-	float top_left_i = bottom_left_i;
-	float top_left_j = bottom_left_j + m_simparams.yCells * y_length;
-
-	float right_shift = (m_simparams.xCells * x_length) / 2.0f;
-	float up_shift = (m_simparams.yCells * y_length) / 2.0f;
-
-	m_cam_sys.Translation(m_cam_sys.GetRightVector(), 0.0f - m_cam_sys.GetCamPos().x);
-	m_cam_sys.Translation(m_cam_sys.GetRightVector(), right_shift);
-	m_cam_sys.Translation(m_cam_sys.GetUpVector(), 0.0f - m_cam_sys.GetCamPos().y);
-	m_cam_sys.Translation(m_cam_sys.GetUpVector(), up_shift);
-
-	data.push_back(Gridvertex(bottom_left_i, bottom_left_j, -1.0f, 1.0f));
-	index.push_back(0);
-	data.push_back(Gridvertex(bottom_right_i, bottom_right_j, -1.0f, 1.0f));
-	index.push_back(1);
-	data.push_back(Gridvertex(top_right_i, top_right_j, -1.0f, 1.0f));
-	index.push_back(2);
-	data.push_back(Gridvertex(top_left_i, top_left_j, -1.0f, 1.0f));
-	index.push_back(3);
-
-	index.push_back(0);
-	index.push_back(3);
-	index.push_back(1);
-	index.push_back(2);
-
-	//LEFT RIGHT
-	float left = bottom_left_i;
-	float right = bottom_right_i;
-	unsigned int index_value = 4;
-	for (unsigned int j = innerRange.begin[1] - 1; j <= (unsigned int)innerRange.end[1]; j++)
-	{
-		data.push_back(Gridvertex(left, (float)j * y_length, -1.0f, 1.0f));
-		index.push_back(index_value); index_value++;
-		data.push_back(Gridvertex(right, (float)j * y_length, -1.0f, 1.0f));
-		index.push_back(index_value); index_value++;
-	}
-	//TOP BOTTOM
-	float bottom = bottom_right_j;
-	float top = top_right_j;
-	for (unsigned int i = innerRange.begin[0] - 1; i <= (unsigned int)innerRange.end[0]; i++)
-	{
-		data.push_back(Gridvertex((float)i * x_length, bottom, -1.0f, 1.0f));
-		index.push_back(index_value); index_value++;
-		data.push_back(Gridvertex((float)i * x_length, top, -1.0f, 1.0f));
-		index.push_back(index_value); index_value++;
-	}
-}
-
-void CavityRenderer::drawGridOverlay()
-{
-	m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
 	m_grid_prgm.use();
-	glm::mat4 proj_mat = glm::perspective(45.0f, (float)m_window_width / (float)m_window_height, 0.1f, 1000.0f);
+	glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
 	glm::mat4 model_mat = glm::mat4(1.0f);
 	glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
 	glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
 	m_grid_prgm.setUniform("mvp_matrix", mvp_mat);
-
-	if(m_show_grid)
-		m_grid.draw();
+	
+	m_grid.draw();
 }
 
 void CavityRenderer::drawField()
-{
-}
-
-void CavityRenderer::drawLIC()
 {
 }
 
@@ -514,108 +500,348 @@ void CavityRenderer::drawGeometry()
 {
 }
 
-void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece)
+void CavityRenderer::drawBoundaryCells()
 {
-	Range range(boundarypiece.range);
-	// Boundary::Grid grid_type(boundarypiece.gridtype);
-	Boundary::Direction dir(boundarypiece.direction);
-	Real condition_value(boundarypiece.condition_value);
-	// Boundary::Condition cond(boundarypiece.condition);
-
-	if (load_img)
-	{
-		unsigned long begin_pos;
-		int x_dim, y_dim;
-		char* m_img_data;
-		readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
-		m_img_data = new char[x_dim * y_dim * 3];
-		readPpmData("arrow.ppm", m_img_data, begin_pos, x_dim, y_dim);
-
-		m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
-
-		delete(m_img_data); 
-		load_img = false;
-	}
-
-	float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
-	float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
-	std::vector<Gridvertex> quad;
-	unsigned int quad_index[] =
-	{
-		1, 0, 3, 2
-	};
-	for_range(i, j, range)
-	{
-		float pos[] = { (float)(i-1) * x_length + x_length / 2.0f, (float)(j-1) * y_length + y_length/2.0f };
-	
-		float left = (pos[0] - x_length / 2.0f);
-		float bottom = (pos[1] - y_length / 2.0f);
-		float right = (pos[0] + x_length / 2.0f);
-		float top = (pos[1] + y_length / 2.0f);
-	
-		switch (dir)
-		{
-		case Boundary::Direction::Up:
-			top += (float)condition_value * y_length;
-			quad = {
-				Gridvertex(left, bottom, 0.0f, 1.0f),
-				Gridvertex(left, top, 1.0f, 1.0f),
-				Gridvertex(right, top, 1.0f, 0.0f),
-				Gridvertex(right, bottom, 0.0f, 0.0f)
-			};
-			break;
-		case Boundary::Direction::Down:
-			bottom -= (float)condition_value * y_length;
-			quad = {
-				Gridvertex(left, bottom, 1.0f, 1.0f),
-				Gridvertex(left, top, 0.0f, 1.0f),
-				Gridvertex(right, top, 0.0f, 0.0f),
-				Gridvertex(right, bottom, 1.0f, 0.0f)
-			};
-			break;
-		case Boundary::Direction::Left:
-			left -= (float)condition_value * x_length;
-			quad = {
-				Gridvertex(left, bottom, 1.0f, 0.0f),
-				Gridvertex(left, top, 1.0f, 1.0f),
-				Gridvertex(right, top, 0.0f, 1.0f),
-				Gridvertex(right, bottom, 0.0f, 0.0f)
-			};
-			break;
-		case Boundary::Direction::Right:
-			right += (float)condition_value * x_length;
-			quad = {
-				Gridvertex(left, bottom, 0.0f, 0.0f),
-				Gridvertex(left, top, 0.0f, 1.0f),
-				Gridvertex(right, top, 1.0f, 1.0f),
-				Gridvertex(right, bottom, 1.0f, 0.0f)
-			};
-			break;
-		}
-	
-		m_arrow_quad.bufferDataFromArray(quad.data(), quad_index,
-			(GLsizei)(4 * sizeof(Gridvertex)),
-			(GLsizei)(4 * sizeof(unsigned int)),
-			GL_QUADS);
-		m_arrow_quad.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
-	
-		m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
-		m_arrow_prgm.use();
-		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glm::mat4 proj_mat = glm::perspective(45.0f, (float)m_window_width / (float)m_window_height, 0.1f, 1000.0f);
-		glm::mat4 model_mat = glm::mat4(1.0f);
-		glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
-		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
-		m_arrow_prgm.setUniform("mvp_matrix", mvp_mat);
-		m_arrow_prgm.setUniform("arrowTexture", 0);
-		glActiveTexture(GL_TEXTURE0);
-		m_arrow.bindTexture();
-	
-		m_arrow_quad.draw();
-	}	
 }
+
+void CavityRenderer::drawBoundaryGlyphs()
+{
+}
+
+void CavityRenderer::postProcessing()
+{
+}
+
+//void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece)
+//{
+//	Range range(boundarypiece.range);
+//	// Boundary::Grid grid_type(boundarypiece.gridtype);
+//	Boundary::Direction dir(boundarypiece.direction);
+//	Real condition_value(boundarypiece.condition_value);
+//	// Boundary::Condition cond(boundarypiece.condition);
+//
+//	if (load_img)
+//	{
+//		unsigned long begin_pos;
+//		int x_dim, y_dim;
+//		char* m_img_data;
+//		readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
+//		m_img_data = new char[x_dim * y_dim * 3];
+//		readPpmData("arrow.ppm", m_img_data, begin_pos, x_dim, y_dim);
+//
+//		m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
+//
+//		delete(m_img_data); 
+//		load_img = false;
+//	}
+//
+//	float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
+//	float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
+//	std::vector<Gridvertex> quad;
+//	unsigned int quad_index[] =
+//	{
+//		1, 0, 3, 2
+//	};
+//	for_range(i, j, range)
+//	{
+//		float pos[] = { (float)(i-1) * x_length + x_length / 2.0f, (float)(j-1) * y_length + y_length/2.0f };
+//	
+//		float left = (pos[0] - x_length / 2.0f);
+//		float bottom = (pos[1] - y_length / 2.0f);
+//		float right = (pos[0] + x_length / 2.0f);
+//		float top = (pos[1] + y_length / 2.0f);
+//	
+//		switch (dir)
+//		{
+//		case Boundary::Direction::Up:
+//			top += (float)condition_value * y_length;
+//			quad = {
+//				Gridvertex(left, bottom, 0.0f, 1.0f),
+//				Gridvertex(left, top, 1.0f, 1.0f),
+//				Gridvertex(right, top, 1.0f, 0.0f),
+//				Gridvertex(right, bottom, 0.0f, 0.0f)
+//			};
+//			break;
+//		case Boundary::Direction::Down:
+//			bottom -= (float)condition_value * y_length;
+//			quad = {
+//				Gridvertex(left, bottom, 1.0f, 1.0f),
+//				Gridvertex(left, top, 0.0f, 1.0f),
+//				Gridvertex(right, top, 0.0f, 0.0f),
+//				Gridvertex(right, bottom, 1.0f, 0.0f)
+//			};
+//			break;
+//		case Boundary::Direction::Left:
+//			left -= (float)condition_value * x_length;
+//			quad = {
+//				Gridvertex(left, bottom, 1.0f, 0.0f),
+//				Gridvertex(left, top, 1.0f, 1.0f),
+//				Gridvertex(right, top, 0.0f, 1.0f),
+//				Gridvertex(right, bottom, 0.0f, 0.0f)
+//			};
+//			break;
+//		case Boundary::Direction::Right:
+//			right += (float)condition_value * x_length;
+//			quad = {
+//				Gridvertex(left, bottom, 0.0f, 0.0f),
+//				Gridvertex(left, top, 0.0f, 1.0f),
+//				Gridvertex(right, top, 1.0f, 1.0f),
+//				Gridvertex(right, bottom, 1.0f, 0.0f)
+//			};
+//			break;
+//		}
+//	
+//		m_arrow_quad.bufferDataFromArray(quad.data(), quad_index,
+//			(GLsizei)(4 * sizeof(Gridvertex)),
+//			(GLsizei)(4 * sizeof(unsigned int)),
+//			GL_QUADS);
+//		m_arrow_quad.setVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(Gridvertex), 0);
+//	
+//		m_cam_sys.Translation(glm::vec3(0.0f, 0.0f, -1.0f), m_cam_sys.GetCamPos().z - m_zoom);
+//		m_arrow_prgm.use();
+//		glEnable(GL_TEXTURE_2D);
+//		glEnable(GL_BLEND);
+//		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//		glm::mat4 proj_mat = glm::perspective(45.0f, (float)m_window_width / (float)m_window_height, 0.1f, 1000.0f);
+//		glm::mat4 model_mat = glm::mat4(1.0f);
+//		glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
+//		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+//		m_arrow_prgm.setUniform("mvp_matrix", mvp_mat);
+//		m_arrow_prgm.setUniform("arrowTexture", 0);
+//		glActiveTexture(GL_TEXTURE0);
+//		m_arrow.bindTexture();
+//	
+//		m_arrow_quad.draw();
+//	}	
+//}
+
+
+/**
+ * Example for a callback function that is used in addButtonParam
+ */
+void TW_CALL Callback(void *clientData)
+{
+	if(clientData)
+		clientData=NULL;
+	// do something
+}
+
+//void TW_CALL RemoveBoundaryPiece(void* clientData)
+//{
+//	CavityRenderer* cr = (CavityRenderer*)clientData;
+//	cr->setMaxBoundaryPiece(cr->getMaxBoundaryPiece() - 1);
+//	cr->deleteBoundaryPiece(cr->getBoundaryPieceIndex());
+//}
+
+//void TW_CALL ModifyBoundaryPiece(void* clientData)
+//{
+//	CavityRenderer* cr = (CavityRenderer*)clientData;
+//	cr->modifyBoundaryPieceParams(cr->getBoundaryPieceIndex());
+//}
+
+//void TW_CALL BoundaryPiece(void* clientData)
+//{
+//	CavityRenderer* cr = (CavityRenderer*)clientData;
+//	cr->setMaxBoundaryPiece(cr->getMaxBoundaryPiece() + 1);
+//	Boundary::Direction dir;
+//	Boundary::Condition cond;
+//	Boundary::Grid grid;
+//	Real value;
+//	int i_begin;
+//	int i_end;
+//	int j_begin;
+//	int j_end;
+//	cr->getBoundaryPieceParams(dir, cond, grid, value, i_begin, i_end, j_begin, j_end);
+//	Index begin = Index(i_begin, j_begin);
+//	Index end = Index(i_end, j_end);
+//	Range range = Range(begin, end);
+//	cr->addBoundaryPiece(Boundary::BoundaryPiece(dir, cond, grid, value, range));
+//	cr->showBoundaryPiece(cr->getMaxBoundaryPiece() - 1);
+//}
+
+void TW_CALL Bake(void* clientData)
+{
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+
+	// this ones job will be to push updates simulation parameters to communication queue
+}
+
+//void CavityRenderer::addBoundaryPieceToBar(std::string mode)
+//{
+//	TwEnumVal direction_enum[] = {
+//		{ (int)Boundary::Direction::Down, "Down" },
+//		{ (int)Boundary::Direction::Left, "Left" },
+//		{ (int)Boundary::Direction::Right, "Right" },
+//		{ (int)Boundary::Direction::Up, "Up" }
+//	};
+//	m_direction_enum = Boundary::Direction::Down;
+//	addEnumParam("Direction", "DirectionType", &m_direction_enum, direction_enum, 4, mode);
+//
+//	TwEnumVal condition_enum[] = {
+//		{ (int)Boundary::Condition::NOSLIP, "NOSLIP" },
+//		{ (int)Boundary::Condition::INFLOW, "INFLOW" },
+//		{ (int)Boundary::Condition::OUTFLOW, "OUTFLOW" },
+//		{ (int)Boundary::Condition::SLIP, "SLIP" }
+//	};
+//	m_condition_enum = Boundary::Condition::NOSLIP;
+//	addEnumParam("Condition", "ConditionType", &m_condition_enum, condition_enum, 4, mode);
+//
+//	TwEnumVal grid_enum[] = {
+//		{ (int)Boundary::Grid::U, "U" },
+//		{ (int)Boundary::Grid::V, "V" },
+//		{ (int)Boundary::Grid::P, "P" },
+//		{ (int)Boundary::Grid::F, "F" },
+//		{ (int)Boundary::Grid::G, "G" }
+//	};
+//	m_grid_enum = Boundary::Grid::U;
+//	addEnumParam("Grid", "GridType", &m_grid_enum, grid_enum, 5, mode);
+//	Real test; float __float; double __double;
+//	const char* _double = typeid(__double).name();
+//	const char* _float = typeid(__float).name();
+//	if (strcmp(typeid(test).name(), _double) == 0)
+//		addDoubleParam("m_condition_value", " step=0.1 label='Condition Value' ", &m_condition_value, mode);
+//	if (strcmp(typeid(test).name(), _float) == 0)
+//		addFloatParam("m_condition_value", " step=0.1 label='Condition Value' ", &m_condition_value, mode);
+//	addIntParam("m_i_begin", " label='i begin' ", &m_i_begin, mode);
+//	addIntParam("m_i_end", " label='i end' ", &m_i_end, mode);
+//	addIntParam("m_j_begin", " label='j begin' ", &m_j_begin, mode);
+//	addIntParam("m_j_end", " label='j end' ", &m_j_end, mode);
+//}
+
+//void CavityRenderer::showBoundaryPiece(unsigned int index)
+//{
+//	if (!m_boundary_conditions.empty() && !m_modify_cond)
+//	{
+//		m_direction_enum = m_boundary_conditions.at(index).direction;
+//		m_condition_enum = m_boundary_conditions.at(index).condition;
+//		m_grid_enum = m_boundary_conditions.at(index).gridtype;
+//		m_condition_value = m_boundary_conditions.at(index).condition_value;
+//		m_i_begin = m_boundary_conditions.at(index).range.begin[0];
+//		m_j_begin = m_boundary_conditions.at(index).range.begin[1];
+//		m_i_end = m_boundary_conditions.at(index).range.end[0];
+//		m_j_end = m_boundary_conditions.at(index).range.end[1];
+//
+//		modifyIntParam("m_nmbr_boundary_piece", 0, m_max_boundary_piece - 1);
+//		drawBoundaryCondition(m_boundary_conditions.at(index));
+//	}
+//}
+
+//void CavityRenderer::modifyBoundaryPieceParams(unsigned int index)
+//{
+//	if (!m_boundary_conditions.empty())
+//	{
+//		m_boundary_conditions.at(index).direction = m_direction_enum;
+//		m_boundary_conditions.at(index).condition = m_condition_enum;
+//		m_boundary_conditions.at(index).gridtype = m_grid_enum;
+//		m_boundary_conditions.at(index).condition_value = m_condition_value;
+//		m_boundary_conditions.at(index).range.begin[0] = m_i_begin;
+//		m_boundary_conditions.at(index).range.begin[1] = m_j_begin;
+//		m_boundary_conditions.at(index).range.end[0] = m_i_end;
+//		m_boundary_conditions.at(index).range.end[1] = m_j_end;
+//	}
+//}
+
+void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, std::string mode, float min, float max)
+{
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_FLOAT, var, def);
+		TwSetParam(bar, name, "min", TW_PARAM_FLOAT, 1, &min);
+		TwSetParam(bar, name, "max", TW_PARAM_FLOAT, 1, &max);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_FLOAT, var, def);
+	}
+}
+
+void CavityRenderer::addDoubleParam(const char* name, const char* def, void* var, std::string mode, double min, double max)
+{
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_DOUBLE, var, def);
+		TwSetParam(bar, name, "min", TW_PARAM_DOUBLE, 1, &min);
+		TwSetParam(bar, name, "max", TW_PARAM_DOUBLE, 1, &max);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_DOUBLE, var, def);
+	}
+}
+
+void CavityRenderer::addIntParam(const char* name, const char* def, void* var, std::string mode, int min, int max)
+{
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_INT32, var, def);
+		TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
+		TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_INT32, var, def);
+	}
+}
+
+void CavityRenderer::addBoolParam(const char* name, const char* def, void* var, std::string mode)
+{
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_BOOL32, var, def);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_BOOL32, var, def);
+	}
+}
+
+void CavityRenderer::addVec3Param(const char* name, const char* def, void* var, std::string mode)
+{
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_DIR3F, var, def);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_DIR3F, var, def);
+	}
+}
+
+void CavityRenderer::addButtonParam(const char* name, const char* def, TwButtonCallback callback)
+{
+	TwAddButton(bar, name, callback, this, def);
+}
+
+void CavityRenderer::addStringParam(const char* name, const char* def, void* var, std::string mode)
+{
+	if (mode == "RW")
+	{
+		TwAddVarRW(bar, name, TW_TYPE_CDSTRING, var, def);
+	}
+	if (mode == "RO")
+	{
+		TwAddVarRO(bar, name, TW_TYPE_CDSTRING, var, def);
+	}
+}
+
+void CavityRenderer::addEnumParam(const char* name, const char* def, void* var, TwEnumVal* _enum, int size, std::string mode)
+{
+	TwType enumType = TwDefineEnum(def, _enum, size);
+	if (mode == "RW") TwAddVarRW(bar, name, enumType, var, NULL);
+	if (mode == "RO") TwAddVarRO(bar, name, enumType, var, NULL);
+}
+
+void CavityRenderer::modifyIntParam(const char* name, int min, int max)
+{
+	TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
+	TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
+}
+
+void CavityRenderer::removeParam(const char* name)
+{
+	TwRemoveVar(bar, name);
+}
+
 
 const std::string CavityRenderer::readShaderFile(const char* const path)
 {
@@ -735,6 +961,7 @@ bool CavityRenderer::readPpmHeader(const char* filename, unsigned long& headerEn
 	file.close();
 	return true;
 }
+
 bool CavityRenderer::readPpmData(const char* filename, char* imageData, unsigned long dataBegin, int imgDimX, int imgDimY)
 {
 	std::ifstream file(filename, std::ios::in | std::ios::binary);
@@ -771,180 +998,4 @@ bool CavityRenderer::readPpmData(const char* filename, char* imageData, unsigned
 	file.close();
 	delete[] buffer;
 	return true;
-}
-
-void CavityRenderer::addBoundaryPieceToBar(std::string mode)
-{
-	TwEnumVal direction_enum[] = {
-		{ (int)Boundary::Direction::Down, "Down" },
-		{ (int)Boundary::Direction::Left, "Left" },
-		{ (int)Boundary::Direction::Right, "Right" },
-		{ (int)Boundary::Direction::Up, "Up" }
-	};
-	m_direction_enum = Boundary::Direction::Down;
-	addEnumParam("Direction", "DirectionType", &m_direction_enum, direction_enum, 4, mode);
-
-	TwEnumVal condition_enum[] = {
-		{ (int)Boundary::Condition::NOSLIP, "NOSLIP" },
-		{ (int)Boundary::Condition::INFLOW, "INFLOW" },
-		{ (int)Boundary::Condition::OUTFLOW, "OUTFLOW" },
-		{ (int)Boundary::Condition::SLIP, "SLIP" }
-	};
-	m_condition_enum = Boundary::Condition::NOSLIP;
-	addEnumParam("Condition", "ConditionType", &m_condition_enum, condition_enum, 4, mode);
-
-	TwEnumVal grid_enum[] = {
-		{ (int)Boundary::Grid::U, "U" },
-		{ (int)Boundary::Grid::V, "V" },
-		{ (int)Boundary::Grid::P, "P" },
-		{ (int)Boundary::Grid::F, "F" },
-		{ (int)Boundary::Grid::G, "G" }
-	};
-	m_grid_enum = Boundary::Grid::U;
-	addEnumParam("Grid", "GridType", &m_grid_enum, grid_enum, 5, mode);
-	Real test; float __float; double __double;
-	const char* _double = typeid(__double).name();
-	const char* _float = typeid(__float).name();
-	if (strcmp(typeid(test).name(), _double) == 0)
-		addDoubleParam("m_condition_value", " step=0.1 label='Condition Value' ", &m_condition_value, mode);
-	if (strcmp(typeid(test).name(), _float) == 0)
-		addFloatParam("m_condition_value", " step=0.1 label='Condition Value' ", &m_condition_value, mode);
-	addIntParam("m_i_begin", " label='i begin' ", &m_i_begin, mode);
-	addIntParam("m_i_end", " label='i end' ", &m_i_end, mode);
-	addIntParam("m_j_begin", " label='j begin' ", &m_j_begin, mode);
-	addIntParam("m_j_end", " label='j end' ", &m_j_end, mode);
-}
-
-void CavityRenderer::showBoundaryPiece(unsigned int index)
-{
-	if (!m_boundary_conditions.empty() && !m_modify_cond)
-	{
-		m_direction_enum = m_boundary_conditions.at(index).direction;
-		m_condition_enum = m_boundary_conditions.at(index).condition;
-		m_grid_enum = m_boundary_conditions.at(index).gridtype;
-		m_condition_value = m_boundary_conditions.at(index).condition_value;
-		m_i_begin = m_boundary_conditions.at(index).range.begin[0];
-		m_j_begin = m_boundary_conditions.at(index).range.begin[1];
-		m_i_end = m_boundary_conditions.at(index).range.end[0];
-		m_j_end = m_boundary_conditions.at(index).range.end[1];
-
-		modifyIntParam("m_nmbr_boundary_piece", 0, m_max_boundary_piece - 1);
-		drawBoundaryCondition(m_boundary_conditions.at(index));
-	}
-}
-
-void CavityRenderer::modifyBoundaryPieceParams(unsigned int index)
-{
-	if (!m_boundary_conditions.empty())
-	{
-		m_boundary_conditions.at(index).direction = m_direction_enum;
-		m_boundary_conditions.at(index).condition = m_condition_enum;
-		m_boundary_conditions.at(index).gridtype = m_grid_enum;
-		m_boundary_conditions.at(index).condition_value = m_condition_value;
-		m_boundary_conditions.at(index).range.begin[0] = m_i_begin;
-		m_boundary_conditions.at(index).range.begin[1] = m_j_begin;
-		m_boundary_conditions.at(index).range.end[0] = m_i_end;
-		m_boundary_conditions.at(index).range.end[1] = m_j_end;
-	}
-}
-
-void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, std::string mode, float min, float max)
-{
-	if (mode == "RW")
-	{
-		TwAddVarRW(bar, name, TW_TYPE_FLOAT, var, def);
-		TwSetParam(bar, name, "min", TW_PARAM_FLOAT, 1, &min);
-		TwSetParam(bar, name, "max", TW_PARAM_FLOAT, 1, &max);
-	}
-	if (mode == "RO")
-	{
-		TwAddVarRO(bar, name, TW_TYPE_FLOAT, var, def);
-	}
-}
-
-void CavityRenderer::addDoubleParam(const char* name, const char* def, void* var, std::string mode, double min, double max)
-{
-	if (mode == "RW")
-	{
-		TwAddVarRW(bar, name, TW_TYPE_DOUBLE, var, def);
-		TwSetParam(bar, name, "min", TW_PARAM_DOUBLE, 1, &min);
-		TwSetParam(bar, name, "max", TW_PARAM_DOUBLE, 1, &max);
-	}
-	if (mode == "RO")
-	{
-		TwAddVarRO(bar, name, TW_TYPE_DOUBLE, var, def);
-	}
-}
-
-void CavityRenderer::addIntParam(const char* name, const char* def, void* var, std::string mode, int min, int max)
-{
-	if (mode == "RW")
-	{
-		TwAddVarRW(bar, name, TW_TYPE_INT32, var, def);
-		TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
-		TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
-	}
-	if (mode == "RO")
-	{
-		TwAddVarRO(bar, name, TW_TYPE_INT32, var, def);
-	}
-}
-
-void CavityRenderer::addBoolParam(const char* name, const char* def, void* var, std::string mode)
-{
-	if (mode == "RW")
-	{
-		TwAddVarRW(bar, name, TW_TYPE_BOOL32, var, def);
-	}
-	if (mode == "RO")
-	{
-		TwAddVarRO(bar, name, TW_TYPE_BOOL32, var, def);
-	}
-}
-
-void CavityRenderer::addVec3Param(const char* name, const char* def, void* var, std::string mode)
-{
-	if (mode == "RW")
-	{
-		TwAddVarRW(bar, name, TW_TYPE_DIR3F, var, def);
-	}
-	if (mode == "RO")
-	{
-		TwAddVarRO(bar, name, TW_TYPE_DIR3F, var, def);
-	}
-}
-
-void CavityRenderer::addButtonParam(const char* name, const char* def, TwButtonCallback callback)
-{
-	TwAddButton(bar, name, callback, this, def);
-}
-
-void CavityRenderer::addStringParam(const char* name, const char* def, void* var, std::string mode)
-{
-	if (mode == "RW")
-	{
-		TwAddVarRW(bar, name, TW_TYPE_CDSTRING, var, def);
-	}
-	if (mode == "RO")
-	{
-		TwAddVarRO(bar, name, TW_TYPE_CDSTRING, var, def);
-	}
-}
-
-void CavityRenderer::addEnumParam(const char* name, const char* def, void* var, TwEnumVal* _enum, int size, std::string mode)
-{
-	TwType enumType = TwDefineEnum(def, _enum, size);
-	if (mode == "RW") TwAddVarRW(bar, name, enumType, var, NULL);
-	if (mode == "RO") TwAddVarRO(bar, name, enumType, var, NULL);
-}
-
-void CavityRenderer::modifyIntParam(const char* name, int min, int max)
-{
-	TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
-	TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
-}
-
-void CavityRenderer::removeParam(const char* name)
-{
-	TwRemoveVar(bar, name);
 }

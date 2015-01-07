@@ -3,8 +3,10 @@
 #include "src/Debug.hpp"
 
 #include "src/Bakery.hpp"
+#include "src/CavityRenderer.hpp"
 
 #include <string>
+#include <thread>
 #include <iostream>
 
 
@@ -231,42 +233,55 @@ void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters
 	newsp.re = clisp.re;
 }
 
+/**
+ * Helper function that encloses complete OpenGL execution.
+ * If done like this, we don't have to clean up OpenGL objects explicitly.
+ */
+void runVisualization(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationParameters>& outbox,
+	int window_width, int window_height, SimulationParameters& initial_params)
+{
+	//CavityRenderer cavity_renderer(inbox,outbox);
+	CavityRenderer cavity_renderer(inbox,outbox);
+	cavity_renderer.initBakeryVis(window_width,window_height,initial_params);
+	cavity_renderer.paint();
+}
+
 int main(int argc, char** argv)
 {
 	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
 
 	SimulationParameters simparam;
-	bool gui = false;
+	bool gui = true;
 	int setting = -1;
 	Real inflowVal = 0.0;
 
 	/* TODO: 
 	 * please set simparam.* parameters manually here: */
 	setting = 4;
-	inflowVal = 0.025;
+	inflowVal = 0.5;
 	simparam.xLength = 1.0;
 	simparam.yLength = 5.0;
-	simparam.iMax = 60;
-	simparam.jMax = 60 * 5;
+	simparam.iMax = 500;
+	simparam.jMax = 100;
 	simparam.re = 1000;
-	simparam.iterMax = 500;
+	simparam.iterMax = 1000;
 
 	/* parse cli values: use gui? inputvals-filename? what other values to set? */
-	initCLI(setting, gui, simparam, argc, argv); /* disabled in windows */
+	//initCLI(setting, gui, simparam, argc, argv); /* disabled in windows */
 
-	switch(setting)
-	{
-		case 0: /* Driven Cavity */
-			inflowVal = 1.0;
-		case 1: /* ChannelFlow */
-		case 2: /* ChannelFlow Upper Half */
-		case 3: /* Step Flow */
-		case 4: /* Karman Object Street */
-			inflowVal = 0.5;
-			break;
-		default: /* all other: fail */
-			break;
-	}
+	//switch(setting)
+	//{
+	//	case 0: /* Driven Cavity */
+	//		inflowVal = 1.0;
+	//	case 1: /* ChannelFlow */
+	//	case 2: /* ChannelFlow Upper Half */
+	//	case 3: /* Step Flow */
+	//	case 4: /* Karman Object Street */
+	//		inflowVal = 0.5;
+	//		break;
+	//	default: /* all other: fail */
+	//		break;
+	//}
 
 	/* let bakery create boundaries 'n stuff using start simparams */
 
@@ -284,24 +299,32 @@ int main(int argc, char** argv)
 
 	/* maybe give simparams to gui - gui feedback? */
 
-	//if(gui)
-	//{
-	//	/**
-	//	 * This is just a test but the range should
-	//	 * match the inner range of p.
-	//	 */
-	//	Index begin = Index(1, 1);
-	//	Index end = Index(newparam.iMax, newparam.jMax);
-	//	Range range = Range(begin, end);
+	if(gui)
+	{
+		/**
+		 * This is just a test but the range should
+		 * match the inner range of p.
+		 */
+		Index begin = Index(1, 1);
+		Index end = Index(newparam.iMax, newparam.jMax);
+		Range range = Range(begin, end);
 
-	//	CavityRenderer cavity_renderer;
-	//	if (cavity_renderer.initBakeryVis(640, 480, newparam))
-	//	{
-	//		cavity_renderer.createGrid(range);
-	//		cavity_renderer.paint();
-	//	}
-	//	/* TODO: get/verwrite newparams from gui */
-	//}
+		MTQueue<SimulationParameters> outbox;
+		MTQueue<SimulationParameters> inbox;
+
+		// Create renderer. Obviously the renderer's inbox is the outbox on this side.
+		
+		std::thread render_thread(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, newparam);
+
+		/* TODO: get/overwrite newparams from gui */
+		//while(true)
+		//{
+		//	SimulationParameters received_params;
+		//	inbox.pop(received_params);
+		//}
+
+		render_thread.join();
+	}
 
 	if(newparam.name == "")
 	{
