@@ -157,7 +157,27 @@ void VTKOutput::writeVTKSingleFile()
 		}
 		os << std::endl;
 	}
+
+	/* write the vorticity */
 	os 
+	<< "</DataArray>" << std::endl
+	<< "<DataArray type=\"Float64\" Name=\"P\" format=\"ascii\">" << std::endl;
+	
+	Range p_inner = domain.getWholeInnerRange();
+	Range v_inner = Range(p_inner.begin, Index(p_inner.end.i - 1, p_inner.end.j - 1));
+	for (int j = v_inner.begin.j; j <= v_inner.end.j; j++)
+	{
+		for (int i = v_inner.begin.i; i <= v_inner.end.i; i++)
+		{
+			os 
+			<< std::scientific << 
+			(domain.u()(i, j + 1) - domain.u()(i, j)) / domain.getDelta().y -
+			(domain.v()(i + 1, j) - domain.v()(i, j)) / domain.getDelta().x;
+		}
+		os << std::endl;
+	}
+
+	os
 	<< "</DataArray>" << std::endl
 	<< "</PointData>" << std::endl
 	

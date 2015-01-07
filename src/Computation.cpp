@@ -118,7 +118,31 @@ namespace Computation
 		}
 	}
 
+	void computeVorticity(
+		GridFunction& vorticity,
+		Domain domain)
+	{
+		GridFunction u = domain.u();
+		GridFunction v = domain.v();
+		Real delta_x = domain.getDelta().x;
+		Real delta_y = domain.getDelta().y;
+		Range p_inner = domain.getWholeInnerRange();
+		Range v_inner = Range(p_inner.begin, Index(p_inner.end.i - 1, p_inner.end.j - 1));
+		for_range(i, j, v_inner)
+		{
+			vorticity(i, j) = (u(i, j + 1) - u(i, j)) / delta_y - (v(i + 1, j) - v(i, j)) / delta_x;
+		}
 
+		//Range u_inner = Range(p_inner.begin, Index(p_inner.end.i - 1, p_inner.end.j));
+		//Range v_inner = Range(p_inner.begin, Index(p_inner.end.i, p_inner.end.j - 1));
+		//for (int i = u_inner.begin.i; i <= u_inner.end.i; i++)
+		//{
+		//	for (int j = v_inner.begin.j; j <= v_inner.end.j; j++)
+		//	{
+		//		vorticity(i, j) = (u(i, j + 1) - u(i, j)) / delta_y - (v(i + 1, j) - v(i, j)) / delta_x;
+		//	}
+		//}
+	}
 };
 
 
