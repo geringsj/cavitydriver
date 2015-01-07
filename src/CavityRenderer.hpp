@@ -27,12 +27,12 @@ private:
 		//! and up-vector (0,1,0) forward-vector (0,0,1) and right-vector (1,0,0)
 		CameraSystem()
 			: cam_pos(), up_vector(0.0f,1.0f,0.0f), forward_vector(0.0f,0.0f,1.0f),
-			right_vector(1.0f,0.0f,0.0f), center(), translation(1.0), rotation(1.0),
+			right_vector(1.0f,0.0f,0.0f), translation(1.0), rotation(1.0),
 			m_aspect_ratio(16.0/9.0), m_field_of_view(60.0/m_aspect_ratio) {}
 		//! constructor creates a camera system with the given parameters
 		CameraSystem(glm::vec3 p_cam_pos,glm::vec3 p_up_vector,glm::vec3 p_forward_vector,glm::vec3 p_right_vector)
 			: cam_pos(p_cam_pos), up_vector(p_up_vector), forward_vector(p_forward_vector),
-			right_vector(p_right_vector), center(), translation(1.0), rotation(1.0),
+			right_vector(p_right_vector), translation(1.0), rotation(1.0),
 			m_aspect_ratio(16.0/9.0), m_field_of_view(60.0/m_aspect_ratio) {}
 		~CameraSystem() {};
 		//! rotation around (up,forward,right)-vector v with angle alpha (in degree)
@@ -42,28 +42,25 @@ private:
 			up_vector = glm::vec3(rotation * glm::vec4(up_vector,1.0f));
 			forward_vector = glm::vec3(rotation * glm::vec4(forward_vector,1.0));
 			right_vector =  glm::vec3(rotation * glm::vec4(right_vector,1.0));
-			center = glm::vec3(rotation * glm::vec4(center,1.0));
 		}
 		//! translation with a step in (up,forward,right)-vector direction
 		void Translation(glm::vec3 t, float step_size)
 		{
 			translation = glm::translate(glm::mat4(1.0f),step_size*t);
 			cam_pos = glm::vec3(translation * glm::vec4(cam_pos,1.0f));
-			center = glm::vec3(translation * glm::vec4(center,1.0));
 		}
 		void zoom(float factor) { m_field_of_view = (60.0/m_aspect_ratio) * factor; }
 		//! return the view matrix
-		glm::mat4 GetViewMatrix() { return glm::lookAt(cam_pos,center,up_vector); }
+		glm::mat4 GetViewMatrix() { return glm::lookAt(cam_pos,cam_pos+forward_vector,up_vector); }
 		//! returns the camera position
 		glm::vec3 GetCamPos() { return cam_pos; }
+		glm::vec3& accessCamPos() { return cam_pos; }
 		//! returns the up-vector
 		glm::vec3 GetUpVector() { return up_vector; }
 		//! returns the forwards vector
 		glm::vec3 GetForwardVector() { return forward_vector; }
 		//! returns the right vector
 		glm::vec3 GetRightVector() { return right_vector; }
-		//! returns the center vector
-		glm::vec3 GetCenterVector() { return center; }
 		float getFieldOfView() { return m_field_of_view; }
 		float& accessFieldOfView() { return m_field_of_view; }
 		float getAspectRatio() { return m_aspect_ratio; }
@@ -77,8 +74,6 @@ private:
 		glm::vec3 forward_vector;
 		//! stores the right vector
 		glm::vec3 right_vector;
-		//! stores the center vector, i.e. the positin we look at in world space
-		glm::vec3 center;
 		//! stores the translation
 		glm::mat4 translation;
 		//! stores the rotation
