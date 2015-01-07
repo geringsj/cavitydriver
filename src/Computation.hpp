@@ -123,11 +123,6 @@ namespace Computation
 			const Real deltaT
 			/**< Time step as computed by Computation::computeTimestep. */
 			);
-
-	void computeVorticity(
-			GridFunction& vorticity,
-			Domain domain
-			);
 };
 
 #endif

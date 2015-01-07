@@ -5,7 +5,6 @@
 
 #include "Domain.hpp"
 #include "Communication.hpp"
-#include "Computation.hpp"
 
 #include <algorithm>
 #include <string>
