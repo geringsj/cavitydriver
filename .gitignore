@@ -7,6 +7,7 @@
 #out/*
 out*/
 documentation/*
+external/*
 
 # linux workspace specific files
 .vimtags

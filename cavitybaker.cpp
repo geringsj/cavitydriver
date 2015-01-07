@@ -1,9 +1,10 @@
-#include "src/Bakery.hpp"
 #include "src/SimulationParameters.hpp"
-//#include "src/CavityRenderer.hpp"
 #include "src/Debug.hpp"
+#include "src/Bakery.hpp"
+#include "src/CavityRenderer.hpp"
 
 #include <string>
+#include <thread>
 #include <iostream>
 
 #include "optionparser.h"
@@ -99,7 +100,7 @@ Options:)" },
  {ITERMAX, 0, "", "iterMax", NonEmpty,
 "  --iterMax=INT  \tMaximum number of iterations for SOR solver. [default: 100]" },
  {RE, 0, "", "re", NonEmpty,
-"  --re=INT  \tReynolds number to be used. [default: 1000]" },
+"  --re=FLOAT\tReynolds number to be used. [default: 1000.0]" },
  {GX, 0, "", "gx", NonEmpty,
 "  --gx=FLOAT  \tExternal force in x direction. [default: 0.0]" },
  {GY, 0, "", "gy", NonEmpty,
@@ -289,53 +290,66 @@ void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters
 	newsp.re = clisp.re;
 }
 
+/**
+ * Helper function that encloses complete OpenGL execution.
+ * If done like this, we don't have to clean up OpenGL objects explicitly.
+ */
+void runVisualization(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationParameters>& outbox,
+	int window_width, int window_height, SimulationParameters& initial_params)
+{
+	//CavityRenderer cavity_renderer(inbox,outbox);
+	CavityRenderer cavity_renderer(inbox,outbox);
+	cavity_renderer.initBakeryVis(window_width,window_height,initial_params);
+	cavity_renderer.paint();
+}
+
 int main(int argc, char** argv)
 {
 	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
 
 	SimulationParameters simparam;
-	bool gui = false;
+	bool gui = true;
 	int setting = -1;
 	Real inflowVal = 0.0;
 
 	/* parse cli values: use gui? inputvals-filename? what other values to set? */
-	if(int doexit = initCLI(setting, gui, inflowVal, simparam, argc, argv) ) /* disabled in windows */
+	if(int doexit = initCLI(setting, gui, inflowVal, simparam, argc, argv) )
 		exit(doexit-1);
 
 	/* let bakery create boundaries 'n stuff using start simparams */
-
-	/**
-	 * Karman:
-	 * Re: 1000, max iter: 5000
-	 * Step:
-	 * Re: 1000, max iter:  100
-	 */
 	SimulationParameters newparam = Bakery::get(static_cast<Bakery::Setting>(setting), inflowVal, simparam);
 	newparam.useComplexGeometry = setting;
 
 	/* replace non-domain parameters in new simparams, to overwrite init-defaults */
 	overwritePostBakeryParams(newparam, simparam);
 
-	/* maybe give simparams to gui - gui feedback? */
+	/* give simparams to gui - gui feedback? */
+	if(gui)
+	{
+		/**
+		 * This is just a test but the range should
+		 * match the inner range of p.
+		 */
+		//Index begin = Index(1, 1);
+		//Index end = Index(newparam.iMax, newparam.jMax);
+		//Range range = Range(begin, end);
 
-	//if(gui)
-	//{
-	//	/**
-	//	 * This is just a test but the range should
-	//	 * match the inner range of p.
-	//	 */
-	//	Index begin = Index(1, 1);
-	//	Index end = Index(newparam.iMax, newparam.jMax);
-	//	Range range = Range(begin, end);
+		MTQueue<SimulationParameters> outbox;
+		MTQueue<SimulationParameters> inbox;
 
-	//	CavityRenderer cavity_renderer;
-	//	if (cavity_renderer.initBakeryVis(640, 480, newparam))
-	//	{
-	//		cavity_renderer.createGrid(range);
-	//		cavity_renderer.paint();
-	//	}
-	//	/* TODO: get/verwrite newparams from gui */
-	//}
+		// Create renderer. Obviously the renderer's inbox is the outbox on this side.
+		
+		std::thread render_thread(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, newparam);
+
+		/* TODO: get/overwrite newparams from gui */
+		//while(true)
+		//{
+		//	SimulationParameters received_params;
+		//	inbox.pop(received_params);
+		//}
+
+		render_thread.join();
+	}
 
 	if(newparam.name == "")
 	{
