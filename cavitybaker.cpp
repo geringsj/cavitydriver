@@ -116,18 +116,24 @@ Options:)" },
 "  --kow=FLOAT  \tWidth of object for Karman Vortex Street SETTING. Will be ignored if other SETTING than 'ObstacleChannelFlow is used. [default: 2.5*5*deltaX]" },
  {INFLOW, 0, "", "inflow", NonEmpty,
 "  --inflow=FLOAT  \tValue of INFLOW boundary condition in all cases. For DrivenCavity this is the U velocity at the upper boundary. For all other settings (the flows), this is the pressure INFLOW at the left boundary, resulting in beeing the pressure difference between left and right boundary. [default: 1.0 in DC / 0.5 in flows]" },
- {UNKNOWN, 0, 0, 0, option::Arg::None, 0 }
+ {UNKNOWN, 0, 0, 0, 0, 0 }
 };
 
 void getMaybeCLIDouble(Real& real, option::Option* options, optionIndex ind)
 {
 	if(options[ind])
+	{
 		real = std::strtod(options[ind].arg,0);
+		std::cout << "[INFO] found " << options[ind].name+2 << std::endl;
+	}
 }
 void getMaybeCLIInt(int& _int, option::Option* options, optionIndex ind)
 {
 	if(options[ind])
+	{
 		_int = std::stoi(options[ind].arg,0);
+		std::cout << "[INFO] found " << options[ind].name+2 << std::endl;
+	}
 }
 
 
@@ -158,11 +164,19 @@ int initCLI(int& setting, bool& gui, Real& inflowVal, SimulationParameters& simp
 		std::cout << "Missing SETTING parameter. Call with '--help' for options.\n";
 		doexit = EXIT_FAILURE+1;
 	}
+	if(parse.nonOptionsCount() > 1)
+	{
+		std::cout << "Too many non-option or unkown parameters, i am confused.\n";
+		for(int i=0; i<parse.nonOptionsCount(); i++)
+			std::cout << "  '" << parse.nonOption(i) << "'\n";
+		doexit = EXIT_FAILURE+1;
+	}
 	if(doexit)
 	{
 		delete[] options; delete[] buffer;
 		return doexit;
 	}
+
 
 	std::string settingstr = std::string(parse.nonOption(0));
 	setting = -1;
@@ -212,8 +226,16 @@ int initCLI(int& setting, bool& gui, Real& inflowVal, SimulationParameters& simp
 		return doexit;
 	}
 
+	if(setting >= 0)
+		std::cout << "[INFO] found SETTING=" << setting << std::endl;
+	if(gui)
+		std::cout << "[INFO] found GUI switch\n";
+
 	if(options[NAME])
+	{
 		simparam.name = std::string(options[NAME].arg);
+		std::cout << "[INFO] found name=" << simparam.name << std::endl;
+	}
 
 	/* overwrite those on pre-bakery processing, because
 	 * bakery uses them */
@@ -322,7 +344,7 @@ int main(int argc, char** argv)
 	else
 	{
 		newparam.writeSettingsFile(newparam.name);
-		log_info("Config file written to \"%s\".", newparam.name.c_str());
+		log_info(">> config file written to \"%s\"", newparam.name.c_str());
 	}
 
 	return 0;
