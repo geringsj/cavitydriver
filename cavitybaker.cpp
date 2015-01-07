@@ -40,7 +40,8 @@ enum optionIndex
 	VI,
 	PI,
 	KA,
-	KOW
+	KOW,
+	INFLOW
 };
 const option::Descriptor usage[] =
 {
@@ -71,48 +72,50 @@ Options:)" },
  {GUI, 0, "g", "gui", option::Arg::None,
 "  -g --gui  \tOpens the OpenGL user interface for interactive parameters input. Only available when program was compiled with OpenGL support." },
  {NAME, 0, "", "name", NonEmpty, 
-"  --name=STRING  \tName of the file in which the configuration parameters will be saved. If no name is given, the parameters file will be written to stdout." },
+"  --name=STRING  \tName of the file in which the configuration parameters will be saved. If no name is given, the parameters file will be written to stdout. [default: no name]" },
 
  {XLENGTH, 0, "", "xLength", NonEmpty,
-"  --xLength=FLOAT  \tLength of domain in x-direction." },
+"  --xLength=FLOAT  \tLength of domain in x-direction. [default: 1.0]" },
  {YLENGTH, 0, "", "yLength", NonEmpty,
-"  --yLength=FLOAT  \tLength of domain in y-direction." },
+"  --yLength=FLOAT  \tLength of domain in y-direction. [default: 1.0 in DC / at least 5.0*xLength in flows]" },
  {IMAX, 0, "", "iMax", NonEmpty,
-"  --iMax=INT  \tNumber of cells the discrete grid will have in x-direction." },
+"  --iMax=INT  \tNumber of cells the discrete grid will have in x-direction. [default: 64]" },
  {JMAX, 0, "", "jMax", NonEmpty,
-"  --jMax=INT  \tNumber of cells the discrete grid will have in y-direction." },
+"  --jMax=INT  \tNumber of cells the discrete grid will have in y-direction. [default: 64]" },
  {TAU, 0, "", "tau", NonEmpty,
-"  --tau=FLOAT  \tScaling factor for timestep computations in (0,1]." },
+"  --tau=FLOAT  \tScaling factor for timestep computations in (0,1]. [default: 0,5]" },
  {TEND, 0, "", "tEnd", NonEmpty,
-"  --tEnd=FLOAT  \tLength of simulation in seconds." },
+"  --tEnd=FLOAT  \tLength of simulation in seconds. [default: 16.5]" },
  {DELTAT, 0, "", "deltaT", NonEmpty,
 "  --deltaT=FLOAT  \tTimestep size. Will be ignored." },
  {DELTAVEC, 0, "", "deltaVec", NonEmpty,
-"  --deltaVec=FLOAT  \tTime between two VTK Outputs of current state of simulation." },
+"  --deltaVec=FLOAT  \tTime in seconds between two VTK Outputs of current state of simulation. [default: 0.2]" },
  {EPS, 0, "", "", NonEmpty,
-"  --eps=FLOAT  \tUpper bound for residual for SOR solver." },
+"  --eps=FLOAT  \tUpper bound for residual for SOR solver. [default: 0.001]" },
  {OMG, 0,  "", "omg", NonEmpty,
-"  --omg=FLOAT  \tOmega factor for SOR calculation." },
+"  --omg=FLOAT  \tOmega factor for SOR calculation. [default: 1.7]" },
  {ALPHA, 0, "", "alpha", NonEmpty,
-"  --alpha=FLOAT  \tMixing factor for Donor-Cell scheme for next velocities." },
+"  --alpha=FLOAT  \tMixing factor for Donor-Cell scheme for next velocities. [default: 0.9]" },
  {ITERMAX, 0, "", "iterMax", NonEmpty,
-"  --iterMax=INT  \tMaximum number of iterations for SOR solver." },
+"  --iterMax=INT  \tMaximum number of iterations for SOR solver. [default: 100]" },
  {RE, 0, "", "re", NonEmpty,
-"  --re=INT  \tReynolds number to be used." },
+"  --re=INT  \tReynolds number to be used. [default: 1000]" },
  {GX, 0, "", "gx", NonEmpty,
-"  --gx=FLOAT  \tExternal force in x direction." },
+"  --gx=FLOAT  \tExternal force in x direction. [default: 0.0]" },
  {GY, 0, "", "gy", NonEmpty,
-"  --gy=FLOAT  \tExternal force in y direction." },
+"  --gy=FLOAT  \tExternal force in y direction. [default: 0.0]" },
  {UI, 0, "", "ui", NonEmpty,
-"  --ui=FLOAT  \tConstant initial value for U-velocity field." },
+"  --ui=FLOAT  \tConstant initial value for U-velocity field. [default: 0.0]" },
  {VI, 0, "", "vi", NonEmpty,
-"  --vi=FLOAT  \tConstant initial value for V-velocity field." },
+"  --vi=FLOAT  \tConstant initial value for V-velocity field. [default: 0.0]" },
  {PI, 0, "", "pi", NonEmpty,
-"  --pi=FLOAT  \tConstant initial value for Pressure field." },
+"  --pi=FLOAT  \tConstant initial value for Pressure field. [default: 0.0]" },
  {KA, 0, "", "ka", NonEmpty,
-"  --ka=FLOAT  \tAngle of object for Karman Vortex Street SETTING specified in radiant. Will be ignored if other SETTING than 'ObstacleChannelFlow is used." },
+"  --ka=FLOAT  \tAngle of object for Karman Vortex Street SETTING specified in radiant. Will be ignored if other SETTING than 'ObstacleChannelFlow is used. [default: 45° in radiant]" },
  {KOW, 0, "", "kow", NonEmpty,
-"  --kow=FLOAT  \tWidth of object for Karman Vortex Street SETTING. Will be ignored if other SETTING than 'ObstacleChannelFlow is used." },
+"  --kow=FLOAT  \tWidth of object for Karman Vortex Street SETTING. Will be ignored if other SETTING than 'ObstacleChannelFlow is used. [default: 2.5*5*deltaX]" },
+ {INFLOW, 0, "", "inflow", NonEmpty,
+"  --inflow=FLOAT  \tValue of INFLOW boundary condition in all cases. For DrivenCavity this is the U velocity at the upper boundary. For all other settings (the flows), this is the pressure INFLOW at the left boundary, resulting in beeing the pressure difference between left and right boundary. [default: 1.0 in DC / 0.5 in flows]" },
  {UNKNOWN, 0, 0, 0, option::Arg::None, 0 }
 };
 
@@ -128,7 +131,7 @@ void getMaybeCLIInt(int& _int, option::Option* options, optionIndex ind)
 }
 
 
-int initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
+int initCLI(int& setting, bool& gui, Real& inflowVal, SimulationParameters& simparam, int argc, char** argv)
 {
 	int doexit = 0;
 	argc-=(argc>0); argv+=(argc>0); // skip program name argv if present
@@ -237,6 +240,21 @@ int initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, c
 	getMaybeCLIDouble(simparam.pi, options, PI);
 	getMaybeCLIInt(simparam.iterMax, options, ITERMAX);
 
+	switch(setting)
+	{
+		case 0: /* Driven Cavity */
+			inflowVal = 1.0;
+		case 1: /* ChannelFlow */
+		case 2: /* ChannelFlow Upper Half */
+		case 3: /* Step Flow */
+		case 4: /* Karman Object Street */
+			inflowVal = 0.5;
+			break;
+		default: /* all other: fail */
+			break;
+	}
+	getMaybeCLIDouble(inflowVal, options, INFLOW);
+
 	delete[] options; delete[] buffer;
 	return doexit;
 }
@@ -259,22 +277,8 @@ int main(int argc, char** argv)
 	Real inflowVal = 0.0;
 
 	/* parse cli values: use gui? inputvals-filename? what other values to set? */
-	if(int doexit = initCLI(setting, gui, simparam, argc, argv) ) /* disabled in windows */
+	if(int doexit = initCLI(setting, gui, inflowVal, simparam, argc, argv) ) /* disabled in windows */
 		exit(doexit-1);
-
-	switch(setting)
-	{
-		case 0: /* Driven Cavity */
-			inflowVal = 1.0;
-		case 1: /* ChannelFlow */
-		case 2: /* ChannelFlow Upper Half */
-		case 3: /* Step Flow */
-		case 4: /* Karman Object Street */
-			inflowVal = 0.5;
-			break;
-		default: /* all other: fail */
-			break;
-	}
 
 	/* let bakery create boundaries 'n stuff using start simparams */
 
