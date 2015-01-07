@@ -151,6 +151,14 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2f; m_window_background_colour[1] = 0.2f; m_window_background_colour[2] = 0.2f;
 
+	m_cam_sys = CameraSystem(
+		glm::vec3(0.0f, 0.0f, 1.0),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f));
+	m_cam_sys.setAspectRatio((float)window_width/(float)window_height);
+	m_cam_sys.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
+
 	m_show_grid = true;
 
 	m_simparams = sim_params;
@@ -176,16 +184,12 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	// Create a tweak bar
 	bar = TwNewBar("CavityBaker-Settings");
 	TwWindowSize(window_width, window_height);
-	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
-	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
 	addIntParam("m_window_width", "label='Window width' group='Window' ", &m_window_width, "RO");
 	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
 	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
 	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_show_grid);
 	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_grid_colour, " label='Grid color' group='Grid' ");
-
-	//TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
 
 	Real test; float __float; double __double;
 	const char* _double = typeid(__double).name();
@@ -275,17 +279,11 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	/* Apparently glewInit() causes a GL ERROR 1280, so let's just catch that... */
 	glGetError();
 
-
-	m_cam_sys = CameraSystem(
-		glm::vec3(0.0f, 0.0f, 1.0),
-		glm::vec3(0.0f, 1.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f),
-		glm::vec3(1.0f, 0.0f, 0.0f));
-
 	// Create resources
 	if(!createGLSLPrograms()) { return false; }
 	if(!createOverlayGrid()) { return false; }
 	if(!createTextures()) { return false; }
+	if(!createFramebuffers()) { return false; }
 
 	return true;
 }
@@ -411,6 +409,11 @@ bool CavityRenderer::createTextures()
 	return true;
 }
 
+bool CavityRenderer::createFramebuffers()
+{
+	return true;
+}
+
 //void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
 //{
 //	m_simparams = sim_params;
@@ -471,6 +474,12 @@ void CavityRenderer::paint()
         glfwPollEvents();
 
 		/* Check for new simparams */
+		SimulationParameters received_params;
+		if(m_inbox.tryPop(received_params))
+		{
+			//TODO overwrite simparams
+			//TODO update grid etc.
+		}
     }
 
 	//TODO cleanup
@@ -615,6 +624,10 @@ void CavityRenderer::postProcessing()
 //	}	
 //}
 
+void CavityRenderer::pushSimParams()
+{
+	m_outbox.push(m_simparams);
+}
 
 /**
  * Example for a callback function that is used in addButtonParam
@@ -664,6 +677,7 @@ void TW_CALL Bake(void* clientData)
 	CavityRenderer* cr = (CavityRenderer*)clientData;
 
 	// this ones job will be to push updates simulation parameters to communication queue
+	cr->pushSimParams();
 }
 
 //void CavityRenderer::addBoundaryPieceToBar(std::string mode)

@@ -317,11 +317,12 @@ int main(int argc, char** argv)
 		std::thread render_thread(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, newparam);
 
 		/* TODO: get/overwrite newparams from gui */
-		//while(true)
-		//{
-		//	SimulationParameters received_params;
-		//	inbox.pop(received_params);
-		//}
+		while(true)
+		{
+			SimulationParameters received_params;
+			inbox.pop(received_params);
+			std::cout<<"I got the goods!"<<std::endl;
+		}
 
 		render_thread.join();
 	}

@@ -66,6 +66,7 @@ private:
 		float getFieldOfView() { return m_field_of_view; }
 		float& accessFieldOfView() { return m_field_of_view; }
 		float getAspectRatio() { return m_aspect_ratio; }
+		void setAspectRatio(float aspect_ratio) { m_aspect_ratio = aspect_ratio; }
 	private:
 		//! stores the camera position
 		glm::vec3 cam_pos;
@@ -112,16 +113,16 @@ public:
 	 */
 	void paint();
 
+	void pushSimParams();
+
 
 	void setWindowSize(int width, int height)
 	{
 		m_window_width=width;
 		m_window_height = height;
+
+		m_cam_sys.setAspectRatio((float)m_window_width/(float)m_window_height);
 	}
-
-
-
-
 
 
 	//void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
@@ -218,6 +219,8 @@ private:
 
 	bool createTextures();
 
+	bool createFramebuffers();
+
 
 	/****************************************************
 	 * Drawing method for the single visualization layers
@@ -237,7 +240,6 @@ private:
 	void drawBoundaryCells();
 
 	void postProcessing();
-
 
 
 
@@ -321,8 +323,8 @@ private:
 	}
 	inline static void windowResizeCallback(GLFWwindow* window, int width, int height)
 	{
-		CavityRenderer* painter = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
-		painter->setWindowSize(width,height);
+		CavityRenderer* renderer = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
+		renderer->setWindowSize(width,height);
 		TwWindowSize(width, height);
 	}
 
