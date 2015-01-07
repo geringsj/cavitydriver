@@ -1,14 +1,11 @@
-//#include "src/CavityRenderer.hpp"
-#include "src/SimulationParameters.hpp"
-#include "src/Debug.hpp"
-
 #include "src/Bakery.hpp"
+#include "src/SimulationParameters.hpp"
+//#include "src/CavityRenderer.hpp"
+#include "src/Debug.hpp"
 
 #include <string>
 #include <iostream>
 
-
-#ifdef __linux__
 #include "optionparser.h"
 static option::ArgStatus NonEmpty(const option::Option& option, bool msg)
 {
@@ -50,6 +47,14 @@ const option::Descriptor usage[] =
 	{UNKNOWN, 0, "", "", option::Arg::None, 
 R"(
 Usage: cavitybaker SETTING [options]
+
+Examples:
+  Generate a driven cavity with RE=500 in a 3x1.5 box:
+    cavitybaker DrivenCavity --re=500 -xLength==3 --yLength=1.5
+
+  Generate a Karman street with object width beeing object 
+  height(=yLength/2) with 1000 max iterations for SOR:
+    cavitybaker 4 --yLength=1 --xLength=5 --kow=0.5 --iterMax=1000
 
 SETTING:
  A name identifying the setting to generate.
@@ -107,7 +112,8 @@ Options:)" },
  {KA, 0, "", "ka", NonEmpty,
 "  --ka=FLOAT  \tAngle of object for Karman Vortex Street SETTING specified in radiant. Will be ignored if other SETTING than 'ObstacleChannelFlow is used." },
  {KOW, 0, "", "kow", NonEmpty,
-"  --kow=FLOAT  \tWidth of object for Karman Vortex Street SETTING. Will be ignored if other SETTING than 'ObstacleChannelFlow is used." }
+"  --kow=FLOAT  \tWidth of object for Karman Vortex Street SETTING. Will be ignored if other SETTING than 'ObstacleChannelFlow is used." },
+ {UNKNOWN, 0, 0, 0, option::Arg::None, 0 }
 };
 
 void getMaybeCLIDouble(Real& real, option::Option* options, optionIndex ind)
@@ -120,36 +126,43 @@ void getMaybeCLIInt(int& _int, option::Option* options, optionIndex ind)
 	if(options[ind])
 		_int = std::stoi(options[ind].arg,0);
 }
-#endif
 
-void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
+
+int initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, char** argv)
 {
-#ifdef __linux__
-  argc-=(argc>0); argv+=(argc>0); // skip program name argv if present
-  option::Stats  stats(usage, argc, argv);
-  option::Option* options = new option::Option[stats.options_max];
-  option::Option* buffer  = new option::Option[stats.buffer_max*100]; /* !! */
-  option::Parser parse(true, usage, argc, argv, options, buffer);
+	int doexit = 0;
+	argc-=(argc>0); argv+=(argc>0); // skip program name argv if present
+	option::Stats  stats(usage, argc, argv);
+	//debug("options_max: %i, buffer_max: %i", stats.options_max, stats.buffer_max);
+	//debug("argc: %i", argc);
+	option::Option* options = new option::Option[stats.options_max];
+	stats.buffer_max = argc;
+	option::Option* buffer  = new option::Option[stats.buffer_max]; /* !! */
+	option::Parser parse(true, usage, argc, argv, options, buffer);
 
 	if(parse.error())
 	{
 		std::cout << "An options-parser error occurred.\n";
-		exit(EXIT_FAILURE);
+		doexit = EXIT_FAILURE+1;
 	}
-
-
 	if(options[HELP])
 	{
 		option::printUsage(std::cout, usage);
-		exit(EXIT_SUCCESS);
+		doexit = EXIT_SUCCESS+1;
 	}
 	if(argc == 0 || !parse.nonOptionsCount())
 	{
 		std::cout << "Missing SETTING parameter. Call with '--help' for options.\n";
-		exit(EXIT_FAILURE);
+		doexit = EXIT_FAILURE+1;
+	}
+	if(doexit)
+	{
+		delete[] options; delete[] buffer;
+		return doexit;
 	}
 
 	std::string settingstr = std::string(parse.nonOption(0));
+	setting = -1;
 	if(
 			"0" == settingstr ||
 			"DrivenCavity" == settingstr ||
@@ -183,11 +196,17 @@ void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, 
 		)
  	setting = 4;
 
-	gui = static_cast<bool>(options[GUI].count());
+	gui = static_cast<bool>(options[GUI]);
 	if(!gui && (setting < 0 || setting > 4))
 	{
-		std::cout << "Invalid SETTING parameter. Call with '--help' for options.\n";
-		exit(EXIT_FAILURE);
+		std::cout << "Invalid SETTING parameter '"<< std::string(settingstr) 
+			<<"'. Call with '--help' for options.\n";
+		doexit = EXIT_FAILURE+1;
+	}
+	if(doexit)
+	{
+		delete[] options; delete[] buffer;
+		return doexit;
 	}
 
 	if(options[NAME])
@@ -218,9 +237,8 @@ void initCLI(int& setting, bool& gui, SimulationParameters& simparam, int argc, 
 	getMaybeCLIDouble(simparam.pi, options, PI);
 	getMaybeCLIInt(simparam.iterMax, options, ITERMAX);
 
-	delete[] options;
-	delete[] buffer;
-#endif
+	delete[] options; delete[] buffer;
+	return doexit;
 }
 
 void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters& clisp)
@@ -240,19 +258,9 @@ int main(int argc, char** argv)
 	int setting = -1;
 	Real inflowVal = 0.0;
 
-	/* TODO: 
-	 * please set simparam.* parameters manually here: */
-	setting = 4;
-	inflowVal = 0.025;
-	simparam.xLength = 1.0;
-	simparam.yLength = 5.0;
-	simparam.iMax = 60;
-	simparam.jMax = 60 * 5;
-	simparam.re = 1000;
-	simparam.iterMax = 500;
-
 	/* parse cli values: use gui? inputvals-filename? what other values to set? */
-	initCLI(setting, gui, simparam, argc, argv); /* disabled in windows */
+	if(int doexit = initCLI(setting, gui, simparam, argc, argv) ) /* disabled in windows */
+		exit(doexit-1);
 
 	switch(setting)
 	{
