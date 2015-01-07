@@ -5,6 +5,7 @@
 #include "src/Bakery.hpp"
 #include "src/CavityRenderer.hpp"
 
+#include <future>
 #include <string>
 #include <thread>
 #include <iostream>
@@ -314,17 +315,20 @@ int main(int argc, char** argv)
 
 		// Create renderer. Obviously the renderer's inbox is the outbox on this side.
 		
-		std::thread render_thread(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, newparam);
+		auto render_execution = std::async(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, newparam);
 
 		/* TODO: get/overwrite newparams from gui */
 		while(true)
 		{
 			SimulationParameters received_params;
-			inbox.pop(received_params);
-			std::cout<<"I got the goods!"<<std::endl;
+			if(inbox.tryPop(received_params,std::chrono::milliseconds(500)))
+				std::cout<<"I got the goods!"<<std::endl;
+
+			auto status = render_execution.wait_for(std::chrono::seconds(0));
+			if(status == std::future_status::ready)
+				break;
 		}
 
-		render_thread.join();
 	}
 
 	if(newparam.name == "")
