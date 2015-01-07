@@ -189,8 +189,8 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
 	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
-	addFloatParam("x", " step=0.1 label='X postion' group='Camera' ", &m_cam_sys.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
-	addFloatParam("y", " step=0.1 label='Y position' group='Camera' ", &m_cam_sys.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
+	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_cam_sys.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
+	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_cam_sys.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
 	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_show_grid);
 	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_grid_colour, " label='Grid color' group='Grid' ");
 
@@ -564,7 +564,7 @@ void CavityRenderer::drawBoundaryCells()
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
 	m_boundary_cell_prgm.setUniform("boundary_tx2D",0);
-	m_arrow.bindTexture();
+	m_boundary_cell_tx.bindTexture();
 
 	for(auto& boundary_piece : m_simparams.boundary_conditions)
 	{
