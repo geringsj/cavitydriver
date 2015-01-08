@@ -19,12 +19,12 @@ int main(int argc, char** argv)
 	 * match the inner range of p.
 	 */
 
-	CavityRenderer cavity_renderer;
-	if (cavity_renderer.initVis(640, 480, simparam))
-	{
-		cavity_renderer.createGrid(range);
-		cavity_renderer.paint();
-	}
+	//CavityRenderer cavity_renderer;
+	//if (cavity_renderer.initVis(640, 480, simparam))
+	//{
+	//	cavity_renderer.createGrid(range);
+	//	cavity_renderer.paint();
+	//}
 
 	return 0;
 }

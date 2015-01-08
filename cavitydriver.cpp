@@ -171,7 +171,6 @@ int main(int argc, char** argv)
 		do
 		{
 			domain.setPressureBoundaries();
-
 #ifdef WITHMPI
 			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Red);
 			communication.exchangeGridBoundaryValues(domain,Communication::Handle::Pressure);
