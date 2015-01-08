@@ -269,7 +269,7 @@ void Boundary::initBoundaries(
 	{
 		Boundary::Entry te(
 			bpiece.direction, bpiece.condition,
-			Index(i,j), Index(i,j),
+			Index(i,j)/*is going to be shifted to boundary cell later on*/, Index(i,j),
 			bpiece.condition_value );
 		switch(bpiece.gridtype)
 		{
@@ -433,6 +433,33 @@ void Boundary::splitBoundaryTypes()
 					} ),
 				bnds[0].end() );
 	}
+	// Debug Stuff
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	for (auto b : m_boundaries_U[i])
+	//	{
+	//		printf("id: %i Cond: %i [NOSLIP=0, INFLOW=1, OUTFLOW=2,SLIP=3] \n", i, (int)b.condition);
+	//		printf("pos: (%i , %i) \n", b.iposition.i, b.iposition.j);
+	//	}
+	//}
+	//printf("--------------------------------------------------- \n");
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	for (auto b : m_boundaries_V[i])
+	//	{
+	//		printf("id: %i Cond: %i [NOSLIP=0, INFLOW=1, OUTFLOW=2,SLIP=3] \n", i, (int)b.condition);
+	//		printf("pos: (%i , %i) \n", b.iposition.i, b.iposition.j);
+	//	}
+	//}
+	//printf("--------------------------------------------------- \n");
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	for (auto b : m_boundaries_P[i])
+	//	{
+	//		printf("id: %i Cond: %i [NOSLIP=0, INFLOW=1, OUTFLOW=2,SLIP=3] \n", i, (int)b.condition);
+	//		printf("pos: (%i , %i) \n", b.iposition.i, b.iposition.j);
+	//	}
+	//}
 }
 
 Boundary::~Boundary()

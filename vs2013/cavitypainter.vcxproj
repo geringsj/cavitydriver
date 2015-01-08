@@ -158,12 +158,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\cavitypainter.cpp" />
-    <ClCompile Include="..\src\CameraSystem.cpp" />
     <ClCompile Include="..\src\CavityRenderer.cpp" />
     <ClCompile Include="..\src\SimulationParameters.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\CameraSystem.h" />
     <ClInclude Include="..\src\CavityRenderer.hpp" />
     <ClInclude Include="..\src\SimulationParameters.hpp" />
   </ItemGroup>
