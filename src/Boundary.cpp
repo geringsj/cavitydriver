@@ -8,8 +8,8 @@
 
 
 void Boundary::copyBoundaries(
-		const std::vector<Entry> boundary, 
-		const GridFunction& source, 
+		const std::vector<Entry>& boundary,
+		const GridFunction& source,
 		GridFunction& target) const
 {
 	for(auto& b : boundary)
@@ -129,7 +129,7 @@ std::vector<Range> Boundary::getInnerRanges(
 
 std::vector<Range> Boundary::getInnerRanges(
 		const Range inner_extent,
-		const std::vector<Entry> boundary[]) const
+		const std::vector<Entry>* boundary) const
 {
 	Dimension pattern_dim(inner_extent.end.i+2, inner_extent.end.j+2);
 	GridFunction pattern(pattern_dim);
@@ -164,7 +164,7 @@ std::vector<Range> Boundary::getInnerRanges(
 			}
 		}
 	}
-	pattern.printSTDOUT();
+	//pattern.printSTDOUT();
 
 	/* collect ranges of reachable inner cells */
 	std::list<Range> ranges;
@@ -287,7 +287,7 @@ void Boundary::initBoundaries(
 	 * up to this point boundary and inner indices are at the 
 	 * inner cell next to the boundary cell */
 	for(auto& blist : 
-			{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0]} 
+			{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0]}
 		)
 	for(auto& entry : *blist)
 	{
@@ -439,40 +439,46 @@ Boundary::~Boundary()
 {
 }
 
+void Boundary::workBoundaries(const std::vector<Entry>* boundaries, const Grid grid, GridFunction& gf) const
+{
+	//debug("working NOSLIP x %lu", boundaries[static_cast<int>(Condition::NOSLIP)].size());
+	for(auto& b : boundaries[static_cast<int>(Condition::NOSLIP)])
+		computeNOSLIP(gf, b.bposition, b.iposition, b.direction, grid);
+
+	//debug("working INFLOW x %lu", boundaries[static_cast<int>(Condition::INFLOW)].size());
+	for(auto& b : boundaries[static_cast<int>(Condition::INFLOW)])
+		computeINFLOW(gf, b.bposition, b.iposition, b.direction, grid, 
+			b.condition_value);
+
+	//debug("working OUTFLOW x %lu", boundaries[static_cast<int>(Condition::OUTFLOW)].size());
+	for(auto& b : boundaries[static_cast<int>(Condition::OUTFLOW)])
+		computeOUTFLOW(gf, b.bposition, b.iposition);
+
+	//debug("working SLIP x %lu", boundaries[static_cast<int>(Condition::SLIP)].size());
+	for(auto& b : boundaries[static_cast<int>(Condition::SLIP)])
+		computeSLIP(gf, b.bposition, b.iposition, b.direction, grid);
+}
 void Boundary::setBoundary(
 		const Grid grid, 
 		GridFunction& gf) const
 {
-	const std::vector<Entry>* boundaries;
 	switch(grid)
 	{
 		case Grid::U:
-				boundaries = &m_boundaries_U[0];
-				break;
+			//debug("working U Boundaries!");
+			workBoundaries(&m_boundaries_U[0], Grid::U, gf);
+			break;
 		case Grid::V:
-				boundaries = &m_boundaries_V[0];
-				break;
+			//debug("working V Boundaries!");
+			workBoundaries(&m_boundaries_V[0], Grid::V, gf);
 			break;
 		case Grid::P:
-				boundaries = &m_boundaries_P[0];
+			//debug("working P Boundaries!");
+			workBoundaries(&m_boundaries_P[0], Grid::P, gf);
 			break;
 		default:
-				boundaries = NULL;
 			break;
 	}
-
-	for(auto& b : boundaries[static_cast<int>(Condition::NOSLIP)])
-				computeNOSLIP(gf, b.bposition, b.iposition, b.direction, grid);
-
-	for(auto& b : boundaries[static_cast<int>(Condition::INFLOW)])
-				computeINFLOW(gf, b.bposition, b.iposition, b.direction, grid, 
-					b.condition_value);
-
-	for(auto& b : boundaries[static_cast<int>(Condition::OUTFLOW)])
-				computeOUTFLOW(gf, b.bposition, b.iposition);
-
-	for(auto& b : boundaries[static_cast<int>(Condition::SLIP)])
-				computeSLIP(gf, b.bposition, b.iposition, b.direction, grid);
 }
 
 /* for F and G */

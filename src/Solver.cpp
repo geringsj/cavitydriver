@@ -67,7 +67,7 @@ namespace Solver
 			const GridFunction& rhs,
 			const Delta & delta,
 			const Ranges& inner_range,
-			const Real& omega)
+			const Real omega)
 	{
 		const Real dxx = pow(delta.x, 2.0);
 		const Real dyy = pow(delta.y, 2.0);
@@ -83,8 +83,8 @@ namespace Solver
 	
 	void SORCycleRedBlack(
 			Domain& domain,
-			const Real& omega,
-			const Color& color)
+			const Real omega,
+			const Color color)
 	{
 		GridFunction& p = domain.p();
 		const GridFunction& rhs = domain.rhs();

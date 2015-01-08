@@ -60,9 +60,6 @@ public:
 	};
 
 private:
-	Competence m_competence;
-	Range m_inner_extent;
-
 	struct Entry {
 		Direction direction;
 		Condition condition;
@@ -76,6 +73,10 @@ private:
 			bposition(bposition), iposition(iposition), 
 			condition_value(condition_value) {}
 	};
+
+	Competence m_competence;
+	Range m_inner_extent;
+
 	std::vector<Entry> m_boundaries_U[4];
 	std::vector<Entry> m_boundaries_V[4];
 	std::vector<Entry> m_boundaries_P[4];
@@ -87,14 +88,15 @@ private:
 
 	std::vector<Range> getInnerRanges(
 		const Range inner_extent,
-		const std::vector<Entry> boundary[]) const;
+		const std::vector<Entry>* boundary) const;
 
 	void initBoundaries(
 		Range localSubInnerPRange, 
 		std::vector<BoundaryPiece>& boundary_conditions);
 	void copyBoundaries(
-		const std::vector<Entry> boundary, 
+		const std::vector<Entry>& boundary,
 		const GridFunction& source, GridFunction& target) const;
+	void workBoundaries(const std::vector<Entry>* boundaries, const Grid grid, GridFunction& gf) const;
 	void splitBoundaryTypes();
 
 public:

@@ -57,15 +57,15 @@ namespace Solver
 			const GridFunction& rhs,
 			const Point& delta,
 			const Ranges& inner_range,
-			const Real& omega);
+			const Real omega);
 
 	/**
 	* Compute one SOR iterator on every 'Red' or 'Black' cell of the pressure field.
 	*/
 	void SORCycleRedBlack(
 			Domain& domain,
-			const Real& omega,
-			const Color& color);
+			const Real omega,
+			const Color color);
 
 }
 

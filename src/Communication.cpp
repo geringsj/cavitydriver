@@ -251,23 +251,6 @@ void Communication::exchangeGridBoundaryValues(
 #endif
 }
 
-/*
-void Communication::exchangeGridInnerValues(Domain domain, Handle grid)
-{
-	switch (grid)
-	{
-	case Communication::Handle::Pressure:
-		break;
-	case Communication::Handle::Velocities:
-		break;
-	case Communication::Handle::PreliminaryVelocities:
-		break;
-	default:
-		break;
-	}
-}
-*/
-
 void Communication::exchangeGridBoundaryValues(
 		GridFunction& gf,
 		Range inner)

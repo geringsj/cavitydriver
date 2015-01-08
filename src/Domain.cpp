@@ -34,12 +34,12 @@ Domain::Domain(
 
 		m_force_gx(in_gx), m_force_gy(in_gy) // , m_force_gz(in_gz)
 {
-	debug("get U inner ranges");
+	//debug("get U inner ranges");
 	m_inner_ranges[0] = m_boundary.getInnerRanges(Boundary::Grid::U);
-	debug("get V inner ranges");
+	//debug("get V inner ranges");
 	m_inner_ranges[1] = m_boundary.getInnerRanges(Boundary::Grid::V);
 	//m_inner_ranges[2] = m_boundary.getInnerRanges(Boundary::Grid::W);
-	debug("get P inner ranges");
+	//debug("get P inner ranges");
 	m_inner_ranges[3] = m_boundary.getInnerRanges(Boundary::Grid::P);
 	m_whole_inner_range = m_boundary.getWholeInnerRange();
 

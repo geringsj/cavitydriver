@@ -79,8 +79,9 @@ int main(int argc, char** argv)
 	Domain domain(local_dim, delta,
 		/* init boundary, for this we need the inner range of the local process
 		 * w.r.t. the range of the global domain. and the competences. */
-		Boundary(communication.getLocalInnerRange(),
-			communication.getBoundaryCompetence(),
+		Boundary(
+			communication.getLocalInnerRange(), 
+			communication.getBoundaryCompetence(), 
 			simparam.boundary_conditions),
 		/* outer forces */
 		simparam.gx, simparam.gy,
@@ -91,7 +92,7 @@ int main(int argc, char** argv)
 
 	Real global_fluidCells = 
 		communication.getGlobalFluidCellsCount(domain.getFluidCellsCount());
-	debug("FluidCells: %f", global_fluidCells);
+	//debug("FluidCells: %f", global_fluidCells);
 
 	//simparam.writeSettingsFile("inputvals_"+simparam.name);
 
@@ -161,7 +162,6 @@ int main(int argc, char** argv)
 		communication.exchangeGridBoundaryValues(domain, Communication::Handle::Velocities);
 
 		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
-
 		domain.setPreliminaryVelocitiesBoundaries();
 		communication.exchangeGridBoundaryValues(domain, Communication::Handle::PreliminaryVelocities);
 
@@ -187,7 +187,7 @@ int main(int argc, char** argv)
 			res = communication.getGlobalResidual(res);
 			it++;
 		} while (communication.checkGlobalFinishSOR
-				(it < simparam.iterMax && res > simparam.eps));
+			(it < simparam.iterMax && res > simparam.eps));
 		t_sor_end = std::chrono::steady_clock::now();
 		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_sor_end-t_sor_start);
 		t_sor_avg += time_span.count();
