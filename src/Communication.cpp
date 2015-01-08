@@ -187,6 +187,17 @@ Real Communication::getGlobalResidual(Real mySubResidual)
 #endif
 }
 
+Real Communication::getGlobalFluidCellsCount(Real local_FluidCells)
+{
+#ifdef WITHMPI
+	MPI_Allreduce(&local_FluidCells, m_recvBuffer, 1, MPI_DOUBLE, 
+			MPI_SUM, *(MPI_Comm*)mycom);
+	return m_recvBuffer[0];
+#else
+	return local_FluidCells;
+#endif
+}
+
 bool Communication::checkGlobalFinishSOR(bool myLoopCondition)
 {
 #ifdef WITHMPI

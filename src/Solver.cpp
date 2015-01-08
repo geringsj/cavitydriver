@@ -10,10 +10,10 @@ namespace Solver
 			const GridFunction& rhs,
 			const Point delta,
 			const Ranges& inner_range,
-			const Dimension globalDims)
+			const Real global_fluidCells)
 	{
 		return 
-			sqrt( computeSquaredResidual(p, rhs, delta, inner_range, globalDims) );
+			sqrt( computeSquaredResidual(p, rhs, delta, inner_range, global_fluidCells) );
 	}
 
 	Real computeSquaredResidual(
@@ -21,11 +21,9 @@ namespace Solver
 			const GridFunction& rhs,
 			const Point& delta,
 			const Ranges& inner_range,
-			const Dimension globalDims)
+			const Real global_fluidCells)
 	{
 		Real numerator = 0.0;
-		/* TODO: denominator is sum of cells in grid !!! */
-		Real denominator = (globalDims.i * globalDims.j);
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
 
@@ -37,7 +35,7 @@ namespace Solver
 
 			numerator += pow(help,2.0);
 		}
-		return (numerator / denominator);
+		return (numerator / global_fluidCells);
 	}
 
 
@@ -98,7 +96,7 @@ namespace Solver
 		const Real OneMinusOmega = (1. - omega);
 		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
-		// Decided offset (in y-direction) based on color of first cell.
+		// Decide offset (in y-direction) based on color of first cell.
 		// If color matches the color of the first cell, no offset is required 
 		// in the first column, else start with offset +1. 
 		// Subsequently, the offset will be flipped between 0 and 1 after each column

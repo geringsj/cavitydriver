@@ -123,6 +123,14 @@ public:
 
 	Color getDomainFirstCellColor(){ return m_FirstCellColor; };
 
+	Real getFluidCellsCount() const
+	{
+		Real sum = 0.0;
+		for(const auto& r : m_inner_ranges[3])
+			sum += static_cast<Real>((1.0+r.end.i-r.begin.i)*(1.0+r.end.j-r.begin.j));
+		return sum;
+	}
+
 	void setPressureBoundaries();
 	void setPreliminaryVelocitiesBoundaries();
 	void setVelocitiesBoundaries();

@@ -12,6 +12,8 @@
 #include <math.h>
 #include <algorithm>
 
+#include <fstream>
+
 #include <chrono>
 
 
@@ -87,6 +89,10 @@ int main(int argc, char** argv)
 		/* color pattern */
 		communication.getFirstCellColor());
 
+	Real global_fluidCells = 
+		communication.getGlobalFluidCellsCount(domain.getFluidCellsCount());
+	debug("FluidCells: %f", global_fluidCells);
+
 	//simparam.writeSettingsFile("inputvals_"+simparam.name);
 
 	log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
@@ -97,10 +103,33 @@ int main(int argc, char** argv)
 		domain.getInnerRangeU().size(),
 		domain.getInnerRangeV().size() );
 
+	debug("ranges P:");
+	for(auto& r : domain.getInnerRangeP())	
+		debug("[(%i,%i)(%i,%i)]",
+		r.begin.i,
+		r.begin.j,
+		r.end.i,
+		r.end.j );
+
+	debug("ranges U:");
+	for(auto& r : domain.getInnerRangeU())	
+		debug("[(%i,%i)(%i,%i)]",
+		r.begin.i,
+		r.begin.j,
+		r.end.i,
+		r.end.j );
+
+	debug("ranges V:");
+	for(auto& r : domain.getInnerRangeV())	
+		debug("[(%i,%i)(%i,%i)]",
+		r.begin.i,
+		r.begin.j,
+		r.end.i,
+		r.end.j );
+
 	/* next: omega and time parameters */
-	Real h = 1.0 / std::min(simparam.iMax, simparam.jMax);// simparam.iMax;
+	Real h = 1.0 / std::min(simparam.iMax, simparam.jMax); // be careful
 	// concerning h, see: http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
-	//if(simparam.xLength == simparam.yLength) /* TODO: what do with this? */
 	simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
 
 	Real t = 0.0, dt, res;
@@ -143,18 +172,18 @@ int main(int argc, char** argv)
 		{
 			domain.setPressureBoundaries();
 
-			//Solver::SORCycle(domain.p(), domain.rhs(), delta, 
-			//		domain.getInnerRangeP(), simparam.omg);
+#ifdef WITHMPI
 			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Red);
 			communication.exchangeGridBoundaryValues(domain,Communication::Handle::Pressure);
 			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Black);
 			communication.exchangeGridBoundaryValues(domain,Communication::Handle::Pressure);
+#else
+			Solver::SORCycle(domain.p(), domain.rhs(), delta,
+					domain.getInnerRangeP(), simparam.omg);
+#endif
 
-			//res = Solver::computeResidual(
-			//		domain.p(), domain.rhs(), delta, 
-			//		domain.getInnerRangeP(), global_dim);
 			res = Solver::computeSquaredResidual(
-				domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_dim);
+				domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_fluidCells);
 			res = communication.getGlobalResidual(res);
 			it++;
 		} while (communication.checkGlobalFinishSOR

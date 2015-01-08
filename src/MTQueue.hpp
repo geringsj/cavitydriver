@@ -1,10 +1,10 @@
 #ifndef MTQueue_hpp
 #define MTQueue_hpp
 
+#include <thread>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
-#include <thread>
 
 /**
  * Basic multithreaded (i.e. thread-safe) queue.

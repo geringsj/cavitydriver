@@ -339,7 +339,7 @@ int main(int argc, char** argv)
 
 		// Create renderer. Obviously the renderer's inbox is the outbox on this side.
 		
-		std::thread render_thread(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, newparam);
+		std::thread render_thread(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, std::ref(newparam));
 
 		/* TODO: get/overwrite newparams from gui */
 		//while(true)

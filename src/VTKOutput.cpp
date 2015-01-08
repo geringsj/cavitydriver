@@ -160,17 +160,18 @@ void VTKOutput::writeVTKSingleFile()
 
 	/* write the vorticity */
 	os 
-	<< "</DataArray>" << std::endl
-	<< "<DataArray type=\"Float64\" Name=\"V\" format=\"ascii\">" << std::endl;
+	<< "</DataArray>" << std::endl;
 
+
+	os << "<DataArray type=\"Float64\" Name=\"Vorticity\" format=\"ascii\">" << std::endl;
 	for (int j = yMin; j <= yMax; ++j)
 	{
 		for (int i = xMin; i <= xMax; ++i)
 		{
 			os
 			<< std::scientific <<
-			(domain.u()(i, j + 1) - domain.u()(i, j)) / domain.getDelta().y -
-			(domain.v()(i + 1, j) - domain.v()(i, j)) / domain.getDelta().x
+			(domain.u()(i, j) - domain.u()(i, j - 1)) / domain.getDelta().y -
+			(domain.v()(i, j) - domain.v()(i - 1, j)) / domain.getDelta().x
 			<< " ";
 		}
 		os << std::endl;
@@ -345,12 +346,12 @@ void VTKOutput::writeVTKSlaveFile()
 	Real cellDeltaX = domain.getDelta().x;
 	Real cellDeltaY = domain.getDelta().y;
 	for (int i = xLoclbMin; i <= xLoclbMax; i++)
-		os << std::scientific << i * cellDeltaX << " ";
+		os << std::scientific << i * cellDeltaX + cellDeltaX/2.0 << " ";
 	os << std::endl;
 	os << "</DataArray>" << std::endl;
 	os << "<DataArray type=\"Float64\" format=\"ascii\">" << std::endl;
 	for (int j = yLoclbMin; j <= yLoclbMax; j++)
-		os << std::scientific << j * cellDeltaY << " ";
+		os << std::scientific << j * cellDeltaY + cellDeltaY/2.0 << " ";
 	os << std::endl;
 	os << "</DataArray>" << std::endl;
 	os << "<DataArray type=\"Float64\" format=\"ascii\">0 0</DataArray>" << std::endl;

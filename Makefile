@@ -17,7 +17,7 @@ DRIVER_OBJECTS=$(filter-out src/%Renderer.o src/%System.o,$(OBJECTS))
 
 BAKER=cavitybaker.cpp
 BAKER_BIN=bin/cavitybaker
-BAKER_OBJECTS=$(filter src/%eters.o src/Bakery.o src/Boundary.o src/GridFunction.o,$(OBJECTS)) 
+BAKER_OBJECTS=$(filter src/CavityRenderer.o src/%eters.o src/Bakery.o src/Boundary.o src/GridFunction.o,$(OBJECTS)) 
 #BAKER_OBJECTS=$(filter src/%eters.o src/Bakery.o src/Boundary.o src/GridFunction.o src/%Renderer.o src/%System.o src/%eters.o,$(OBJECTS)) 
 
 PAINTER=cavitypainter.cpp
@@ -47,7 +47,8 @@ opt: all
 painter: LDFLAGS += -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
 painter: build $(PAINTER_BIN)
 
-baker: LDFLAGS +=  -Lexternal/lib/ -Wl,-Rexternal/lib/
+baker: LDFLAGS +=  -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
+baker: CPPFLAGS +=  -pthread -Wl,--no-as-needed
 baker: build $(BAKER_BIN)
 
 build:

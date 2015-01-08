@@ -39,18 +39,21 @@ namespace Bakery {
 				grid, valueU, Range(
 				Index(inner.begin.i, inner.end.j),
 				Index(inner.end.i, inner.end.j) ) ));
+
 		simpams.boundary_conditions.push_back(
 			Boundary::BoundaryPiece(
 				Boundary::Direction::Down, condD,
 				grid, valueD, Range(
 				Index(inner.begin.i, inner.begin.j),
 				Index(inner.end.i, inner.begin.j) ) ));
+
 		simpams.boundary_conditions.push_back(
 			Boundary::BoundaryPiece(
 				Boundary::Direction::Left, condL,
 				grid, valueL, Range(
 				Index(inner.begin.i, inner.begin.j),
 				Index(inner.begin.i, inner.end.j) ) ));
+
 		simpams.boundary_conditions.push_back(
 			Boundary::BoundaryPiece(
 				Boundary::Direction::Right, condR,
@@ -128,13 +131,17 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
 			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
 		/* set U */
-		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
+		setOuterBoundaries(simpams, 
+			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
+			Boundary::Grid::U,
 			Boundary::Condition::INFLOW, inflowVal,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0);
 		/* set V */
-		setOuterBoundaries(simpams, inner, Boundary::Grid::V,
+		setOuterBoundaries(simpams, 
+			Range(inner.begin, Index(inner.end.i, inner.end.j-1)),
+			Boundary::Grid::V,
 			Boundary::Condition::INFLOW, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
@@ -150,13 +157,17 @@ namespace Bakery {
 			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
 			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
 		/* set U */
-		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
+		setOuterBoundaries(simpams,
+			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
+			Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0);
 		/* set V */
-		setOuterBoundaries(simpams, inner, Boundary::Grid::V,
+		setOuterBoundaries(simpams,
+			Range(inner.begin, Index(inner.end.i, inner.end.j-1)),
+			Boundary::Grid::V,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
@@ -172,13 +183,17 @@ namespace Bakery {
 			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
 			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
 		/* set U */
-		setOuterBoundaries(simpams, inner, Boundary::Grid::U,
+		setOuterBoundaries(simpams,
+			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
+			Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::SLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0);
 		/* set V */
-		setOuterBoundaries(simpams, inner, Boundary::Grid::V,
+		setOuterBoundaries(simpams,
+			Range(inner.begin, Index(inner.end.i, inner.end.j-1)),
+			Boundary::Grid::V,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::SLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
@@ -186,7 +201,7 @@ namespace Bakery {
 		}
 
 		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field, Real inflowVal)
-		{
+		{ /* TODO: shift U and V inner ends according to their needs, and don't forget the shifted boundaries' neighbour-cells! */
 		/* set P */
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
 			Boundary::Condition::OUTFLOW, 0.0, /* UP */
@@ -233,7 +248,7 @@ namespace Bakery {
 		}
 
 		void addUVP_NOSLIP(Boundary::Direction dir, Index ind, SimulationParameters& simpams)
-		{
+		{ /* TODO: shift U and V inner ends according to their needs, and don't forget the shifted boundaries' neighbour-cells! */
 			simpams.boundary_conditions.push_back(
 					Boundary::BoundaryPiece(
 						dir, Boundary::Condition::NOSLIP, Boundary::Grid::U,
@@ -370,7 +385,7 @@ namespace Bakery {
 
 			/* add missing domain boundaries depending on case (maybe do somewhere before?) */
 			getChannelFlowObstacle(simpams, inner, field, inflowVal);
-		}
+		} /* if(Step || Karman) */
 
 		return simpams;
 	}

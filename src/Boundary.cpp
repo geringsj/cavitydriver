@@ -68,6 +68,8 @@ void Boundary::computeINFLOW(
 		const Grid grid,
 		const Real value) const
 {
+	/* grid must be set to 'value' exactly at position of measure point,
+	 * depending on grid type and direction */
 	if(
 			(grid==Grid::U && (dir==Direction::Right || dir==Direction::Left) ) ||
 			(grid==Grid::V && (dir==Direction::Up || dir==Direction::Down) ) )
@@ -134,18 +136,16 @@ std::vector<Range> Boundary::getInnerRanges(
 	std::list<Index> cells;
 
 	/* mark all cells as not reachable */
-	for_range(i,j,Range(Index(0,0), Index(pattern_dim.i-1,pattern_dim.j-1)))
+	for_range(i,j, Range(Index(0,0), Index(pattern_dim.i-1,pattern_dim.j-1)))
 		pattern(i,j) = -1.0;
 	/* mark all boundary and neighbour inner cells as such */
 	for(int i : {0,1,2,3} )
 	for(auto cell : boundary[i])
 	{
 		pattern(cell.iposition) = 1.0;
+		pattern(cell.bposition) = 0.0;
 		cells.push_back(cell.iposition);
 	}
-	for(int i : {0,1,2,3} )
-	for(auto cell : boundary[i])
-		pattern(cell.bposition) = 0.0;
 
 	/* propagate 1s */
 	while(! cells.empty())
@@ -164,6 +164,7 @@ std::vector<Range> Boundary::getInnerRanges(
 			}
 		}
 	}
+	pattern.printSTDOUT();
 
 	/* collect ranges of reachable inner cells */
 	std::list<Range> ranges;
@@ -282,24 +283,9 @@ void Boundary::initBoundaries(
 		}
 	}
 
-	/* correct boundaries for U/V by shiftig right/upper boundaries one left/down.
-	 * we do this because the boundaries input is given with respect to P and we
-	 * need to account for the shift of U and V values on the grid */
-	for(auto& bound : this->m_boundaries_U[0])
-		if(bound.direction == Direction::Right)
-		{
-			bound.bposition.i--;
-			bound.iposition.i--;
-		}
-	for(auto& bound : this->m_boundaries_V[0])
-		if(bound.direction == Direction::Up)
-		{
-			bound.bposition.j--;
-			bound.iposition.j--;
-		}
-
 	/* move boundary indices to be at boundary. 
-	 * up to this point boundary and inner indices are at the boundary cell */
+	 * up to this point boundary and inner indices are at the 
+	 * inner cell next to the boundary cell */
 	for(auto& blist : 
 			{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0]} 
 		)
@@ -344,6 +330,10 @@ Boundary::Boundary(
 
 	this->m_competence = competence;
 
+	/* if this if executes we didn't get boundary conditions as input, 
+	 * so we default to driven cavity by setting driven cavity boundary conditions.
+	 * (with respecting shiften V/U boundaries at top/right if 
+	 * this subdomain has competence over those boudnaries */
 	if(boundary_conditions.size() == 0)
 	{
 		/* get missing boundary conditions for driven cavity */
@@ -370,11 +360,11 @@ Boundary::Boundary(
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
 
 		/* add v boundaries: 0 everywhere */
-		if(competence.Up)
+		if(competence.Up) /* => move global upper boundary one down */
 		boundary_conditions.push_back(
 			BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::V, 0.0, Range(
-				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
-				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j -1),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j -1) ) ));
 		if(competence.Down)
 		boundary_conditions.push_back(
 			BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::V, 0.0, Range(
@@ -386,29 +376,29 @@ Boundary::Boundary(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
 				Index(
 					localSubInnerPRange.begin.i, 
-					localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
+					localSubInnerPRange.end.j -competence.Up) ) ));
 		if(competence.Right)
 		boundary_conditions.push_back(
 			BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::V, 0.0, Range(
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
 				Index(
 					localSubInnerPRange.end.i, 
-					localSubInnerPRange.end.j /*-(competence.Up)*/ ) ) ));
+					localSubInnerPRange.end.j -competence.Up) ) ));
 
 		/* add u boundaries: 1 at top, 0 everywhere else */
-		if(competence.Up)
+		if(competence.Up) /* => move global right boundary one to the left */
 		boundary_conditions.push_back(
 			BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::U, 1.0, Range(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
 				Index(
-					localSubInnerPRange.end.i /*-(competence.Right)*/,
+					localSubInnerPRange.end.i -competence.Right,
 					localSubInnerPRange.end.j) ) ));
 		if(competence.Down)
 		boundary_conditions.push_back(
 			BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::U, 0.0, Range(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
 				Index(
-					localSubInnerPRange.end.i /*-(competence.Right)*/,
+					localSubInnerPRange.end.i -competence.Right,
 					localSubInnerPRange.begin.j) ) ));
 		if(competence.Left)
 		boundary_conditions.push_back(
@@ -418,8 +408,8 @@ Boundary::Boundary(
 		if(competence.Right)
 		boundary_conditions.push_back(
 			BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::U, 0.0, Range(
-				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
-				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+				Index(localSubInnerPRange.end.i -1, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.end.i -1, localSubInnerPRange.end.j) ) ));
 	}
 
 	initBoundaries(localSubInnerPRange, boundary_conditions);

@@ -80,6 +80,8 @@ public:
 	Dimension getLocalDimension() const { return m_myDomain_dim; }
 	Range getLocalInnerRange() const { return m_localInnerRange; }
 	Range getProcLocalInnerRange(int procrank) const;
+
+	Real getGlobalFluidCellsCount(Real local_FluidCells);
 };
 
 

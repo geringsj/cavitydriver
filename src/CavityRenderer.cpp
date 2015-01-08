@@ -1,5 +1,7 @@
 #include "CavityRenderer.hpp"
 
+#include <iostream>
+
 /* Static tweak bar callback definitions. Implementation see further down. */
 void TW_CALL Bake(void* clientData);
 
