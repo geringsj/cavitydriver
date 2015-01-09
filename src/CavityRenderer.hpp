@@ -119,6 +119,12 @@ public:
 		m_window_height = height;
 
 		m_cam_sys.setAspectRatio((float)m_window_width/(float)m_window_height);
+
+		m_field_fbo->resize(width,height);
+		m_grid_fbo->resize(width,height);
+		m_boundary_gylphs_fbo->resize(width,height);
+		m_boundary_cells_fbo->resize(width,height);
+		m_geometry_fbo->resize(width,height);
 	}
 
 
@@ -173,7 +179,7 @@ private:
 	std::shared_ptr<Texture2D> m_boundary_pdlt_glyph_tx;
 	std::shared_ptr<Texture2D> m_boundary_pnm_glyph_tx;
 	GLSLProgram m_glyph_prgm;
-	Mesh m_glyp_quad;
+	int m_boundary_glyph_mode;
 
 	/* Boundary cells variables*/
 	std::shared_ptr<Texture2D> m_boundary_cell_tx;

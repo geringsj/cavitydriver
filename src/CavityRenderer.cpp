@@ -195,6 +195,8 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_grid_colour, " label='Grid color' group='Grid' ");
 
 	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_show_boundary_cells);
+	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_show_boundary_glyphs);
+	addIntParam("m_boundary_glyph_mode", " label='Glyph display mode' group='Boundary' ", &m_boundary_glyph_mode, "RW", 0, 1);
 
 	Real test; float __float; double __double;
 	const char* _double = typeid(__double).name();
@@ -307,7 +309,8 @@ bool CavityRenderer::createGLSLPrograms()
 	std::string arrow_fragment = readShaderFile("./shader/arrowFragment.glsl");
 	if (!m_glyph_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_glyph_prgm.getLog(); return false; };
 	
-	m_glyph_prgm.bindAttribLocation(0, "in_position");
+	m_glyph_prgm.bindAttribLocation(0, "v_position");
+	m_glyph_prgm.bindAttribLocation(1, "v_uv");
 	
 	m_glyph_prgm.link();
 
@@ -515,15 +518,19 @@ bool CavityRenderer::createFramebuffers()
 {
 	//TODO create all framebuffers based on window width and height
 	m_field_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+	m_field_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	m_grid_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
 	m_grid_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	m_boundary_gylphs_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+	m_boundary_gylphs_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	m_boundary_cells_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+	m_boundary_cells_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	m_geometry_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+	m_geometry_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	return true;
 }
@@ -549,21 +556,11 @@ void CavityRenderer::paint()
 		//glfwGetFramebufferSize(m_window, &width, &height);
 		//glViewport(0, 0, width, height);
 
-		if(m_show_field)
-			drawField();
-
-		if(m_show_boundary_glyphs)
-			drawBoundaryGlyphs();
-
-		if(m_show_boundary_cells)
-			drawBoundaryCells();
-
-		if(m_show_geometry)
-			drawGeometry();
-
-		if(m_show_grid)
-			drawOverlayGrid();
-		
+		drawField();
+		drawBoundaryGlyphs();
+		drawBoundaryCells();
+		drawGeometry();
+		drawOverlayGrid();
 
 		// Merge layers, do additional post processing. Output to primary framebuffer
 		postProcessing();
@@ -597,19 +594,22 @@ void CavityRenderer::drawOverlayGrid()
 	glClearColor(
 		m_window_background_colour[0],
 		m_window_background_colour[1],
-		m_window_background_colour[2], 1.0f);
+		m_window_background_colour[2], 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, m_grid_fbo->getWidth(), m_grid_fbo->getHeight());
 
-	m_grid_prgm.use();
-	glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
-	glm::mat4 model_mat = glm::mat4(1.0f);
-	glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
-	glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
-	m_grid_prgm.setUniform("mvp_matrix", mvp_mat);
-	m_grid_prgm.setUniform("colour", glm::vec3(m_grid_colour[0],m_grid_colour[1],m_grid_colour[2]));
-	
-	m_grid.draw();
+	if(m_show_grid)
+	{
+		m_grid_prgm.use();
+		glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
+		glm::mat4 model_mat = glm::mat4(1.0f);
+		glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
+		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+		m_grid_prgm.setUniform("mvp_matrix", mvp_mat);
+		m_grid_prgm.setUniform("colour", glm::vec3(m_grid_colour[0],m_grid_colour[1],m_grid_colour[2]));
+		
+		m_grid.draw();
+	}
 }
 
 void CavityRenderer::drawField()
@@ -622,36 +622,94 @@ void CavityRenderer::drawGeometry()
 
 void CavityRenderer::drawBoundaryCells()
 {
-	m_boundary_cell_prgm.use();
-	
-	glEnable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE0);
-	m_boundary_cell_prgm.setUniform("boundary_tx2D",0);
-	m_boundary_pdlt_glyph_tx->bindTexture();
+	m_boundary_cells_fbo->bind();
+	glClearColor(
+		m_window_background_colour[0],
+		m_window_background_colour[1],
+		m_window_background_colour[2], 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, m_boundary_cells_fbo->getWidth(), m_boundary_cells_fbo->getHeight());
 
-	for(auto& boundary_piece : m_simparams.boundary_conditions)
+	if(m_show_boundary_cells)
 	{
-		Range range(boundary_piece.range);
-		float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
-		float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
+		m_boundary_cell_prgm.use();
+		
+		glEnable(GL_TEXTURE_2D);
+		glActiveTexture(GL_TEXTURE0);
+		m_boundary_cell_prgm.setUniform("boundary_tx2D",0);
+		m_boundary_cell_tx->bindTexture();
 
-		for_range(i, j, range)
+		for(auto& boundary_piece : m_simparams.boundary_conditions)
 		{
-			float pos[] = { (float)(i-1) * x_length/1.0 + x_length / 2.0f, (float)(j-1) * y_length/1.0 + y_length/2.0f };
+			Range range(boundary_piece.range);
+			float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
+			float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
 
-			glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
-			glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(pos[0],pos[1],0.0));
-			glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
-			glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
-			m_boundary_cell_prgm.setUniform("mvp_matrix", mvp_mat);
-			
-			m_boundary_cell.draw();
+			for_range(i, j, range)
+			{
+				float pos[] = { (float)(i-1) * x_length/1.0 + x_length / 2.0f, (float)(j-1) * y_length/1.0 + y_length/2.0f };
+
+				glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
+				glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(pos[0],pos[1],0.0));
+				glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
+				glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+				m_boundary_cell_prgm.setUniform("mvp_matrix", mvp_mat);
+				
+				m_boundary_cell.draw();
+			}
 		}
 	}
 }
 
 void CavityRenderer::drawBoundaryGlyphs()
 {
+	m_boundary_gylphs_fbo->bind();
+	glClearColor(
+		m_window_background_colour[0],
+		m_window_background_colour[1],
+		m_window_background_colour[2], 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, m_boundary_gylphs_fbo->getWidth(), m_boundary_gylphs_fbo->getHeight());
+
+	if(m_show_boundary_glyphs)
+	{
+		m_glyph_prgm.use();
+
+		for(auto& boundary_piece : m_simparams.boundary_conditions)
+		{
+			Range range(boundary_piece.range);
+			float x_length = (float)m_simparams.xLength / (float)m_simparams.iMax;
+			float y_length = (float)m_simparams.yLength / (float)m_simparams.jMax;
+
+			if(m_boundary_glyph_mode == 0)
+			{
+
+			}
+			else if(m_boundary_glyph_mode == 1)
+			{
+
+				if(boundary_piece.gridtype == Boundary::Grid::P &&  boundary_piece.condition==Boundary::Condition::INFLOW)
+					m_boundary_pdlt_glyph_tx->bindTexture();
+
+				if(boundary_piece.gridtype == Boundary::Grid::P &&  boundary_piece.condition==Boundary::Condition::OUTFLOW)
+					m_boundary_pnm_glyph_tx->bindTexture();
+			}
+
+			for_range(i, j, range)
+			{
+				float pos[] = { (float)(i-1) * x_length/1.0 + x_length / 2.0f, (float)(j-1) * y_length/1.0 + y_length/2.0f };
+
+				glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
+				glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(pos[0],pos[1],0.0));
+				glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
+				glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+				m_glyph_prgm.setUniform("mvp_matrix", mvp_mat);
+				
+				if( (m_boundary_glyph_mode==1) && (boundary_piece.gridtype == Boundary::Grid::P))
+					m_boundary_cell.draw();
+			}
+		}
+	}
 }
 
 void CavityRenderer::postProcessing()
@@ -672,6 +730,18 @@ void CavityRenderer::postProcessing()
 	glActiveTexture(GL_TEXTURE0);
 	m_postProc_prgm.setUniform("grid_tx2D",0);
 	m_grid_fbo->bindColorbuffer(0);
+
+	glActiveTexture(GL_TEXTURE1);
+	m_postProc_prgm.setUniform("boundary_cells_tx2D",1);
+	m_boundary_cells_fbo->bindColorbuffer(0);
+
+	glActiveTexture(GL_TEXTURE2);
+	m_postProc_prgm.setUniform("boundary_glyphs_tx2D",2);
+	m_boundary_gylphs_fbo->bindColorbuffer(0);
+
+	m_postProc_prgm.setUniform("background_colour",glm::vec3(m_window_background_colour[0],
+															m_window_background_colour[1],
+															m_window_background_colour[2]));
 
 	m_screen_quad.draw();
 }
