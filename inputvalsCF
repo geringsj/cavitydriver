@@ -1,0 +1,40 @@
+-- Extended Inputvals for SimulationParameters.
+-- When a parameter is given more than once,
+-- the first occurrence of the parameter will be used.
+
+name="DefaultCavityDriverUsecase"
+
+useComplexGeometry=0
+
+-- Domain parameters
+xLength=10.0
+yLength=2.0
+
+iMax=25
+jMax=5
+
+-- Time and Simulation parameters
+tEnd=30
+tau=0.5
+deltaVec=0.2
+deltaT=0.1
+iterMax=500
+eps=0.001
+omg=1.7
+alpha=0.9
+re=1000
+
+-- Outside forces on the system
+gx=0.0
+gy=0.0
+
+-- Initial field values
+ui=0.0
+vi=0.0
+pi=0.0
+
+-- Karman Parameters
+KarmanAngle= 0130e2
+KarmanObjectWidth=	013.3
+
+BoundaryPieces=""

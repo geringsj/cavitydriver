@@ -31,11 +31,9 @@ void Boundary::computeNOSLIP(
 	)
 	{
 		g(bindex) = 0.0;
+		return;
 	}
-	else
-	{
-		g(bindex) = -g(iindex);
-	}
+	g(bindex) = -g(iindex);
 }
 
 void Boundary::computeSLIP(
@@ -46,12 +44,10 @@ void Boundary::computeSLIP(
 		const Grid grid) const
 {
 	/* the dot-product condition of SLIP: (U,V) dot normalDirection = 0 */
-	if(grid==Grid::V && (dir==Direction::Up || dir==Direction::Down)) 
-	{
-		g(bindex) = 0.0;
-		return;
-	}
-	if(grid==Grid::U && (dir==Direction::Right || dir==Direction::Left))
+	if(
+		(grid==Grid::V && (dir==Direction::Up || dir==Direction::Down) ) ||
+		(grid==Grid::U && (dir==Direction::Right || dir==Direction::Left) )
+	)
 	{
 		g(bindex) = 0.0;
 		return;
@@ -350,19 +346,19 @@ Boundary::Boundary(
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
 		if(competence.Left)
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Left, Condition::OUTFLOW, Grid::P, 0.0, Range(
+			BoundaryPiece(Direction::Left, Condition::INFLOW, Grid::P, 1.0, Range(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
 		if(competence.Right)
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::P, 0.0, Range(
+			BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::P, 0.0, Range(
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
 
 		/* add v boundaries: 0 everywhere */
 		if(competence.Up) /* => move global upper boundary one down */
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::V, 0.0, Range(
+			BoundaryPiece(Direction::Up, Condition::NOSLIP, Grid::V, 0.0, Range(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j -1),
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j -1) ) ));
 		if(competence.Down)
@@ -372,14 +368,14 @@ Boundary::Boundary(
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
 		if(competence.Left)
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::V, 0.0, Range(
+			BoundaryPiece(Direction::Left, Condition::OUTFLOW, Grid::V, 0.0, Range(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
 				Index(
 					localSubInnerPRange.begin.i, 
 					localSubInnerPRange.end.j -competence.Up) ) ));
 		if(competence.Right)
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::V, 0.0, Range(
+			BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::V, 0.0, Range(
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
 				Index(
 					localSubInnerPRange.end.i, 
@@ -388,7 +384,7 @@ Boundary::Boundary(
 		/* add u boundaries: 1 at top, 0 everywhere else */
 		if(competence.Up) /* => move global right boundary one to the left */
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::U, 1.0, Range(
+			BoundaryPiece(Direction::Up, Condition::NOSLIP, Grid::U, 0.0, Range(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
 				Index(
 					localSubInnerPRange.end.i -competence.Right,
@@ -402,15 +398,91 @@ Boundary::Boundary(
 					localSubInnerPRange.begin.j) ) ));
 		if(competence.Left)
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::U, 0.0, Range(
+			BoundaryPiece(Direction::Left, Condition::OUTFLOW, Grid::U, 0.0, Range(
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
 				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
 		if(competence.Right)
 		boundary_conditions.push_back(
-			BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::U, 0.0, Range(
+			BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::U, 0.0, Range(
 				Index(localSubInnerPRange.end.i -1, localSubInnerPRange.begin.j),
 				Index(localSubInnerPRange.end.i -1, localSubInnerPRange.end.j) ) ));
 	}
+	//{
+	//	/* get missing boundary conditions for driven cavity */
+	//	/* add pressure boundary conditions: "copy inner to boundary" */
+	//	if(competence.Up)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Up, Condition::OUTFLOW, Grid::P, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
+	//			Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+	//	if(competence.Down)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Down, Condition::OUTFLOW, Grid::P, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+	//			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
+	//	if(competence.Left)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Left, Condition::OUTFLOW, Grid::P, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
+	//	if(competence.Right)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::P, 0.0, Range(
+	//			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
+	//			Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+
+	//	/* add v boundaries: 0 everywhere */
+	//	if(competence.Up) /* => move global upper boundary one down */
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::V, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j -1),
+	//			Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j -1) ) ));
+	//	if(competence.Down)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::V, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+	//			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
+	//	if(competence.Left)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::V, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+	//			Index(
+	//				localSubInnerPRange.begin.i, 
+	//				localSubInnerPRange.end.j -competence.Up) ) ));
+	//	if(competence.Right)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::V, 0.0, Range(
+	//			Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
+	//			Index(
+	//				localSubInnerPRange.end.i, 
+	//				localSubInnerPRange.end.j -competence.Up) ) ));
+
+	//	/* add u boundaries: 1 at top, 0 everywhere else */
+	//	if(competence.Up) /* => move global right boundary one to the left */
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Up, Condition::INFLOW, Grid::U, 1.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
+	//			Index(
+	//				localSubInnerPRange.end.i -competence.Right,
+	//				localSubInnerPRange.end.j) ) ));
+	//	if(competence.Down)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Down, Condition::NOSLIP, Grid::U, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+	//			Index(
+	//				localSubInnerPRange.end.i -competence.Right,
+	//				localSubInnerPRange.begin.j) ) ));
+	//	if(competence.Left)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Left, Condition::NOSLIP, Grid::U, 0.0, Range(
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+	//			Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
+	//	if(competence.Right)
+	//	boundary_conditions.push_back(
+	//		BoundaryPiece(Direction::Right, Condition::NOSLIP, Grid::U, 0.0, Range(
+	//			Index(localSubInnerPRange.end.i -1, localSubInnerPRange.begin.j),
+	//			Index(localSubInnerPRange.end.i -1, localSubInnerPRange.end.j) ) ));
+	//}
 
 	initBoundaries(localSubInnerPRange, boundary_conditions);
 	splitBoundaryTypes();
@@ -422,16 +494,16 @@ void Boundary::splitBoundaryTypes()
 	{
 	for(auto e : bnds[0])
 		for(auto cond : {Condition::INFLOW, Condition::OUTFLOW, Condition::SLIP} )
-				if(e.condition == cond)
+			if(e.condition == cond)
 				bnds[static_cast<int>(cond)].push_back(e);
 
-		bnds[0].erase( 
-				std::remove_if(bnds[0].begin(), bnds[0].end(), 
-					[](Boundary::Entry e)
-					{
-						return (e.condition != Condition::NOSLIP);
-					} ),
-				bnds[0].end() );
+	bnds[0].erase(
+		std::remove_if(bnds[0].begin(), bnds[0].end(), 
+			[](Boundary::Entry e)
+			{
+				return (e.condition != Condition::NOSLIP);
+			} ),
+			bnds[0].end() );
 	}
 	// Debug Stuff
 	//for (int i = 0; i < 4; i++)
