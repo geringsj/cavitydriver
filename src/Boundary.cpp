@@ -259,7 +259,7 @@ void Boundary::initBoundaries(
 
 	/* split boundary pieces to cell-wise portions 
 	 * and keep those for local domain */
-	for(auto bpiece : boundary_conditions)
+	for(auto& bpiece : boundary_conditions)
 	for_range(i,j,bpiece.range)
 	if( IndexIsInRange(Index(i,j), localSubInnerPRange) )
 	{
@@ -270,12 +270,16 @@ void Boundary::initBoundaries(
 		switch(bpiece.gridtype)
 		{
 			case Grid::P:
-				this->m_boundaries_P[0].push_back(te); break;
+				this->m_boundaries_P[0].push_back(te);
+				break;
 			case Grid::U:
-				this->m_boundaries_U[0].push_back(te); break;
+				this->m_boundaries_U[0].push_back(te);
+				break;
 			case Grid::V:
-				this->m_boundaries_V[0].push_back(te); break;
-			default: break;
+				this->m_boundaries_V[0].push_back(te);
+				break;
+			default:
+				break;
 		}
 	}
 

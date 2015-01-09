@@ -29,7 +29,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point delta,
-			const Ranges& inner_range,
+			const Ranges& inner_ranges,
 			const Real global_fluidCells);
 
 	/**
@@ -44,7 +44,7 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Ranges& inner_range,
+			const Ranges& inner_ranges,
 			const Real global_fluidCells);
 	
 	/**
@@ -56,7 +56,7 @@ namespace Solver
 			GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Ranges& inner_range,
+			const Ranges& inner_ranges,
 			const Real omega);
 
 	/**

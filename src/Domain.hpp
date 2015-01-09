@@ -8,9 +8,11 @@
 
 #include <vector>
 
-typedef std::vector<Range> Ranges;
+//typedef std::vector<Range> Ranges;
+//#define for_vecrange(F,S,R) for(auto&M:R)for_range(F,S,M)
+typedef Range Ranges;
+#define for_vecrange(F,S,R) for_range(F,S,R)
 
-#define for_vecrange(F,S,R) for(auto&M:R)for_range(F,S,M)
 
 /** 
  * Implements the Domain we will be working on, managing dimensions, grids and properties.
@@ -123,11 +125,11 @@ public:
 
 	Color getDomainFirstCellColor(){ return m_FirstCellColor; };
 
-	Real getFluidCellsCount() const
+	int getFluidCellsCount() const
 	{
-		Real sum = 0.0;
-		for(const auto& r : m_inner_ranges[3])
-			sum += static_cast<Real>((1.0+r.end.i-r.begin.i)*(1.0+r.end.j-r.begin.j));
+		int sum = 0;
+		for_vecrange(i,j,m_inner_ranges[3])
+			sum += 1;
 		return sum;
 	}
 
@@ -151,7 +153,7 @@ private:
 	 * [2] -> inner Range of W (maye we will need it ...)
 	 * [3] -> inner Range of pressure P
 	 */
-	std::vector<Range> /* aka 'Ranges' */ m_inner_ranges[4];
+	Ranges m_inner_ranges[4];
 	Range m_whole_inner_range;
 
 	/**

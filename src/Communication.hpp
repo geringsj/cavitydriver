@@ -81,7 +81,7 @@ public:
 	Range getLocalInnerRange() const { return m_localInnerRange; }
 	Range getProcLocalInnerRange(int procrank) const;
 
-	Real getGlobalFluidCellsCount(Real local_FluidCells);
+	int getGlobalFluidCellsCount(int local_FluidCells);
 };
 
 

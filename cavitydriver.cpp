@@ -90,43 +90,43 @@ int main(int argc, char** argv)
 		/* color pattern */
 		communication.getFirstCellColor());
 
-	Real global_fluidCells = 
-		communication.getGlobalFluidCellsCount(domain.getFluidCellsCount());
+	Real global_fluidCells = static_cast<Real>(
+		communication.getGlobalFluidCellsCount(domain.getFluidCellsCount()) );
 	//debug("FluidCells: %f", global_fluidCells);
 
 	//simparam.writeSettingsFile("inputvals_"+simparam.name);
 
-	log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
-		communication.getRank(),
-		domain.getWholeInnerRange().end.i, domain.getWholeInnerRange().end.j,
-		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"),
-		domain.getInnerRangeP().size(),
-		domain.getInnerRangeU().size(),
-		domain.getInnerRangeV().size() );
+	//log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
+	//	communication.getRank(),
+	//	domain.getWholeInnerRange().end.i, domain.getWholeInnerRange().end.j,
+	//	(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"),
+	//	domain.getInnerRangeP().size(),
+	//	domain.getInnerRangeU().size(),
+	//	domain.getInnerRangeV().size() );
 
-	debug("ranges P:");
-	for(auto& r : domain.getInnerRangeP())	
-		debug("[(%i,%i)(%i,%i)]",
-		r.begin.i,
-		r.begin.j,
-		r.end.i,
-		r.end.j );
+	//debug("ranges P:");
+	//for(auto& r : domain.getInnerRangeP())	
+	//	debug("[(%i,%i)(%i,%i)]",
+	//	r.begin.i,
+	//	r.begin.j,
+	//	r.end.i,
+	//	r.end.j );
 
-	debug("ranges U:");
-	for(auto& r : domain.getInnerRangeU())	
-		debug("[(%i,%i)(%i,%i)]",
-		r.begin.i,
-		r.begin.j,
-		r.end.i,
-		r.end.j );
+	//debug("ranges U:");
+	//for(auto& r : domain.getInnerRangeU())	
+	//	debug("[(%i,%i)(%i,%i)]",
+	//	r.begin.i,
+	//	r.begin.j,
+	//	r.end.i,
+	//	r.end.j );
 
-	debug("ranges V:");
-	for(auto& r : domain.getInnerRangeV())	
-		debug("[(%i,%i)(%i,%i)]",
-		r.begin.i,
-		r.begin.j,
-		r.end.i,
-		r.end.j );
+	//debug("ranges V:");
+	//for(auto& r : domain.getInnerRangeV())	
+	//	debug("[(%i,%i)(%i,%i)]",
+	//	r.begin.i,
+	//	r.begin.j,
+	//	r.end.i,
+	//	r.end.j );
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / std::min(simparam.iMax, simparam.jMax); // be careful

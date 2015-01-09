@@ -9,25 +9,25 @@ namespace Solver
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point delta,
-			const Ranges& inner_range,
+			const Ranges& inner_ranges,
 			const Real global_fluidCells)
 	{
 		return 
-			sqrt( computeSquaredResidual(p, rhs, delta, inner_range, global_fluidCells) );
+			sqrt( computeSquaredResidual(p, rhs, delta, inner_ranges, global_fluidCells) );
 	}
 
 	Real computeSquaredResidual(
 			const GridFunction& p,
 			const GridFunction& rhs,
 			const Point& delta,
-			const Ranges& inner_range,
+			const Ranges& inner_ranges,
 			const Real global_fluidCells)
 	{
 		Real numerator = 0.0;
 		Real dxx = pow(delta.x, 2.0);
 		Real dyy = pow(delta.y, 2.0);
 
-		for_vecrange(i,j,inner_range)
+		for_vecrange(i,j,inner_ranges)
 		{
 			Real pxx = (p(i+1,j) - 2.0*p(i,j) + p(i-1,j)) / dxx;
 			Real pyy = (p(i,j+1) - 2.0*p(i,j) + p(i,j-1)) / dyy;
@@ -66,7 +66,7 @@ namespace Solver
 			GridFunction& p,
 			const GridFunction& rhs,
 			const Delta & delta,
-			const Ranges& inner_range,
+			const Ranges& inner_ranges,
 			const Real omega)
 	{
 		const Real dxx = pow(delta.x, 2.0);
@@ -74,7 +74,7 @@ namespace Solver
 		const Real OneMinusOmega = (1. - omega);
 		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
-		for_vecrange(i,j,inner_range)
+		for_vecrange(i,j,inner_ranges)
 		{
 			p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, OneMinusOmega, omegaTimesDxxDyy);
 		}
@@ -89,7 +89,7 @@ namespace Solver
 		GridFunction& p = domain.p();
 		const GridFunction& rhs = domain.rhs();
 		const Delta delta = domain.getDelta();
-		const Ranges& inner_range = domain.getInnerRangeP();
+		const Ranges& inner_ranges = domain.getInnerRangeP();
 
 		const Real dxx = pow(delta.x, 2.0);
 		const Real dyy = pow(delta.y, 2.0);
@@ -102,7 +102,8 @@ namespace Solver
 		// Subsequently, the offset will be flipped between 0 and 1 after each column
 		// in order to achieve a check-board pattern (red-black scheme).
 
-		for(auto& r : inner_range)
+		//for(auto& r : inner_ranges)
+		Range r = inner_ranges;
 		{/* we need to recompute the offset for each subrange :( */
 			const int xBegin = r.begin.i;
 			const int yBegin = r.begin.j;
