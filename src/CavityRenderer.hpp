@@ -4,6 +4,7 @@
 #include <array>
 #include <fstream>
 #include <sstream>
+#include <memory>
 #include <vector>
 #include <typeinfo>
 
@@ -143,12 +144,15 @@ private:
 	GLfloat m_window_background_colour[3];
 	TwBar* bar;
 
+	GLSLProgram m_postProc_prgm;
+	Mesh m_screen_quad;
+
 	/* FBOs for visualization layers */
-	FramebufferObject m_field_fbo;
-	FramebufferObject m_grid_fbo;
-	FramebufferObject m_boundary_gylphs_fbo;
-	FramebufferObject m_boundary_cells_fbo;
-	FramebufferObject m_geometry_fbo;
+	std::shared_ptr<FramebufferObject> m_field_fbo;
+	std::shared_ptr<FramebufferObject> m_grid_fbo;
+	std::shared_ptr<FramebufferObject> m_boundary_gylphs_fbo;
+	std::shared_ptr<FramebufferObject> m_boundary_cells_fbo;
+	std::shared_ptr<FramebufferObject> m_geometry_fbo;
 
 	/* local simparams copy */
 	SimulationParameters m_simparams;
@@ -165,21 +169,23 @@ private:
 	GLfloat m_grid_colour[3];
 
 	/* Boundary glyph variables*/
-	Texture2D m_arrow;
-	GLSLProgram m_arrow_prgm;
-	Mesh m_arrow_quad;
+	std::shared_ptr<Texture2D> m_boundary_velocity_glyph_tx;
+	std::shared_ptr<Texture2D> m_boundary_pdlt_glyph_tx;
+	std::shared_ptr<Texture2D> m_boundary_pnm_glyph_tx;
+	GLSLProgram m_glyph_prgm;
+	Mesh m_glyp_quad;
 
 	/* Boundary cells variables*/
-	Texture2D m_boundary_cell_tx;
-	Texture2D m_boundary_cell_positions_tx;
+	std::shared_ptr<Texture2D> m_boundary_cell_tx;
+	std::shared_ptr<Texture2D> m_boundary_cell_positions_tx;
 	GLSLProgram m_boundary_cell_prgm;
 	Mesh m_boundary_cell;
 
 	/* Field related variables */
 	Mesh m_field_quad;
 	GLSLProgram m_field_prgm;
-	Texture2D m_pressure_tx;
-	Texture2D m_velocity_tx;
+	std::shared_ptr<Texture2D> m_pressure_tx;
+	std::shared_ptr<Texture2D> m_velocity_tx;
 
 	/*****************
 	 *Visibility flags
@@ -214,6 +220,8 @@ private:
 	bool createOverlayGrid();
 
 	bool createBoundaryCell();
+
+	bool createGeometry();
 
 	bool createTextures();
 

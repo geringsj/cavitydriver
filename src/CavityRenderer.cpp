@@ -194,6 +194,8 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_show_grid);
 	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_grid_colour, " label='Grid color' group='Grid' ");
 
+	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_show_boundary_cells);
+
 	Real test; float __float; double __double;
 	const char* _double = typeid(__double).name();
 	const char* _float = typeid(__float).name();
@@ -286,6 +288,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	if(!createGLSLPrograms()) { return false; }
 	if(!createOverlayGrid()) { return false; }
 	if(!createBoundaryCell()) { return false; }
+	if(!createGeometry()) { return false; }
 	if(!createTextures()) { return false; }
 	if(!createFramebuffers()) { return false; }
 
@@ -296,32 +299,32 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 bool CavityRenderer::createGLSLPrograms()
 {
 	/* Arrow texture programm */
-	m_arrow_prgm.init();
+	m_glyph_prgm.init();
 	
 	std::string arrow_vertex = readShaderFile("./shader/arrowVertex.glsl");
-	if (!m_arrow_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
+	if (!m_glyph_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_glyph_prgm.getLog(); return false; };
 	
 	std::string arrow_fragment = readShaderFile("./shader/arrowFragment.glsl");
-	if (!m_arrow_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_arrow_prgm.getLog(); return false; };
+	if (!m_glyph_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_glyph_prgm.getLog(); return false; };
 	
-	m_arrow_prgm.bindAttribLocation(0, "in_position");
+	m_glyph_prgm.bindAttribLocation(0, "in_position");
 	
-	m_arrow_prgm.link();
+	m_glyph_prgm.link();
 
 	/* Grid programm */
 	m_grid_prgm.init();
-
+	
 	std::string grid_vertex = readShaderFile("./shader/gridVertex.glsl");
 	if (!m_grid_prgm.compileShaderFromString(&grid_vertex, GL_VERTEX_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
-
+	
 	std::string grid_fragment = readShaderFile("./shader/gridFragment.glsl");
 	if (!m_grid_prgm.compileShaderFromString(&grid_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_grid_prgm.getLog(); return false; };
-
+	
 	m_grid_prgm.bindAttribLocation(0, "in_position");
-
+	
 	m_grid_prgm.link();
 
-	/* Boundary cells program*/
+	/* Boundary cells program */
 	m_boundary_cell_prgm.init();
 
 	std::string boundary_vertex_shdr = readShaderFile("./shader/boundaryCellVertex.glsl");
@@ -334,6 +337,20 @@ bool CavityRenderer::createGLSLPrograms()
 	m_boundary_cell_prgm.bindAttribLocation(1, "in_uv");
 
 	m_boundary_cell_prgm.link();
+
+	/* Post processing program */
+	m_postProc_prgm.init();
+
+	std::string postProc_vertex_shdr = readShaderFile("./shader/postProcVertex.glsl");
+	if (!m_postProc_prgm.compileShaderFromString(&postProc_vertex_shdr, GL_VERTEX_SHADER)) { std::cout << m_postProc_prgm.getLog(); return false; };
+
+	std::string postProc_fragment_shdr = readShaderFile("./shader/postProcFragment.glsl");
+	if (!m_postProc_prgm.compileShaderFromString(&postProc_fragment_shdr, GL_FRAGMENT_SHADER)) { std::cout << m_postProc_prgm.getLog(); return false; };
+
+	m_postProc_prgm.bindAttribLocation(0, "v_position");
+	m_postProc_prgm.bindAttribLocation(1, "v_uv");
+
+	if (!m_postProc_prgm.link()) { std::cout << m_postProc_prgm.getLog(); return false; };
 
 	return true; /* return with great success */
 }
@@ -434,6 +451,22 @@ bool CavityRenderer::createBoundaryCell()
 	return true;
 }
 
+bool CavityRenderer::createGeometry()
+{
+	std::array< VertexUV, 4 > vertex_array = {{ VertexUV(-1.0,-1.0,0.0,0.0,0.0),
+											VertexUV(-1.0,1.0,0.0,0.0,1.0),
+											VertexUV(1.0,1.0,0.0,1.0,1.0),
+											VertexUV(1.0,-1.0,0.0,1.0,0.0) }};
+
+	std::array< GLuint, 6 > index_array = {{ 0,2,1,2,0,3 }};
+
+	if(!(m_screen_quad.bufferDataFromArray(vertex_array.data(),index_array.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
+	m_screen_quad.setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(VertexUV),0);
+	m_screen_quad.setVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(VertexUV),(GLvoid*) (sizeof(float)*3));
+
+	return true;
+}
+
 bool CavityRenderer::createTextures()
 {
 	unsigned long begin_pos;
@@ -443,7 +476,8 @@ bool CavityRenderer::createTextures()
 	m_img_data = new char[x_dim * y_dim * 3];
 	readPpmData("arrow.ppm", m_img_data, begin_pos, x_dim, y_dim);
 	
-	if(!m_arrow.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
+	m_boundary_velocity_glyph_tx = std::make_shared<Texture2D>("m_boundary_velocity_glyph_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
+	//if(!m_boundary_velocity_glyph_tx.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
 	
 	delete[] m_img_data;
 
@@ -451,7 +485,26 @@ bool CavityRenderer::createTextures()
 	m_img_data = new char[x_dim * y_dim * 3];
 	readPpmData("boundary_cell.ppm", m_img_data, begin_pos, x_dim, y_dim);
 	
-	if(!m_boundary_cell_tx.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
+	m_boundary_cell_tx = std::make_shared<Texture2D>("m_boundary_cell_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
+	//if(!m_boundary_cell_tx.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
+	
+	delete[] m_img_data;
+
+	readPpmHeader("boundary_p_dlt_glyph.ppm", begin_pos, x_dim, y_dim);
+	m_img_data = new char[x_dim * y_dim * 3];
+	readPpmData("boundary_p_dlt_glyph.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	
+	m_boundary_pdlt_glyph_tx = std::make_shared<Texture2D>("m_boundary_pdlt_glyph_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
+	//if(!m_boundary_pdlt_glyph_tx.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
+	
+	delete[] m_img_data;
+
+	readPpmHeader("boundary_p_nm_glyph.ppm", begin_pos, x_dim, y_dim);
+	m_img_data = new char[x_dim * y_dim * 3];
+	readPpmData("boundary_p_nm_glyph.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	
+	m_boundary_pnm_glyph_tx = std::make_shared<Texture2D>("m_boundary_pnm_glyph_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
+	//if(!m_boundary_pnm_glyph_tx.load(GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data)) {return false;};
 	
 	delete[] m_img_data;
 
@@ -461,6 +514,17 @@ bool CavityRenderer::createTextures()
 bool CavityRenderer::createFramebuffers()
 {
 	//TODO create all framebuffers based on window width and height
+	m_field_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+
+	m_grid_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+	m_grid_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
+
+	m_boundary_gylphs_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+
+	m_boundary_cells_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+
+	m_geometry_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
+
 	return true;
 }
 
@@ -475,15 +539,15 @@ void CavityRenderer::paint()
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(m_window))
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(
-		m_window_background_colour[0],
-		m_window_background_colour[1],
-		m_window_background_colour[2], 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		int width, height;
-		glfwGetFramebufferSize(m_window, &width, &height);
-		glViewport(0, 0, width, height);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glClearColor(
+		//m_window_background_colour[0],
+		//m_window_background_colour[1],
+		//m_window_background_colour[2], 1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//int width, height;
+		//glfwGetFramebufferSize(m_window, &width, &height);
+		//glViewport(0, 0, width, height);
 
 		if(m_show_field)
 			drawField();
@@ -502,16 +566,6 @@ void CavityRenderer::paint()
 		
 
 		// Merge layers, do additional post processing. Output to primary framebuffer
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//glClearColor(
-		//	m_window_background_colour[0],
-		//	m_window_background_colour[1],
-		//	m_window_background_colour[2], 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//int width, height;
-		//glfwGetFramebufferSize(m_window, &width, &height);
-		//glViewport(0, 0, width, height);
-
 		postProcessing();
 
 		// Draw TB
@@ -539,12 +593,21 @@ void CavityRenderer::paint()
 
 void CavityRenderer::drawOverlayGrid()
 {
+	m_grid_fbo->bind();
+	glClearColor(
+		m_window_background_colour[0],
+		m_window_background_colour[1],
+		m_window_background_colour[2], 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, m_grid_fbo->getWidth(), m_grid_fbo->getHeight());
+
 	m_grid_prgm.use();
 	glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
 	glm::mat4 model_mat = glm::mat4(1.0f);
 	glm::mat4 view_mat = m_cam_sys.GetViewMatrix();
 	glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
 	m_grid_prgm.setUniform("mvp_matrix", mvp_mat);
+	m_grid_prgm.setUniform("colour", glm::vec3(m_grid_colour[0],m_grid_colour[1],m_grid_colour[2]));
 	
 	m_grid.draw();
 }
@@ -564,7 +627,7 @@ void CavityRenderer::drawBoundaryCells()
 	glEnable(GL_TEXTURE_2D);
 	glActiveTexture(GL_TEXTURE0);
 	m_boundary_cell_prgm.setUniform("boundary_tx2D",0);
-	m_boundary_cell_tx.bindTexture();
+	m_boundary_pdlt_glyph_tx->bindTexture();
 
 	for(auto& boundary_piece : m_simparams.boundary_conditions)
 	{
@@ -593,6 +656,24 @@ void CavityRenderer::drawBoundaryGlyphs()
 
 void CavityRenderer::postProcessing()
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(
+		m_window_background_colour[0],
+		m_window_background_colour[1],
+		m_window_background_colour[2], 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	int width, height;
+	glfwGetFramebufferSize(m_window, &width, &height);
+	glViewport(0, 0, width, height);
+
+	m_postProc_prgm.use();
+
+	glEnable(GL_TEXTURE_2D);
+	glActiveTexture(GL_TEXTURE0);
+	m_postProc_prgm.setUniform("grid_tx2D",0);
+	m_grid_fbo->bindColorbuffer(0);
+
+	m_screen_quad.draw();
 }
 
 //void CavityRenderer::drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece)
@@ -875,11 +956,11 @@ void CavityRenderer::addBoolParam(const char* name, const char* def, void* var, 
 {
 	if (mode == "RW")
 	{
-		TwAddVarRW(bar, name, TW_TYPE_BOOL32, var, def);
+		TwAddVarRW(bar, name, TW_TYPE_BOOLCPP, var, def);
 	}
 	if (mode == "RO")
 	{
-		TwAddVarRO(bar, name, TW_TYPE_BOOL32, var, def);
+		TwAddVarRO(bar, name, TW_TYPE_BOOLCPP, var, def);
 	}
 }
 
