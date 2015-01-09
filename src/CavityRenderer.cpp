@@ -369,17 +369,17 @@ bool CavityRenderer::createOverlayGrid()
 	float bottom_left_i = 0.0f;
 	float bottom_left_j = 0.0f;
 
-	float bottom_right_i = bottom_left_i + m_simparams.xCells * x_length;
+	float bottom_right_i = bottom_left_i + (m_simparams.xCells + 2) * x_length;
 	float bottom_right_j = bottom_left_j;
 
 	float top_right_i = bottom_right_i;
-	float top_right_j = bottom_right_j + m_simparams.yCells * y_length;
+	float top_right_j = bottom_right_j + (m_simparams.yCells + 2) * y_length;
 
 	float top_left_i = bottom_left_i;
-	float top_left_j = bottom_left_j + m_simparams.yCells * y_length;
+	float top_left_j = bottom_left_j + (m_simparams.yCells + 2) * y_length;
 
-	float right_shift = (m_simparams.xCells * x_length) / 2.0f;
-	float up_shift = (m_simparams.yCells * y_length) / 2.0f;
+	float right_shift = top_right_i / 2.0f;
+	float up_shift = top_right_j / 2.0f;
 
 	//why is this in here ?
 	//m_cam_sys.Translation(m_cam_sys.GetRightVector(), 0.0f - m_cam_sys.GetCamPos().x);
@@ -647,7 +647,22 @@ void CavityRenderer::drawBoundaryCells()
 
 			for_range(i, j, range)
 			{
-				float pos[] = { (float)(i-1) * x_length/1.0 + x_length / 2.0f, (float)(j-1) * y_length/1.0 + y_length/2.0f };
+				float pos[] = { (float)(i) * x_length/1.0 + x_length / 2.0f, (float)(j) * y_length/1.0 + y_length/2.0f };
+				switch(boundary_piece.direction)
+				{
+				case Boundary::Direction::Up:
+					pos[1] += y_length;
+					break;
+				case Boundary::Direction::Down:
+					pos[1] -= y_length;
+					break;
+				case Boundary::Direction::Left:
+					pos[0] -= x_length;
+					break;
+				case Boundary::Direction::Right:
+					pos[0] += x_length;
+					break;
+				}
 
 				glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
 				glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(pos[0],pos[1],0.0));
@@ -697,7 +712,22 @@ void CavityRenderer::drawBoundaryGlyphs()
 
 			for_range(i, j, range)
 			{
-				float pos[] = { (float)(i-1) * x_length/1.0 + x_length / 2.0f, (float)(j-1) * y_length/1.0 + y_length/2.0f };
+				float pos[] = { (float)(i) * x_length/1.0 + x_length / 2.0f, (float)(j) * y_length/1.0 + y_length/2.0f };
+				switch(boundary_piece.direction)
+				{
+				case Boundary::Direction::Up:
+					pos[1] += y_length;
+					break;
+				case Boundary::Direction::Down:
+					pos[1] -= y_length;
+					break;
+				case Boundary::Direction::Left:
+					pos[0] -= x_length;
+					break;
+				case Boundary::Direction::Right:
+					pos[0] += x_length;
+					break;
+				}
 
 				glm::mat4 proj_mat = glm::perspective(m_cam_sys.getFieldOfView(), m_cam_sys.getAspectRatio(), 0.1f, 100.0f);
 				glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(pos[0],pos[1],0.0));
