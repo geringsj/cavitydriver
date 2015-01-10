@@ -10,8 +10,8 @@ useComplexGeometry=0
 xLength=10.0
 yLength=2.0
 
-iMax=25
-jMax=5
+iMax=50
+jMax=10
 
 -- Time and Simulation parameters
 tEnd=30

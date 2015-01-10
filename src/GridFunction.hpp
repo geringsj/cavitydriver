@@ -79,7 +79,7 @@ public:
 	 * Determines the maximum value out of all grid entries.
 	 * @return Maximum grid value.
 	 */
-	Real getMaxValueGridFunction();
+	Real getMaxValue();
 
 	/** Prints 2D grid to stdout in a nicely formatted manner, for debugging purposes. */
 	void printSTDOUT();

@@ -25,12 +25,11 @@ Index GridFunction::getGridDimension() const
 	return this->dimension;
 }
 
-Real GridFunction::getMaxValueGridFunction()
+Real GridFunction::getMaxValue()
 {
-	Index begin(0,0);
-	Real max = this->operator()(begin.i, begin.j);
+	Real max = this->operator()(0,0);
 
-	for_range(i,j,wholeRange)
+	for_range(i,j,this->wholeRange)
 	{
 		if(max < this->operator()(i,j))
 			max = this->operator()(i,j);

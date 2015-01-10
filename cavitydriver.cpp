@@ -25,8 +25,7 @@ int main(int argc, char** argv)
 	std::chrono::steady_clock::time_point t_frame_start, t_frame_end;
 	std::chrono::steady_clock::time_point t_sor_start, t_sor_end;
 	std::chrono::duration<double> time_span;
-	double t_sor_avg = 0.0;
-	double t_frame_avg = 0.0;
+	double t_sor_avg = 0.0, t_frame_avg = 0.0;
 
 	/* init simulation parameters */
 	std::string inputvals("inputvals");
@@ -46,6 +45,7 @@ int main(int argc, char** argv)
 	/* init communication of processes */
 	Communication communication = Communication(global_dim);
 
+	/* TODO: move statistics somewhere else */
 	if(communication.getRank() == 0)
 	log_info("[P%i] loading inputvals from file \"%s\"",
 		communication.getRank(), inputvals.c_str());
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 		/* color pattern */
 		communication.getFirstCellColor());
 
-	Real global_fluidCells = static_cast<Real>(
+	Real global_fluidCellsCount = static_cast<Real>(
 		communication.getGlobalFluidCellsCount(domain.getFluidCellsCount()) );
 	//debug("FluidCells: %f", global_fluidCells);
 
@@ -133,12 +133,12 @@ int main(int argc, char** argv)
 	// concerning h, see: http://userpages.umbc.edu/~gobbert/papers/YangGobbertAML2007.pdf
 	simparam.omg = 2.0 /(1.0 + sin(M_PI*(h))); 
 
-	Real t = 0.0, dt, res;
+	Real t = 0.0, dt = 0.0, res = 42.;
 	int it = 0, step=0;
 
 	/* write initial state of velocities and pressure */
 	VTKOutput vtkoutput(domain, "out", communication);
-	vtkoutput.writeVTKFile(0.0);
+	vtkoutput.writeVTKFile(0.0); /* first vtk frame: all zero */
 	Real nextVTKWrite = 0.0;
 
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
@@ -149,21 +149,29 @@ int main(int argc, char** argv)
 		t_frame_start = std::chrono::steady_clock::now();
 
 		/* the magic starts here */
-		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re); 
-		Delta maxVelocities = 
-			Delta(domain.u().getMaxValueGridFunction(), domain.v().getMaxValueGridFunction());
+
+		/* to get consistent maxvalues from new velocities, 
+		 * first set boundaries, then compute max values for timestep */
+		domain.setVelocitiesBoundaries();
+
+		/* maybe write vtk */
+		if((nextVTKWrite += dt) > simparam.deltaVec)
+		{ vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0; }
+
+		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
+		Delta maxVelocities(domain.u().getMaxValue(), domain.v().getMaxValue());
 		maxVelocities = communication.getGlobalMaxVelocities(maxVelocities);
 
 		dt = Computation::computeTimestepFromMaxVelocities
 			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
 		t += dt;
 
-		domain.setVelocitiesBoundaries();
-		communication.exchangeGridBoundaryValues(domain, Communication::Handle::Velocities);
-
+		communication.exchangeGridBoundaryValues
+			(domain, Communication::Handle::Velocities);
 		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
 		domain.setPreliminaryVelocitiesBoundaries();
-		communication.exchangeGridBoundaryValues(domain, Communication::Handle::PreliminaryVelocities);
+		communication.exchangeGridBoundaryValues
+			(domain, Communication::Handle::PreliminaryVelocities);
 
 		Computation::computeRighthandSide(domain, dt);
 
@@ -173,48 +181,43 @@ int main(int argc, char** argv)
 			domain.setPressureBoundaries();
 #ifdef WITHMPI
 			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Red);
-			communication.exchangeGridBoundaryValues(domain,Communication::Handle::Pressure);
+			communication.exchangeGridBoundaryValues
+				(domain,Communication::Handle::Pressure);
+
 			Solver::SORCycleRedBlack(domain, simparam.omg, Color::Black);
-			communication.exchangeGridBoundaryValues(domain,Communication::Handle::Pressure);
+			communication.exchangeGridBoundaryValues
+				(domain,Communication::Handle::Pressure);
 #else
 			Solver::SORCycle(domain.p(), domain.rhs(), delta,
 					domain.getInnerRangeP(), simparam.omg);
 #endif
 
 			res = Solver::computeSquaredResidual(
-				domain.p(), domain.rhs(), delta, domain.getInnerRangeP(), global_fluidCells);
+				domain.p(), domain.rhs(), delta,
+				domain.getInnerRangeP(), global_fluidCellsCount);
 			res = communication.getGlobalResidual(res);
-			it++;
 		} while (communication.checkGlobalFinishSOR
-			(it < simparam.iterMax && res > simparam.eps));
+			(++it < simparam.iterMax && res > simparam.eps));
+
 		t_sor_end = std::chrono::steady_clock::now();
-		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_sor_end-t_sor_start);
-		t_sor_avg += time_span.count();
+		time_span = std::chrono::duration_cast<std::chrono::duration<double>>
+			(t_sor_end-t_sor_start); t_sor_avg += time_span.count();
 		//log_info("SOR solver time: %f seconds",time_span.count());
 
 		/* write new line of current statistics to stdout */
 		if(communication.getRank() == 0)
 		{
 			printf("[INFO] - Round %i: %.2f%% | dt=%f | Solver: it=%i / res=%f%s\r",
-				step, (t / simparam.tEnd)*100., dt, it, res, 
-				((t < simparam.tEnd)) ? ("") : ("\n"));
+			step,(t/simparam.tEnd)*100.,dt,it,res,(t<simparam.tEnd)?(""):("\n"));
 			fflush( stdout );
 		}
-		it = 0;
+		it = 0; step++;
 
 		Computation::computeNewVelocities(domain, dt);
 
-		nextVTKWrite += dt;
-		if(nextVTKWrite > simparam.deltaVec)
-		{
-			nextVTKWrite = 0.0;
-			vtkoutput.writeVTKFile(dt);
-		}
-		step++;
-
 		t_frame_end = std::chrono::steady_clock::now();
-		time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t_frame_end-t_frame_start);
-		t_frame_avg += time_span.count();
+		time_span = std::chrono::duration_cast<std::chrono::duration<double>>
+			(t_frame_end-t_frame_start); t_frame_avg += time_span.count();
 		//log_info("Overall frame time: %f seconds",time_span.count());
 	}
 
@@ -223,10 +226,8 @@ int main(int argc, char** argv)
 
 	/* output time: overall, per frame and pressure computation per frame */
 	log_info("[P%i] Overall time: %fs | avg. frame time: %fs | avg. SOR time: %fs",
-		communication.getRank(),
-		time_span.count(),
-		t_frame_avg / (double)(step-1),
-		t_sor_avg / (double)(step-1) );
+		communication.getRank(), time_span.count(),
+		t_frame_avg/(double)(step-1), t_sor_avg/(double)(step-1) );
 
 	/* end of magic */
 	return 0;

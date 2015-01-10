@@ -10,10 +10,10 @@ namespace Solver
 			const GridFunction& rhs,
 			const Point delta,
 			const Ranges& inner_ranges,
-			const Real global_fluidCells)
+			const Real global_fluidCellsCount)
 	{
 		return 
-			sqrt( computeSquaredResidual(p, rhs, delta, inner_ranges, global_fluidCells) );
+			sqrt(computeSquaredResidual(p,rhs,delta,inner_ranges,global_fluidCellsCount));
 	}
 
 	Real computeSquaredResidual(
@@ -21,7 +21,7 @@ namespace Solver
 			const GridFunction& rhs,
 			const Point& delta,
 			const Ranges& inner_ranges,
-			const Real global_fluidCells)
+			const Real global_fluidCellsCount)
 	{
 		Real numerator = 0.0;
 		Real dxx = pow(delta.x, 2.0);
@@ -35,7 +35,8 @@ namespace Solver
 
 			numerator += pow(help,2.0);
 		}
-		return (numerator / global_fluidCells);
+		return (numerator / global_fluidCellsCount);
+		/* TODO: move normalization to main loop or communication */
 	}
 
 
@@ -47,17 +48,17 @@ namespace Solver
 				const int j, 
 				const Real dxx, 
 				const Real dyy, 
-				const Real omegaMinus1,
-				const Real omegaTimesDxxDyy)
+				const Real OneMinusOmega,
+				const Real OmegaTimesDxxDyy)
 		{
 			const Real old_value = p(i,j);
 			const Real pxx = (p(i - 1,j) + p(i + 1,j)) / dxx;
 			const Real pyy = (p(i,j - 1) + p(i,j + 1)) / dyy;
 
-			return 
-				omegaMinus1 * old_value 
-				+ 
-				omegaTimesDxxDyy 
+			return
+				OneMinusOmega * old_value
+				+
+				OmegaTimesDxxDyy
 				* ( pxx + pyy - rhs(i,j) );
 		}
 	};
@@ -72,11 +73,11 @@ namespace Solver
 		const Real dxx = pow(delta.x, 2.0);
 		const Real dyy = pow(delta.y, 2.0);
 		const Real OneMinusOmega = (1. - omega);
-		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
+		const Real OmegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
 		for_vecrange(i,j,inner_ranges)
 		{
-			p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, OneMinusOmega, omegaTimesDxxDyy);
+			p(i,j) = evaluateSOR(p, rhs, i, j, dxx, dyy, OneMinusOmega, OmegaTimesDxxDyy);
 		}
 	}
 	

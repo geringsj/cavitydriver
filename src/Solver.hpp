@@ -30,7 +30,7 @@ namespace Solver
 			const GridFunction& rhs,
 			const Point delta,
 			const Ranges& inner_ranges,
-			const Real global_fluidCells);
+			const Real global_fluidCellsCount);
 
 	/**
 	* Compute the squared residual res that is to be used as an exit condition.
@@ -45,7 +45,7 @@ namespace Solver
 			const GridFunction& rhs,
 			const Point& delta,
 			const Ranges& inner_ranges,
-			const Real global_fluidCells);
+			const Real global_fluidCellsCount);
 	
 	/**
 	* Compute one SOR iteration on the pressure p.
