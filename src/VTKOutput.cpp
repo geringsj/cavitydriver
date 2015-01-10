@@ -77,24 +77,24 @@ void VTKOutput::writeVTKSingleFile()
 {
 	/* generate filename with current framestep */
 	std::string filename;
-  	filename.append("./");
-  	filename.append (this->output_path);
-  	filename.append("/");
-  	filename.append ("field_");
-  	filename.append (std::to_string(this->framestep));
-  	filename.append (".vts");
+	filename.append("./");
+	filename.append (this->output_path);
+	filename.append("/");
+	filename.append ("field_");
+	filename.append (std::to_string(this->framestep));
+	filename.append (".vts");
 
-  	/* open stream for VTK XML data */
-  	std::filebuf fb;
-  	fb.open (const_cast < char *>(filename.c_str ()), std::ios::out);
-  	std::ostream os (&fb);
+	/* open stream for VTK XML data */
+	std::filebuf fb;
+	fb.open (const_cast < char *>(filename.c_str ()), std::ios::out);
+	std::ostream os (&fb);
 
-  	/* write extent of grid, the Min/Max values are _inclusive_, 
-  	 * like in for(int i=Min; i<=Max; ...) */
-  	int xMin = this->domain.getWholeInnerRange().begin.i;
-  	int xMax = this->domain.getWholeInnerRange().end.i;
-  	int yMin = this->domain.getWholeInnerRange().begin.j;
-  	int yMax = this->domain.getWholeInnerRange().end.j;
+	/* write extent of grid, the Min/Max values are _inclusive_, 
+	 * like in for(int i=Min; i<=Max; ...) */
+	int xMin = this->domain.getWholeInnerRange().begin.i;
+	int xMax = this->domain.getWholeInnerRange().end.i;
+	int yMin = this->domain.getWholeInnerRange().begin.j;
+	int yMax = this->domain.getWholeInnerRange().end.j;
 	os 
 	<< "<?xml version=\"1.0\"?>" << std::endl
 	<< "<VTKFile type=\"StructuredGrid\">" << std::endl
@@ -113,7 +113,7 @@ void VTKOutput::writeVTKSingleFile()
 	<< "<Points>" << std::endl 
 	<< "<DataArray type=\"Float64\" format=\"ascii\" NumberOfComponents=\"3\"> " << std::endl;
 	Real deltaX = this->domain.getDelta().x;
-  	Real deltaY = this->domain.getDelta().y;
+	Real deltaY = this->domain.getDelta().y;
 	for(int j = yMin; j <= yMax; j++)
 	{
 		for(int i = xMin; i <= xMax; i++)
@@ -140,6 +140,7 @@ void VTKOutput::writeVTKSingleFile()
 		{
 			os << std::scientific 
 				<< (domain.u()(i, j) + domain.u()(i - 1, j)) / 2.0 << " " 
+				<< std::scientific 
 				<< (domain.v()(i, j) + domain.v()(i, j - 1)) / 2.0 << " " 
 				<< 0.0 << std::endl;
 		}

@@ -230,7 +230,7 @@ void Domain::setPressureBoundaries()
 {
 	//this->m_boundary.setBoundary(Boundary::Grid::P, this->p());
 	
-	Real inflowval = 1.0;
+	Real inflowval = 0.1;
 
 	Range RangeP = m_inner_ranges[3];//[0];
 	Range upRangeP(Index(RangeP.begin.i, RangeP.end.j), RangeP.end);

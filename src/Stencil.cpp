@@ -63,10 +63,10 @@ namespace Derivatives
 			return [&gf, delta, f, b, isX, isY, isZ](int i, int j)
 				{
 					return 
-						( 
-						 gf( i+ f*isX , j + f*isY) 
-							- 
-						 gf( i + b*isX, j + b*isY) 
+						(
+						 gf( i + f*isX, j + f*isY)
+							-
+						 gf( i + b*isX, j + b*isY)
 						) / delta;
 				};
 		}
@@ -103,13 +103,13 @@ namespace Derivatives
 			}
 			return [&gf, delta, isX, isY, isZ](int i, int j)
 				{
-					return 
+					return
 						(
-						 gf( i + isX , j + isY) 
-							+ 
+						 gf( i + isX, j + isY)
+							+
 						 gf( i - isX, j - isY)
-							- 
-						 2.0*gf( i , j ) 
+							-
+						 2.0*gf( i , j )
 						)
 						/ (delta*delta);
 				};

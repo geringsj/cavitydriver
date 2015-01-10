@@ -144,7 +144,7 @@ int main(int argc, char** argv)
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
 
 	/* main loop */
-	while(t < simparam.tEnd)
+	while((t += dt) < simparam.tEnd)
 	{
 		t_frame_start = std::chrono::steady_clock::now();
 
@@ -153,6 +153,8 @@ int main(int argc, char** argv)
 		/* to get consistent maxvalues from new velocities, 
 		 * first set boundaries, then compute max values for timestep */
 		domain.setVelocitiesBoundaries();
+		communication.exchangeGridBoundaryValues
+			(domain, Communication::Handle::Velocities);
 
 		/* maybe write vtk */
 		if((nextVTKWrite += dt) > simparam.deltaVec)
@@ -164,10 +166,7 @@ int main(int argc, char** argv)
 
 		dt = Computation::computeTimestepFromMaxVelocities
 			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
-		t += dt;
 
-		communication.exchangeGridBoundaryValues
-			(domain, Communication::Handle::Velocities);
 		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
 		domain.setPreliminaryVelocitiesBoundaries();
 		communication.exchangeGridBoundaryValues
@@ -192,6 +191,9 @@ int main(int argc, char** argv)
 					domain.getInnerRangeP(), simparam.omg);
 #endif
 
+			domain.setPressureBoundaries();
+			communication.exchangeGridBoundaryValues
+				(domain,Communication::Handle::Pressure);
 			res = Solver::computeSquaredResidual(
 				domain.p(), domain.rhs(), delta,
 				domain.getInnerRangeP(), global_fluidCellsCount);
