@@ -267,26 +267,26 @@ namespace Derivatives
 
 					Real fgp = /* this part goes in plus gg-direction */
 						(
-						 gf( i , j ) 
-							+ 
-						 gf( i + GinX , j  + GinY ) 
+						 gf( i , j )
+							-
+						 gf( i + GinX , j  + GinY )
 						)
 						*
 					std::fabs(
-						 gg( i , j ) 
-							- 
+						 gg( i , j )
+							+
 						 gg( i + FinX , j + FinY )
 						);
 					Real fgm = /* this part goes in minus gg-direction */
 						(
-						 gf( i , j ) 
-							+ 
-						 gf( i - GinX , j - GinY ) 
+						 -gf( i , j )
+							+
+						 gf( i - GinX , j - GinY )
 						)
 						*
 					std::fabs(
-						 gg( i - GinX , j - GinY ) 
-							- 
+						 gg( i - GinX , j - GinY )
+							+
 						 gg( i + FinX - GinX , j + FinY - GinY )
 						);
 

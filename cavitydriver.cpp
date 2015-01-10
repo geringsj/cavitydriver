@@ -192,9 +192,6 @@ int main(int argc, char** argv)
 					domain.getInnerRangeP(), simparam.omg);
 #endif
 
-			domain.setPressureBoundaries();
-			communication.exchangeGridBoundaryValues
-				(domain,Communication::Handle::Pressure);
 			res = Solver::computeSquaredResidual(
 				domain.p(), domain.rhs(), delta,
 				domain.getInnerRangeP(), global_fluidCellsCount);
@@ -216,6 +213,9 @@ int main(int argc, char** argv)
 		}
 		it = 0; step++;
 
+		domain.setPressureBoundaries();
+		communication.exchangeGridBoundaryValues
+			(domain,Communication::Handle::Pressure);
 		Computation::computeNewVelocities(domain, dt);
 
 		t_frame_end = std::chrono::steady_clock::now();

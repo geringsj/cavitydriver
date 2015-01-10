@@ -95,7 +95,7 @@ namespace Solver
 		const Real dxx = pow(delta.x, 2.0);
 		const Real dyy = pow(delta.y, 2.0);
 		const Real OneMinusOmega = (1. - omega);
-		const Real omegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
+		const Real OmegaTimesDxxDyy = omega * ((dxx*dyy)/(2.0*(dxx+dyy)));
 
 		// Decide offset (in y-direction) based on color of first cell.
 		// If color matches the color of the first cell, no offset is required 
@@ -120,7 +120,7 @@ namespace Solver
 				for(int i=xBegin+offset; i<=xEnd; i=i+2)// skip every other cell in x dimension
 				{
 					p(i,j) = 
-						evaluateSOR(p, rhs, i, j, dxx, dyy, OneMinusOmega, omegaTimesDxxDyy);
+						evaluateSOR(p, rhs, i, j, dxx, dyy, OneMinusOmega, OmegaTimesDxxDyy);
 				}
 				offset = (offset+1)%2;// 'Flip' offset for next row
 			}
