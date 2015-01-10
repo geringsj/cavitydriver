@@ -144,7 +144,7 @@ int main(int argc, char** argv)
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
 
 	/* main loop */
-	while((t += dt) < simparam.tEnd)
+	while(t < simparam.tEnd)
 	{
 		t_frame_start = std::chrono::steady_clock::now();
 
@@ -166,6 +166,7 @@ int main(int argc, char** argv)
 
 		dt = Computation::computeTimestepFromMaxVelocities
 			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
+		t += dt; /* for status output */
 
 		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
 		domain.setPreliminaryVelocitiesBoundaries();

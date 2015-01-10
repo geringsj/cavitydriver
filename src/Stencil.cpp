@@ -351,7 +351,6 @@ namespace Derivatives
 			GridFunction& gf1, GridFunction& gf2, Delta d, 
 			Function f1, Function f2)
 	{
-		return [](int i, int j){ return i*j*0.0; };
 		return genFG_gdc(gf1, gf2, d, f1, f2);
 	}
 	std::function<Real(int, int)> getProductFirstDerivativeDCS(
@@ -360,7 +359,7 @@ namespace Derivatives
 	{
 		Function ff1 = static_cast<Derivatives::Function>(f1);
 		Function ff2 = static_cast<Derivatives::Function>(f2);
-		return getProductFirstDerivative(gf1, gf2, d, ff1, ff2);
+		return getProductFirstDerivativeDCS(gf1, gf2, d, ff1, ff2);
 	}
 
 };
