@@ -68,7 +68,7 @@ namespace Computation
 					1+D,1+Gdim);
 
 			/* TODO: "weighted mean of...", so weight?! */
-			Real OneMinusAlpha = (1. - alpha);
+			//Real OneMinusAlpha = (1. - alpha);
 			/* the formula: */
 			for_vecrange(i,j,domain.getInnerRanges()[D])
 			{
@@ -77,8 +77,8 @@ namespace Computation
 					+ deltaT*
 					(
 					 (Fxx(i,j) + Fyy(i,j))/Re
-					 - (OneMinusAlpha*FFf(i,j) + alpha*FFfdc(i,j))
-					 - (OneMinusAlpha*FGg(i,j) + alpha*FGgdc(i,j))
+					 - (FFf(i,j) + alpha*FFfdc(i,j))
+					 - (FGg(i,j) + alpha*FGgdc(i,j))
 					 + domain.g(D)
 					);
 			}
