@@ -1,8 +1,10 @@
 #ifndef CavityRenderer_hpp
 #define CavityRenderer_hpp
 
+#include <array>
 #include <fstream>
 #include <sstream>
+#include <memory>
 #include <vector>
 #include <typeinfo>
 
@@ -26,12 +28,12 @@ private:
 		//! and up-vector (0,1,0) forward-vector (0,0,1) and right-vector (1,0,0)
 		CameraSystem()
 			: cam_pos(), up_vector(0.0f,1.0f,0.0f), forward_vector(0.0f,0.0f,1.0f),
-			right_vector(1.0f,0.0f,0.0f), center(), translation(1.0), rotation(1.0),
+			right_vector(1.0f,0.0f,0.0f), translation(1.0), rotation(1.0),
 			m_aspect_ratio(16.0/9.0), m_field_of_view(60.0/m_aspect_ratio) {}
 		//! constructor creates a camera system with the given parameters
 		CameraSystem(glm::vec3 p_cam_pos,glm::vec3 p_up_vector,glm::vec3 p_forward_vector,glm::vec3 p_right_vector)
 			: cam_pos(p_cam_pos), up_vector(p_up_vector), forward_vector(p_forward_vector),
-			right_vector(p_right_vector), center(), translation(1.0), rotation(1.0),
+			right_vector(p_right_vector), translation(1.0), rotation(1.0),
 			m_aspect_ratio(16.0/9.0), m_field_of_view(60.0/m_aspect_ratio) {}
 		~CameraSystem() {};
 		//! rotation around (up,forward,right)-vector v with angle alpha (in degree)
@@ -41,31 +43,29 @@ private:
 			up_vector = glm::vec3(rotation * glm::vec4(up_vector,1.0f));
 			forward_vector = glm::vec3(rotation * glm::vec4(forward_vector,1.0));
 			right_vector =  glm::vec3(rotation * glm::vec4(right_vector,1.0));
-			center = glm::vec3(rotation * glm::vec4(center,1.0));
 		}
 		//! translation with a step in (up,forward,right)-vector direction
 		void Translation(glm::vec3 t, float step_size)
 		{
 			translation = glm::translate(glm::mat4(1.0f),step_size*t);
 			cam_pos = glm::vec3(translation * glm::vec4(cam_pos,1.0f));
-			center = glm::vec3(translation * glm::vec4(center,1.0));
 		}
 		void zoom(float factor) { m_field_of_view = (60.0/m_aspect_ratio) * factor; }
 		//! return the view matrix
-		glm::mat4 GetViewMatrix() { return glm::lookAt(cam_pos,center,up_vector); }
+		glm::mat4 GetViewMatrix() { return glm::lookAt(cam_pos,cam_pos+forward_vector,up_vector); }
 		//! returns the camera position
 		glm::vec3 GetCamPos() { return cam_pos; }
+		glm::vec3& accessCamPos() { return cam_pos; }
 		//! returns the up-vector
 		glm::vec3 GetUpVector() { return up_vector; }
 		//! returns the forwards vector
 		glm::vec3 GetForwardVector() { return forward_vector; }
 		//! returns the right vector
 		glm::vec3 GetRightVector() { return right_vector; }
-		//! returns the center vector
-		glm::vec3 GetCenterVector() { return center; }
 		float getFieldOfView() { return m_field_of_view; }
 		float& accessFieldOfView() { return m_field_of_view; }
 		float getAspectRatio() { return m_aspect_ratio; }
+		void setAspectRatio(float aspect_ratio) { m_aspect_ratio = aspect_ratio; }
 	private:
 		//! stores the camera position
 		glm::vec3 cam_pos;
@@ -75,8 +75,6 @@ private:
 		glm::vec3 forward_vector;
 		//! stores the right vector
 		glm::vec3 right_vector;
-		//! stores the center vector, i.e. the positin we look at in world space
-		glm::vec3 center;
 		//! stores the translation
 		glm::mat4 translation;
 		//! stores the rotation
@@ -112,16 +110,22 @@ public:
 	 */
 	void paint();
 
+	void pushSimParams();
+
 
 	void setWindowSize(int width, int height)
 	{
 		m_window_width=width;
 		m_window_height = height;
+
+		m_cam_sys.setAspectRatio((float)m_window_width/(float)m_window_height);
+
+		m_field_fbo->resize(width,height);
+		m_grid_fbo->resize(width,height);
+		m_boundary_gylphs_fbo->resize(width,height);
+		m_boundary_cells_fbo->resize(width,height);
+		m_geometry_fbo->resize(width,height);
 	}
-
-
-
-
 
 
 	//void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
@@ -146,12 +150,15 @@ private:
 	GLfloat m_window_background_colour[3];
 	TwBar* bar;
 
+	GLSLProgram m_postProc_prgm;
+	Mesh m_screen_quad;
+
 	/* FBOs for visualization layers */
-	FramebufferObject m_field_fbo;
-	FramebufferObject m_grid_fbo;
-	FramebufferObject m_boundary_gylphs_fbo;
-	FramebufferObject m_boundary_cells_fbo;
-	FramebufferObject m_geometry_fbo;
+	std::shared_ptr<FramebufferObject> m_field_fbo;
+	std::shared_ptr<FramebufferObject> m_grid_fbo;
+	std::shared_ptr<FramebufferObject> m_boundary_gylphs_fbo;
+	std::shared_ptr<FramebufferObject> m_boundary_cells_fbo;
+	std::shared_ptr<FramebufferObject> m_geometry_fbo;
 
 	/* local simparams copy */
 	SimulationParameters m_simparams;
@@ -168,21 +175,23 @@ private:
 	GLfloat m_grid_colour[3];
 
 	/* Boundary glyph variables*/
-	Texture2D m_arrow;
-	GLSLProgram m_arrow_prgm;
-	Mesh m_arrow_quad;
+	std::shared_ptr<Texture2D> m_boundary_velocity_glyph_tx;
+	std::shared_ptr<Texture2D> m_boundary_pdlt_glyph_tx;
+	std::shared_ptr<Texture2D> m_boundary_pnm_glyph_tx;
+	GLSLProgram m_glyph_prgm;
+	int m_boundary_glyph_mode;
 
 	/* Boundary cells variables*/
-	Texture2D m_boundary_cell_tx;
-	Texture2D m_boundary_cell_positions_tx;
+	std::shared_ptr<Texture2D> m_boundary_cell_tx;
+	std::shared_ptr<Texture2D> m_boundary_cell_positions_tx;
 	GLSLProgram m_boundary_cell_prgm;
 	Mesh m_boundary_cell;
 
 	/* Field related variables */
 	Mesh m_field_quad;
 	GLSLProgram m_field_prgm;
-	Texture2D m_pressure_tx;
-	Texture2D m_velocity_tx;
+	std::shared_ptr<Texture2D> m_pressure_tx;
+	std::shared_ptr<Texture2D> m_velocity_tx;
 
 	/*****************
 	 *Visibility flags
@@ -216,7 +225,13 @@ private:
 	/** Create overlay grid (really just a grid made of lines) */
 	bool createOverlayGrid();
 
+	bool createBoundaryCell();
+
+	bool createGeometry();
+
 	bool createTextures();
+
+	bool createFramebuffers();
 
 
 	/****************************************************
@@ -237,7 +252,6 @@ private:
 	void drawBoundaryCells();
 
 	void postProcessing();
-
 
 
 
@@ -321,8 +335,8 @@ private:
 	}
 	inline static void windowResizeCallback(GLFWwindow* window, int width, int height)
 	{
-		CavityRenderer* painter = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
-		painter->setWindowSize(width,height);
+		CavityRenderer* renderer = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
+		renderer->setWindowSize(width,height);
 		TwWindowSize(width, height);
 	}
 

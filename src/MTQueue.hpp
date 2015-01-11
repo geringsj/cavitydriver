@@ -53,9 +53,7 @@ public:
 	 * \return Returns true if an element was succesfully extracted from queue.
 	 * Returns false if queue remained empty.
 	 */
-	bool tryPop(
-		T& val, 
-		std::chrono::microseconds timeout = static_cast<std::chrono::microseconds>(0))
+	bool tryPop(T& val, std::chrono::microseconds timeout = std::chrono::microseconds(0))
 	{
 		std::unique_lock<std::mutex> lock(m_mutex);
 

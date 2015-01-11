@@ -6,7 +6,6 @@
 #include "src/Solver.hpp"
 #include "src/Debug.hpp"
 #include "src/Communication.hpp"
-//#include "src/CavityPainter.hpp"
 
 #define _USE_MATH_DEFINES
 #include <math.h>

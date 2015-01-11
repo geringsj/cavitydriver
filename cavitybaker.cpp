@@ -3,6 +3,7 @@
 #include "src/Bakery.hpp"
 #include "src/CavityRenderer.hpp"
 
+#include <future>
 #include <string>
 #include <thread>
 #include <iostream>
@@ -297,7 +298,6 @@ void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters
 void runVisualization(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationParameters>& outbox,
 	int window_width, int window_height, SimulationParameters& initial_params)
 {
-	//CavityRenderer cavity_renderer(inbox,outbox);
 	CavityRenderer cavity_renderer(inbox,outbox);
 	cavity_renderer.initBakeryVis(window_width,window_height,initial_params);
 	cavity_renderer.paint();
@@ -326,29 +326,28 @@ int main(int argc, char** argv)
 	/* give simparams to gui - gui feedback? */
 	if(gui)
 	{
-		/**
-		 * This is just a test but the range should
-		 * match the inner range of p.
-		 */
-		//Index begin = Index(1, 1);
-		//Index end = Index(newparam.iMax, newparam.jMax);
-		//Range range = Range(begin, end);
-
 		MTQueue<SimulationParameters> outbox;
 		MTQueue<SimulationParameters> inbox;
 
 		// Create renderer. Obviously the renderer's inbox is the outbox on this side.
-		
-		std::thread render_thread(&runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, std::ref(newparam));
+		auto render_execution = std::async(std::launch::async, &runVisualization, std::ref(outbox), std::ref(inbox), 640, 480, std::ref(newparam));
 
 		/* TODO: get/overwrite newparams from gui */
-		//while(true)
-		//{
-		//	SimulationParameters received_params;
-		//	inbox.pop(received_params);
-		//}
+		while(true)
+		{
+			SimulationParameters received_params;
+			if(inbox.tryPop(received_params,std::chrono::milliseconds(500)))
+			{
+				std::cout<<"I got the goods!"<<std::endl;
 
-		render_thread.join();
+				newparam = Bakery::get(static_cast<Bakery::Setting>(setting), inflowVal, received_params);
+			}
+
+			auto status = render_execution.wait_for(std::chrono::seconds(0));
+			if(status == std::future_status::ready)
+				break;
+		}
+
 	}
 
 	if(newparam.name == "")

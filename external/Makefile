@@ -8,7 +8,7 @@ dirs:
 	@mkdir -p lib
 
 glowl:
-	if cd "glowl"; then echo "already have cloned glowl"; else git clone git://zuggerwad.de:~/glowl glowl; fi
+	if cd "glowl"; then echo "already have cloned glowl"; else git clone https://github.com/invor/glowl glowl; fi
 	make -C ./glowl/
 	cp ./glowl/libglowl.a ./lib/
 	cp -r ./glowl/include/glowl ./include/
