@@ -124,15 +124,13 @@ void VTKOutput::writeVTKSingleFile()
 				<< 0.0 << std::endl;
 		}
 	}
-	os 
-	<< "</DataArray>" << std::endl
-	<< "</Points>" << std::endl
+	os << "</DataArray>" << std::endl << "</Points>" << std::endl;
 
 	/* write inner of vector field U/V 
 	 * here we interpolate U and V to be at the grid-position of P,
 	 * so we 'implicitly' touch the boundary values of U and V
 	 * when looping using the ranges of P */
-	<< "<PointData Vectors=\"Field\"  Scalars=\"P\">" << std::endl 
+	os << "<PointData Vectors=\"Field\"  Scalars=\"P\">" << std::endl
 	<< "<DataArray Name=\"Field\" NumberOfComponents=\"3\" type=\"Float64\" >" << std::endl;
 	for(int j = yMin; j <= yMax; ++j)
 	{
@@ -145,11 +143,10 @@ void VTKOutput::writeVTKSingleFile()
 				<< 0.0 << std::endl;
 		}
 	}
+	os << "</DataArray>" << std::endl;
 
 	/* write inner of P, no weird stuff happening here */
-	os
-	<< "</DataArray>" << std::endl
-	<< "<DataArray type=\"Float64\" Name=\"P\" format=\"ascii\">" << std::endl;
+	os << "<DataArray type=\"Float64\" Name=\"P\" format=\"ascii\">" << std::endl;
 	for(int j = yMin; j <= yMax; ++j)
 	{
 		for(int i = xMin; i <= xMax; ++i)
@@ -158,12 +155,9 @@ void VTKOutput::writeVTKSingleFile()
 		}
 		os << std::endl;
 	}
+	os << "</DataArray>" << std::endl;
 
 	/* write the vorticity */
-	os 
-	<< "</DataArray>" << std::endl;
-
-
 	os << "<DataArray type=\"Float64\" Name=\"Vorticity\" format=\"ascii\">" << std::endl;
 	for (int j = yMin; j <= yMax; ++j)
 	{
@@ -177,11 +171,9 @@ void VTKOutput::writeVTKSingleFile()
 		}
 		os << std::endl;
 	}
+	os<< "</DataArray>" << std::endl;
 
-	os
-	<< "</DataArray>" << std::endl
-	<< "</PointData>" << std::endl
-	
+	os << "</PointData>" << std::endl
 	<< "</Piece>" << std::endl
 	<< "</StructuredGrid>" << std::endl 
 	<< "</VTKFile>" << std::endl;

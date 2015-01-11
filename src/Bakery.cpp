@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include <list>
+#include <functional>
 
 namespace Bakery {
 
@@ -76,13 +77,37 @@ namespace Bakery {
 			Boundary::Condition condR,
 			Real valueR)
 		{
+		std::function<bool(int,int)> canGoThere;
+		switch(grid)
+		{
+			case Boundary::Grid::P:
+				canGoThere = [&field](int i, int j)
+				{
+					return (field(i,j) != 1.0);
+				};
+				break;
+			case Boundary::Grid::U:
+				canGoThere = [&field](int i, int j)
+				{
+					return (field(i,j) != 1.0 && field(i,j) != 2.0 && field(i,j) != 4.0);
+				};
+				break;
+			case Boundary::Grid::V:
+				canGoThere = [&field](int i, int j)
+				{
+					return (field(i,j) != 1.0 && field(i,j) != 3.0 && field(i,j) != 4.0);
+				};
+				break;
+			default:
+				break;
+		}
 		/* up */
 		for_range(i,j,
 				Range(
 				Index(inner.begin.i, inner.end.j),
 				Index(inner.end.i, inner.end.j) )
 		)
-		if(field(i,j) == 0.0)
+		if( canGoThere(i,j) )
 		simpams.boundary_conditions.push_back(
 			Boundary::BoundaryPiece(
 				Boundary::Direction::Up, condU,
@@ -93,7 +118,7 @@ namespace Bakery {
 				Index(inner.begin.i, inner.begin.j),
 				Index(inner.end.i, inner.begin.j) )
 		)
-		if(field(i,j) == 0.0)
+		if( canGoThere(i,j) )
 		simpams.boundary_conditions.push_back(
 			Boundary::BoundaryPiece(
 				Boundary::Direction::Down, condD,
@@ -104,7 +129,7 @@ namespace Bakery {
 				Index(inner.begin.i, inner.begin.j),
 				Index(inner.begin.i, inner.end.j) )
 		)
-		if(field(i,j) == 0.0)
+		if( canGoThere(i,j) )
 		simpams.boundary_conditions.push_back(
 			Boundary::BoundaryPiece(
 				Boundary::Direction::Left, condL,
@@ -115,7 +140,7 @@ namespace Bakery {
 				Index(inner.end.i, inner.begin.j),
 				Index(inner.end.i, inner.end.j) ) 
 		)
-		if(field(i,j) == 0.0)
+		if( canGoThere(i,j) )
 		simpams.boundary_conditions.push_back(
 			Boundary::BoundaryPiece(
 				Boundary::Direction::Right, condR,
@@ -201,7 +226,7 @@ namespace Bakery {
 		}
 
 		void getChannelFlowObstacle(SimulationParameters& simpams, Range inner, GridFunction& field, Real inflowVal)
-		{ /* TODO: shift U and V inner ends according to their needs, and don't forget the shifted boundaries' neighbour-cells! */
+		{
 		/* set P */
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
 			Boundary::Condition::OUTFLOW, 0.0, /* UP */
@@ -209,13 +234,19 @@ namespace Bakery {
 			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
 			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
 		/* set U */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::U,
+		setOuterBoundariesWithObstacle(simpams, 
+			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
+			field,
+			Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0);
 		/* set V */
-		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::V,
+		setOuterBoundariesWithObstacle(simpams,
+			Range(inner.begin, Index(inner.end.i, inner.end.j-1)),
+			field,
+			Boundary::Grid::V,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::OUTFLOW, 0.0,
@@ -247,20 +278,24 @@ namespace Bakery {
 			return pointInTri(point, rect) || pointInTri(point, rect+2);
 		}
 
-		void addUVP_NOSLIP(Boundary::Direction dir, Index ind, SimulationParameters& simpams)
-		{ /* TODO: shift U and V inner ends according to their needs, and don't forget the shifted boundaries' neighbour-cells! */
-			simpams.boundary_conditions.push_back(
-					Boundary::BoundaryPiece(
-						dir, Boundary::Condition::NOSLIP, Boundary::Grid::U,
-						0.0, Range(ind,ind) ) );
-			simpams.boundary_conditions.push_back(
-					Boundary::BoundaryPiece(
-						dir, Boundary::Condition::NOSLIP, Boundary::Grid::V,
-						0.0, Range(ind,ind) ) );
-			simpams.boundary_conditions.push_back(
+		void addObjectBoundary(
+			Boundary::Grid grid, Boundary::Direction dir,
+			 Index ind, SimulationParameters& simpams)
+		{
+		switch(grid){
+			case Boundary::Grid::P:
+				simpams.boundary_conditions.push_back(
 					Boundary::BoundaryPiece(
 						dir, Boundary::Condition::OUTFLOW, Boundary::Grid::P,
 						0.0, Range(ind,ind) ) );
+				break;
+			default:
+				simpams.boundary_conditions.push_back(
+					Boundary::BoundaryPiece(
+						dir, Boundary::Condition::NOSLIP, grid,
+						0.0, Range(ind,ind) ) );
+				break;
+		}
 		}
 	}
 
@@ -365,22 +400,89 @@ namespace Bakery {
 			}
 			//field.printSTDOUT();
 
-			/* collect object boundaries in inner */
+			/* mark special case cells for U boundaries at right
+			 * and V boundaries at top */
+			/* U: mark empty cells left of boundary as 2.0 */
+			/* V: mark empty cells below boundary as 2.0 */
+			/* we need to handle this here during boundary creation so
+			 * the Boundary handling class gets simpler */
 			for_range(i,j,inner)
 			if(field(i,j) == 0.0)
 			{
+				/* right cell is marked => set U*/
+				if(field(i+1,j) == 1.0)
+					field(i,j) = 2.0;
+				/* upper cell is marked => set V */
+				if(field(i,j+1) == 1.0)
+					field(i,j) = 3.0;
+				/* both */
+				if(field(i+1,j) == 1.0 && field(i,j+1) == 1.0)
+					field(i,j) = 4.0;
+			}
+
+			/* collect object boundaries in inner */
+			/* for P */
+			for_range(i,j,inner)
+			if(field(i,j) == 0.0 || field(i,j) > 1.0)
+			{
 				/* left */
 				if(field(i-1,j) == 1.0)
-					addUVP_NOSLIP(Boundary::Direction::Left, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::P, Boundary::Direction::Left, Index(i,j), simpams);
 				/* right */
 				if(field(i+1,j) == 1.0)
-					addUVP_NOSLIP(Boundary::Direction::Right, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::P, Boundary::Direction::Right, Index(i,j), simpams);
 				/* up */
 				if(field(i,j+1) == 1.0)
-					addUVP_NOSLIP(Boundary::Direction::Up, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::P, Boundary::Direction::Up, Index(i,j), simpams);
 				/* down */
 				if(field(i,j-1) == 1.0)
-					addUVP_NOSLIP(Boundary::Direction::Down, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::P, Boundary::Direction::Down, Index(i,j), simpams);
+			}
+			/* for U, not allowed on 1.0, 2.0 and 4.0*/
+			for_range(i,j,inner)
+			if(field(i,j) == 0.0 || field(i,j) == 3.0)
+			{
+				/* left */
+				if(field(i-1,j) == 1.0)
+					addObjectBoundary
+						(Boundary::Grid::U, Boundary::Direction::Left, Index(i,j), simpams);
+				/* right */
+				if(field(i+1,j) == 2.0 || field(i+1,j) == 4.0)
+					addObjectBoundary
+						(Boundary::Grid::U, Boundary::Direction::Right, Index(i,j), simpams);
+				/* up */
+				if(field(i,j+1) == 1.0)
+					addObjectBoundary
+						(Boundary::Grid::U, Boundary::Direction::Up, Index(i,j), simpams);
+				/* down */
+				if(field(i,j-1) == 1.0)
+					addObjectBoundary
+						(Boundary::Grid::U, Boundary::Direction::Down, Index(i,j), simpams);
+			}
+			/* for V, not allowed on 1.0, 3.0 and 4.0*/
+			for_range(i,j,inner)
+			if(field(i,j) == 0.0 || field(i,j) == 2.0)
+			{
+				/* left */
+				if(field(i-1,j) == 1.0)
+					addObjectBoundary
+						(Boundary::Grid::V, Boundary::Direction::Left, Index(i,j), simpams);
+				/* right */
+				if(field(i+1,j) == 1.0)
+					addObjectBoundary
+						(Boundary::Grid::V, Boundary::Direction::Right, Index(i,j), simpams);
+				/* up */
+				if(field(i,j+1) == 3.0 || field(i,j+1) == 4.0)
+					addObjectBoundary
+						(Boundary::Grid::V, Boundary::Direction::Up, Index(i,j), simpams);
+				/* down */
+				if(field(i,j-1) == 1.0)
+					addObjectBoundary
+						(Boundary::Grid::V, Boundary::Direction::Down, Index(i,j), simpams);
 			}
 
 			/* add missing domain boundaries depending on case (maybe do somewhere before?) */

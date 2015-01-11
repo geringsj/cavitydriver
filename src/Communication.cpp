@@ -190,9 +190,10 @@ Real Communication::getGlobalResidual(Real mySubResidual)
 int Communication::getGlobalFluidCellsCount(int local_FluidCells)
 {
 #ifdef WITHMPI
-	MPI_Allreduce(&local_FluidCells, m_recvBuffer, 1, MPI_INT, 
+	int recv;
+	MPI_Allreduce(&local_FluidCells, &recv, 1, MPI_INT, 
 			MPI_SUM, *(MPI_Comm*)mycom);
-	return m_recvBuffer[0];
+	return recv;
 #else
 	return local_FluidCells;
 #endif

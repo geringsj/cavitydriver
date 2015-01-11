@@ -103,8 +103,7 @@ namespace Solver
 		// Subsequently, the offset will be flipped between 0 and 1 after each column
 		// in order to achieve a check-board pattern (red-black scheme).
 
-		//for(auto& r : inner_ranges)
-		Range r = inner_ranges;
+		for(auto& r : inner_ranges)
 		{/* we need to recompute the offset for each subrange :( */
 			const int xBegin = r.begin.i;
 			const int yBegin = r.begin.j;

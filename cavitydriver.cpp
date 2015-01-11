@@ -80,8 +80,8 @@ int main(int argc, char** argv)
 		/* init boundary, for this we need the inner range of the local process
 		 * w.r.t. the range of the global domain. and the competences. */
 		Boundary(
-			communication.getLocalInnerRange(), 
-			communication.getBoundaryCompetence(), 
+			communication.getLocalInnerRange(),
+			communication.getBoundaryCompetence(),
 			simparam.boundary_conditions),
 		/* outer forces */
 		simparam.gx, simparam.gy,
@@ -92,41 +92,14 @@ int main(int argc, char** argv)
 
 	Real global_fluidCellsCount = static_cast<Real>(
 		communication.getGlobalFluidCellsCount(domain.getFluidCellsCount()) );
-	//debug("FluidCells: %f", global_fluidCells);
 
-	//simparam.writeSettingsFile("inputvals_"+simparam.name);
-
-	//log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
-	//	communication.getRank(),
-	//	domain.getWholeInnerRange().end.i, domain.getWholeInnerRange().end.j,
-	//	(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"),
-	//	domain.getInnerRangeP().size(),
-	//	domain.getInnerRangeU().size(),
-	//	domain.getInnerRangeV().size() );
-
-	//debug("ranges P:");
-	//for(auto& r : domain.getInnerRangeP())	
-	//	debug("[(%i,%i)(%i,%i)]",
-	//	r.begin.i,
-	//	r.begin.j,
-	//	r.end.i,
-	//	r.end.j );
-
-	//debug("ranges U:");
-	//for(auto& r : domain.getInnerRangeU())	
-	//	debug("[(%i,%i)(%i,%i)]",
-	//	r.begin.i,
-	//	r.begin.j,
-	//	r.end.i,
-	//	r.end.j );
-
-	//debug("ranges V:");
-	//for(auto& r : domain.getInnerRangeV())	
-	//	debug("[(%i,%i)(%i,%i)]",
-	//	r.begin.i,
-	//	r.begin.j,
-	//	r.end.i,
-	//	r.end.j );
+	log_info("[P%i] range p=(%i,%i), firstColor=%s, subRangesCount: p=%lu, u=%lu, v=%lu",
+		communication.getRank(),
+		domain.getWholeInnerRange().end.i, domain.getWholeInnerRange().end.j,
+		(domain.getDomainFirstCellColor() == Color::Red) ? ("Red") : ("Black"),
+		domain.getInnerRangeP().size(),
+		domain.getInnerRangeU().size(),
+		domain.getInnerRangeV().size() );
 
 	/* next: omega and time parameters */
 	Real h = 1.0 / std::min(simparam.iMax, simparam.jMax); // be careful

@@ -8,10 +8,8 @@
 
 #include <vector>
 
-//typedef std::vector<Range> Ranges;
-//#define for_vecrange(F,S,R) for(auto&M:R)for_range(F,S,M)
-typedef Range Ranges;
-#define for_vecrange(F,S,R) for_range(F,S,R)
+typedef std::vector<Range> Ranges;
+#define for_vecrange(F,S,R) for(auto&M:R)for_range(F,S,M)
 
 
 /** 

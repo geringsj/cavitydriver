@@ -67,8 +67,6 @@ namespace Computation
 					domain.getVelocity()[D],domain.getVelocity()[Gdim],domain.getDelta(),
 					1+D,1+Gdim);
 
-			/* TODO: "weighted mean of...", so weight?! */
-			//Real OneMinusAlpha = (1. - alpha);
 			/* the formula: */
 			for_vecrange(i,j,domain.getInnerRanges()[D])
 			{

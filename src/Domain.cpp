@@ -34,14 +34,11 @@ Domain::Domain(
 
 		m_force_gx(in_gx), m_force_gy(in_gy) // , m_force_gz(in_gz)
 {
-	//debug("get U inner ranges");
-	m_inner_ranges[0] = Range(Index(1,1), Index(dimension.i-1, dimension.j));//m_boundary.getInnerRanges(Boundary::Grid::U);
-	//debug("get V inner ranges");
-	m_inner_ranges[1] = Range(Index(1,1), Index(dimension.i, dimension.j-1));//m_boundary.getInnerRanges(Boundary::Grid::V);
+	m_inner_ranges[0] = m_boundary.getInnerRanges(Boundary::Grid::U);
+	m_inner_ranges[1] = m_boundary.getInnerRanges(Boundary::Grid::V);
 	//m_inner_ranges[2] = m_boundary.getInnerRanges(Boundary::Grid::W);
-	//debug("get P inner ranges");
-	m_inner_ranges[3] = Range(Index(1,1), dimension);//m_boundary.getInnerRanges(Boundary::Grid::P);
-	m_whole_inner_range = Range(Index(1,1), dimension);//m_boundary.getWholeInnerRange();
+	m_inner_ranges[3] = m_boundary.getInnerRanges(Boundary::Grid::P);
+	m_whole_inner_range = m_boundary.getWholeInnerRange();
 
 	/* init all grids to start values given from outside */
 	for(uint d=0; d<DIMENSIONS; d++)
@@ -76,198 +73,198 @@ Domain::~Domain()
 
 void Domain::setVelocitiesBoundaries()
 {
-	//this->m_boundary.setBoundary(Boundary::Grid::U, this->u());
-	//this->m_boundary.setBoundary(Boundary::Grid::V, this->v());
+	this->m_boundary.setBoundary(Boundary::Grid::U, this->u());
+	this->m_boundary.setBoundary(Boundary::Grid::V, this->v());
 
-	/* U */
-	Range RangeU = m_inner_ranges[0];//[0];
-	Range upRangeU(Index(RangeU.begin.i, RangeU.end.j), RangeU.end);
-	Range downRangeU(RangeU.begin, Index(RangeU.end.i,RangeU.begin.j));
-	Range leftRangeU(RangeU.begin, Index(RangeU.begin.i,RangeU.end.j));
-	Range rightRangeU(Index(RangeU.end.i,RangeU.begin.j), RangeU.end);
-	/* Up */
-	for_range(i,j,upRangeU)
-	{
-		Index bindex(i,j+1);
-		Index iindex(i,j);
-		/* NOSLIP */
-		u()( bindex ) = - u()( iindex );
-	}
-	/* Down */
-	for_range(i,j,downRangeU)
-	{
-		Index bindex(i,j-1);
-		Index iindex(i,j);
-		/* NOSLIP */
-		u()( bindex ) = - u()( iindex );
-	}
-	/* Left */
-	for_range(i,j,leftRangeU)
-	{
-		Index bindex(i-1,j);
-		Index iindex(i,j);
-		/* OUTFLOW */
-		u()( bindex ) = u()( iindex );
-	}
-	/* Right */
-	for_range(i,j,rightRangeU)
-	{
-		Index bindex(i+1,j);
-		Index iindex(i,j);
-		/* OUTFLOW */
-		u()( bindex ) = u()( iindex );
-	}
-
-	/* V */
-	Range RangeV = m_inner_ranges[1];//[0];
-	Range upRangeV(Index(RangeV.begin.i, RangeV.end.j), RangeV.end);
-	Range downRangeV(RangeV.begin, Index(RangeV.end.i,RangeV.begin.j));
-	Range leftRangeV(RangeV.begin, Index(RangeV.begin.i,RangeV.end.j));
-	Range rightRangeV(Index(RangeV.end.i,RangeV.begin.j), RangeV.end);
-	/* Up */
-	for_range(i,j,upRangeV)
-	{
-		Index bindex(i,j+1);
-		Index iindex(i,j);
-		/* NOSLIP */
-		v()( bindex ) = 0.0;//- v()( iindex );
-	}
-	/* Down */
-	for_range(i,j,downRangeV)
-	{
-		Index bindex(i,j-1);
-		Index iindex(i,j);
-		/* NOSLIP */
-		v()( bindex ) = 0.0;//- v()( iindex );
-	}
-	/* Left */
-	for_range(i,j,leftRangeV)
-	{
-		Index bindex(i-1,j);
-		Index iindex(i,j);
-		/* OUTFLOW */
-		v()( bindex ) = v()( iindex );
-	}
-	/* Right */
-	for_range(i,j,rightRangeV)
-	{
-		Index bindex(i+1,j);
-		Index iindex(i,j);
-		/* OUTFLOW */
-		v()( bindex ) = v()( iindex );
-	}
+//	/* U */
+//	Range RangeU = m_inner_ranges[0];//[0];
+//	Range upRangeU(Index(RangeU.begin.i, RangeU.end.j), RangeU.end);
+//	Range downRangeU(RangeU.begin, Index(RangeU.end.i,RangeU.begin.j));
+//	Range leftRangeU(RangeU.begin, Index(RangeU.begin.i,RangeU.end.j));
+//	Range rightRangeU(Index(RangeU.end.i,RangeU.begin.j), RangeU.end);
+//	/* Up */
+//	for_range(i,j,upRangeU)
+//	{
+//		Index bindex(i,j+1);
+//		Index iindex(i,j);
+//		/* NOSLIP */
+//		u()( bindex ) = - u()( iindex );
+//	}
+//	/* Down */
+//	for_range(i,j,downRangeU)
+//	{
+//		Index bindex(i,j-1);
+//		Index iindex(i,j);
+//		/* NOSLIP */
+//		u()( bindex ) = - u()( iindex );
+//	}
+//	/* Left */
+//	for_range(i,j,leftRangeU)
+//	{
+//		Index bindex(i-1,j);
+//		Index iindex(i,j);
+//		/* OUTFLOW */
+//		u()( bindex ) = u()( iindex );
+//	}
+//	/* Right */
+//	for_range(i,j,rightRangeU)
+//	{
+//		Index bindex(i+1,j);
+//		Index iindex(i,j);
+//		/* OUTFLOW */
+//		u()( bindex ) = u()( iindex );
+//	}
+//
+//	/* V */
+//	Range RangeV = m_inner_ranges[1];//[0];
+//	Range upRangeV(Index(RangeV.begin.i, RangeV.end.j), RangeV.end);
+//	Range downRangeV(RangeV.begin, Index(RangeV.end.i,RangeV.begin.j));
+//	Range leftRangeV(RangeV.begin, Index(RangeV.begin.i,RangeV.end.j));
+//	Range rightRangeV(Index(RangeV.end.i,RangeV.begin.j), RangeV.end);
+//	/* Up */
+//	for_range(i,j,upRangeV)
+//	{
+//		Index bindex(i,j+1);
+//		Index iindex(i,j);
+//		/* NOSLIP */
+//		v()( bindex ) = 0.0;//- v()( iindex );
+//	}
+//	/* Down */
+//	for_range(i,j,downRangeV)
+//	{
+//		Index bindex(i,j-1);
+//		Index iindex(i,j);
+//		/* NOSLIP */
+//		v()( bindex ) = 0.0;//- v()( iindex );
+//	}
+//	/* Left */
+//	for_range(i,j,leftRangeV)
+//	{
+//		Index bindex(i-1,j);
+//		Index iindex(i,j);
+//		/* OUTFLOW */
+//		v()( bindex ) = v()( iindex );
+//	}
+//	/* Right */
+//	for_range(i,j,rightRangeV)
+//	{
+//		Index bindex(i+1,j);
+//		Index iindex(i,j);
+//		/* OUTFLOW */
+//		v()( bindex ) = v()( iindex );
+//	}
 }
 
 void Domain::setPreliminaryVelocitiesBoundaries()
 {
-	//this->m_boundary.copyGridBoundary(Boundary::Grid::F, this->u(), this->F());
-	//this->m_boundary.copyGridBoundary(Boundary::Grid::G, this->v(), this->G());
+	this->m_boundary.copyGridBoundary(Boundary::Grid::F, this->u(), this->F());
+	this->m_boundary.copyGridBoundary(Boundary::Grid::G, this->v(), this->G());
 
-	/* U / F */
-	Range RangeU = m_inner_ranges[0];//[0];
-	Range upRangeU(Index(RangeU.begin.i, RangeU.end.j), RangeU.end);
-	Range downRangeU(RangeU.begin, Index(RangeU.end.i,RangeU.begin.j));
-	Range leftRangeU(RangeU.begin, Index(RangeU.begin.i,RangeU.end.j));
-	Range rightRangeU(Index(RangeU.end.i,RangeU.begin.j), RangeU.end);
-	/* Up */
-	for_range(i,j,upRangeU)
-	{
-		Index bindex(i,j+1);
-		F()( bindex ) = u()( bindex );
-	}
-	/* Down */
-	for_range(i,j,downRangeU)
-	{
-		Index bindex(i,j-1);
-		F()( bindex ) = u()( bindex );
-	}
-	/* Left */
-	for_range(i,j,leftRangeU)
-	{
-		Index bindex(i-1,j);
-		F()( bindex ) = u()( bindex );
-	}
-	/* Right */
-	for_range(i,j,rightRangeU)
-	{
-		Index bindex(i+1,j);
-		F()( bindex ) = u()( bindex );
-	}
-
-	/* V */
-	Range RangeV = m_inner_ranges[1];//[0];
-	Range upRangeV(Index(RangeV.begin.i, RangeV.end.j), RangeV.end);
-	Range downRangeV(RangeV.begin, Index(RangeV.end.i,RangeV.begin.j));
-	Range leftRangeV(RangeV.begin, Index(RangeV.begin.i,RangeV.end.j));
-	Range rightRangeV(Index(RangeV.end.i,RangeV.begin.j), RangeV.end);
-	/* Up */
-	for_range(i,j,upRangeV)
-	{
-		Index bindex(i,j+1);
-		G()( bindex ) = v()( bindex );
-	}
-	/* Down */
-	for_range(i,j,downRangeV)
-	{
-		Index bindex(i,j-1);
-		G()( bindex ) = v()( bindex );
-	}
-	/* Left */
-	for_range(i,j,leftRangeV)
-	{
-		Index bindex(i-1,j);
-		G()( bindex ) = v()( bindex );
-	}
-	/* Right */
-	for_range(i,j,rightRangeV)
-	{
-		Index bindex(i+1,j);
-		G()( bindex ) = v()( bindex );
-	}
+//	/* U / F */
+//	Range RangeU = m_inner_ranges[0];//[0];
+//	Range upRangeU(Index(RangeU.begin.i, RangeU.end.j), RangeU.end);
+//	Range downRangeU(RangeU.begin, Index(RangeU.end.i,RangeU.begin.j));
+//	Range leftRangeU(RangeU.begin, Index(RangeU.begin.i,RangeU.end.j));
+//	Range rightRangeU(Index(RangeU.end.i,RangeU.begin.j), RangeU.end);
+//	/* Up */
+//	for_range(i,j,upRangeU)
+//	{
+//		Index bindex(i,j+1);
+//		F()( bindex ) = u()( bindex );
+//	}
+//	/* Down */
+//	for_range(i,j,downRangeU)
+//	{
+//		Index bindex(i,j-1);
+//		F()( bindex ) = u()( bindex );
+//	}
+//	/* Left */
+//	for_range(i,j,leftRangeU)
+//	{
+//		Index bindex(i-1,j);
+//		F()( bindex ) = u()( bindex );
+//	}
+//	/* Right */
+//	for_range(i,j,rightRangeU)
+//	{
+//		Index bindex(i+1,j);
+//		F()( bindex ) = u()( bindex );
+//	}
+//
+//	/* V */
+//	Range RangeV = m_inner_ranges[1];//[0];
+//	Range upRangeV(Index(RangeV.begin.i, RangeV.end.j), RangeV.end);
+//	Range downRangeV(RangeV.begin, Index(RangeV.end.i,RangeV.begin.j));
+//	Range leftRangeV(RangeV.begin, Index(RangeV.begin.i,RangeV.end.j));
+//	Range rightRangeV(Index(RangeV.end.i,RangeV.begin.j), RangeV.end);
+//	/* Up */
+//	for_range(i,j,upRangeV)
+//	{
+//		Index bindex(i,j+1);
+//		G()( bindex ) = v()( bindex );
+//	}
+//	/* Down */
+//	for_range(i,j,downRangeV)
+//	{
+//		Index bindex(i,j-1);
+//		G()( bindex ) = v()( bindex );
+//	}
+//	/* Left */
+//	for_range(i,j,leftRangeV)
+//	{
+//		Index bindex(i-1,j);
+//		G()( bindex ) = v()( bindex );
+//	}
+//	/* Right */
+//	for_range(i,j,rightRangeV)
+//	{
+//		Index bindex(i+1,j);
+//		G()( bindex ) = v()( bindex );
+//	}
 }
 
 void Domain::setPressureBoundaries()
 {
-	//this->m_boundary.setBoundary(Boundary::Grid::P, this->p());
-	
-	Real inflowval = 1.0;
+	this->m_boundary.setBoundary(Boundary::Grid::P, this->p());
 
-	Range RangeP = m_inner_ranges[3];//[0];
-	Range upRangeP(Index(RangeP.begin.i, RangeP.end.j), RangeP.end);
-	Range downRangeP(RangeP.begin, Index(RangeP.end.i,RangeP.begin.j));
-	Range leftRangeP(RangeP.begin, Index(RangeP.begin.i,RangeP.end.j));
-	Range rightRangeP(Index(RangeP.end.i,RangeP.begin.j), RangeP.end);
-	/* Up */
-	for_range(i,j,upRangeP)
-	{
-		Index bindex(i,j+1);
-		Index iindex(i,j);
-		/* OUTFLOW */
-		p()( bindex ) = p()( iindex );
-	}
-	/* Down */
-	for_range(i,j,downRangeP)
-	{
-		Index bindex(i,j-1);
-		Index iindex(i,j);
-		/* OUTFLOW */
-		p()( bindex ) = p()( iindex );
-	}
-	/* Left */
-	for_range(i,j,leftRangeP)
-	{
-		Index bindex(i-1,j);
-		Index iindex(i,j);
-		/* INFLOW */
-		p()( bindex ) = 2.0*inflowval - p()( iindex );
-	}
-	/* Right */
-	for_range(i,j,rightRangeP)
-	{
-		Index bindex(i+1,j);
-		Index iindex(i,j);
-		/* NOSLIP */
-		p()( bindex ) = - p()( iindex );
-	}
+//	Real inflowval = 0.1;
+//
+//	Range RangeP = m_inner_ranges[3];//[0];
+//	Range upRangeP(Index(RangeP.begin.i, RangeP.end.j), RangeP.end);
+//	Range downRangeP(RangeP.begin, Index(RangeP.end.i,RangeP.begin.j));
+//	Range leftRangeP(RangeP.begin, Index(RangeP.begin.i,RangeP.end.j));
+//	Range rightRangeP(Index(RangeP.end.i,RangeP.begin.j), RangeP.end);
+//	/* Up */
+//	for_range(i,j,upRangeP)
+//	{
+//		Index bindex(i,j+1);
+//		Index iindex(i,j);
+//		/* OUTFLOW */
+//		p()( bindex ) = p()( iindex );
+//	}
+//	/* Down */
+//	for_range(i,j,downRangeP)
+//	{
+//		Index bindex(i,j-1);
+//		Index iindex(i,j);
+//		/* OUTFLOW */
+//		p()( bindex ) = p()( iindex );
+//	}
+//	/* Left */
+//	for_range(i,j,leftRangeP)
+//	{
+//		Index bindex(i-1,j);
+//		Index iindex(i,j);
+//		/* INFLOW */
+//		p()( bindex ) = 2.0*inflowval - p()( iindex );
+//	}
+//	/* Right */
+//	for_range(i,j,rightRangeP)
+//	{
+//		Index bindex(i+1,j);
+//		Index iindex(i,j);
+//		/* NOSLIP */
+//		p()( bindex ) = - p()( iindex );
+//	}
 }
 
