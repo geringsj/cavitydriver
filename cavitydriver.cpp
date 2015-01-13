@@ -15,6 +15,88 @@
 
 #include <chrono>
 
+#ifdef WITHUNCER
+#if defined(__linux)
+#include "sys/stat.h"
+#endif
+#if defined(_WIN64)
+#include <Windows.h>
+#endif
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+void checkOutputPath()
+{
+	std::string filename;
+	filename.append("./uncertainty/");
+
+	// Test if the directory exits, if not create it.
+	std::filebuf test_dir;
+	test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
+	if (!test_dir.is_open())
+	{
+		// Directory doesn't exist.
+#if defined(_WIN64)
+		CreateDirectory(filename.c_str(), NULL);
+#elif defined(_WIN32)
+		CreateDirectory(filename.c_str(), NULL);
+#elif defined(__linux)
+		mkdir(filename.c_str(), 0700);
+#endif
+	}
+}
+
+void printUncertainty(Domain& domain, Real time, std::string name)
+{
+	std::string filename;
+	filename.append("./uncertainty/");
+	filename.append(name);
+	filename.append(".txt");
+
+	std::string lines;
+	std::string line;
+	std::ifstream read_uncer(filename);
+	if (read_uncer.is_open())
+	{
+		while (getline(read_uncer, line))
+		{
+			lines.append(line);
+			lines.append("\n");
+		}
+		read_uncer.close();
+	}
+
+	Real u_val_120_5 = domain.u()(120, 5);
+	Real u_val_64_64 = domain.u()(64, 64);
+	Real u_val_5_120 = domain.u()(5, 120);
+	Real v_val_120_5 = domain.v()(120, 5);
+	Real v_val_64_64 = domain.v()(64, 64);
+	Real v_val_5_120 = domain.v()(5, 120);
+
+	std::string values = "";
+	values.append(std::to_string(u_val_120_5));
+	values.append(",");
+	values.append(std::to_string(v_val_120_5));
+	values.append(" | ");
+	values.append(std::to_string(u_val_64_64));
+	values.append(",");
+	values.append(std::to_string(v_val_64_64));
+	values.append(" | ");
+	values.append(std::to_string(u_val_5_120));
+	values.append(",");
+	values.append(std::to_string(v_val_5_120));
+	values.append(" | ");
+	values.append(std::to_string(time));
+
+	std::ofstream write_uncer(filename);
+	if (write_uncer.is_open())
+	{
+		write_uncer << lines;
+		write_uncer << values;
+		write_uncer.close();
+	}
+}
+#endif
 
 int main(int argc, char** argv)
 {
@@ -113,6 +195,11 @@ int main(int argc, char** argv)
 	vtkoutput.writeVTKFile(0.0); /* first vtk frame: all zero */
 	Real nextVTKWrite = 0.0;
 
+#ifdef WITHUNCER
+	checkOutputPath();
+	printUncertainty(domain, t, simparam.name);
+#endif
+
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
 
 	/* main loop */
@@ -129,8 +216,15 @@ int main(int argc, char** argv)
 			(domain, Communication::Handle::Velocities);
 
 		/* maybe write vtk */
-		if((nextVTKWrite += dt) > simparam.deltaVec)
-		{ vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0; }
+		
+		if ((nextVTKWrite += dt) > simparam.deltaVec)
+		{
+			vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0;
+
+#ifdef WITHUNCER
+			printUncertainty(domain, t, simparam.name);
+#endif
+		}
 
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		Delta maxVelocities(domain.u().getMaxValue(), domain.v().getMaxValue());

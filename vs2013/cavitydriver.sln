@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cavitybaker", "cavitybaker.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cavitypainter", "cavitypainter.vcxproj", "{2EE8304B-4A33-4235-9574-32ED53454F1D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cavityuncertain", "cavityuncertain.vcxproj", "{81402AE5-37F1-439F-830A-54819AF2C083}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -53,6 +55,18 @@ Global
 		{2EE8304B-4A33-4235-9574-32ED53454F1D}.Release|Win32.Build.0 = Release|Win32
 		{2EE8304B-4A33-4235-9574-32ED53454F1D}.Release|x64.ActiveCfg = Release|x64
 		{2EE8304B-4A33-4235-9574-32ED53454F1D}.Release|x64.Build.0 = Release|x64
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Debug|Win32.ActiveCfg = Debug|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Debug|Win32.Build.0 = Debug|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Debug|x64.ActiveCfg = Debug|x64
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Debug|x64.Build.0 = Debug|x64
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Release|Win32.ActiveCfg = Release|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Release|Win32.Build.0 = Release|Win32
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Release|x64.ActiveCfg = Release|x64
+		{81402AE5-37F1-439F-830A-54819AF2C083}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
