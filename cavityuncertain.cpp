@@ -53,6 +53,56 @@ std::vector<T> apply_permutation(
 	return sorted_vec;
 }
 
+void Expectation(std::vector<Real>& expec, std::vector<Real> values)
+{
+	Real sum = 0.0;
+	Real n = values.size();
+	for (auto x : values)
+	{
+		sum += x;
+	}
+	sum /= n;
+	expec.push_back(sum);
+}
+
+void Variance(std::vector<Real>& variance, Real expec, std::vector<Real> values)
+{
+	Real sum = 0.0;
+	for (auto x : values)
+	{
+		sum += pow(x - expec, 2.0);
+	}
+	variance.push_back(sum);
+}
+
+void CreateGnuplotOutput(std::vector<Real>* expec, std::vector<Real>* variance, std::vector<Real>& times)
+{
+	// time E1 E2 E3 E4 E5 E6 V1 V2 V3 V4 V5 V6
+	std::string line = "";
+	for (unsigned int i = 0; i < times.size(); i++)
+	{
+		line.append(std::to_string(times[i]));
+		line.append(" ");
+		for (unsigned int j = 0; j < 6; j++)
+		{
+			line.append(std::to_string(expec[i][j]));
+			line.append(" ");
+		}
+		for (unsigned int j = 0; j < 6; j++)
+		{
+			line.append(std::to_string(variance[i][j]));
+			if(j < 5) line.append(" ");
+			else line.append("\n");
+		}
+	}
+	std::ofstream output("plot.data");
+	if (output.is_open())
+	{
+		output << line;
+		output.close();
+	}
+}
+
 int main()
 {
 	/**
@@ -68,7 +118,7 @@ int main()
 	std::string params;
 	for (unsigned int i = 0; i < max_sim; i++)
 	{
-		re = min_re + (rand() % (int)(max_re - min_re + 1));
+		re = min_re + (rand() % (int)(max_re - min_re + 1)); // TODO make it fulfill the requirements of the assignement
 		
 #if defined(__linux)
 		params = "./cavitybaker 0 --re=";
@@ -79,13 +129,13 @@ int main()
 #if defined(_WIN64)
 		params = "cavitybaker.exe 0 --re=";
 		params.append(std::to_string(re));
-		params.append(" --iterMax=100 --tEnd=1.5 --xLength=1 --yLength=1 --iMax=128 --jMax=128 --name=uncertainty");
+		params.append(" --iterMax=100 --tEnd=16.5 --xLength=1 --yLength=1 --iMax=128 --jMax=128 --name=uncertainty");
 		params.append(std::to_string(i));
 #endif
 #if defined(_WIN32)
 		params = "cavitybaker.exe 0 --re=";
 		params.append(std::to_string(re));
-		params.append(" --iterMax=100 --tEnd=1.5 --xLength=1 --yLength=1 --iMax=128 --jMax=128 --name=uncertainty");
+		params.append(" --iterMax=100 --tEnd=0.5 --xLength=1 --yLength=1 --iMax=128 --jMax=128 --name=uncertainty");
 		params.append(std::to_string(i));
 #endif
 
@@ -144,7 +194,7 @@ int main()
 				_val_64_64.push_back(std::pair<Real, Real>(atof(val_64_64[0].c_str()), atof(val_64_64[1].c_str())));
 				std::vector<std::string> val_5_120 = split(elems[2], ',');
 				_val_5_120.push_back(std::pair<Real, Real>(atof(val_5_120[0].c_str()), atof(val_5_120[1].c_str())));
-				time.push_back(atof(elems[3].c_str()));
+				time.push_back(atof(elems[3].c_str())); 
 			}
 			read_uncer.close();
 		}
@@ -163,4 +213,48 @@ int main()
 	_val_120_5 = apply_permutation(_val_120_5, p);
 	_val_64_64 = apply_permutation(_val_64_64, p);
 	_val_5_120 = apply_permutation(_val_5_120, p);
+
+	std::vector<Real> expec[6];
+	std::vector<Real> variance[6];
+	std::vector<Real> new_time;
+	std::vector<Real> values[6];
+	Real timestep = time[0];
+	new_time.push_back(timestep);
+	for (unsigned int i = 0; i < time.size(); i++)
+	{
+		if (time[i] > timestep)
+		{
+			for (unsigned int j = 0; j < 6; j++)
+			{
+				Expectation(expec[j], values[j]);
+				Variance(variance[j], expec[j][i], values[j]);
+				values[j].clear();
+			}
+			timestep = time[i];
+			new_time.push_back(timestep);
+		}
+		values[0].push_back(_val_120_5[i].first);
+		values[1].push_back(_val_120_5[i].second);
+		values[2].push_back(_val_64_64[i].first);
+		values[3].push_back(_val_64_64[i].second);
+		values[4].push_back(_val_5_120[i].first);
+		values[5].push_back(_val_5_120[i].second);
+	}
+	for (unsigned int j = 0; j < 6; j++)
+	{
+		Expectation(expec[j], values[j]);
+		Variance(variance[j], expec[j][expec[j].size()-1], values[j]);
+		values[j].clear();
+	}
+
+	for (auto e : expec)
+	{
+		for (auto ee : e)
+		{
+			printf(" exp: %f ", ee);
+		}
+		printf("\n");
+	}
+
+	//CreateGnuplotOutput(expec, variance, new_time);
 }

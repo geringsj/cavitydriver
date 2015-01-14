@@ -190,10 +190,12 @@ int main(int argc, char** argv)
 	Real t = 0.0, dt = 0.0, res = 42.;
 	int it = 0, step=0;
 
+#ifndef WITHUNCER
 	/* write initial state of velocities and pressure */
 	VTKOutput vtkoutput(domain, "out", communication);
 	vtkoutput.writeVTKFile(0.0); /* first vtk frame: all zero */
 	Real nextVTKWrite = 0.0;
+#endif
 
 #ifdef WITHUNCER
 	checkOutputPath();
@@ -215,16 +217,15 @@ int main(int argc, char** argv)
 		communication.exchangeGridBoundaryValues
 			(domain, Communication::Handle::Velocities);
 
+#ifndef WITHUNCER
 		/* maybe write vtk */
-		
 		if ((nextVTKWrite += dt) > simparam.deltaVec)
-		{
-			vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0;
+		{ vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0; }
+#endif
 
 #ifdef WITHUNCER
 			printUncertainty(domain, t, simparam.name);
 #endif
-		}
 
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		Delta maxVelocities(domain.u().getMaxValue(), domain.v().getMaxValue());
@@ -232,6 +233,9 @@ int main(int argc, char** argv)
 
 		dt = Computation::computeTimestepFromMaxVelocities
 			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
+#ifdef WITHUNCER
+		dt = 0.002; // just a wild guess... TODO make it better
+#endif
 		t += dt; /* for status output */
 
 		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
