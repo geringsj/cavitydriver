@@ -108,6 +108,7 @@ private:
 		Mesh m_grid;
 
 		void draw(CameraSystem& camera, float* background_colour);
+		bool updateGridMesh(SimulationParameters& m_simparams);
 	};
 	
 	struct BoundaryCellsLayer : public Layer
@@ -119,11 +120,12 @@ private:
 
 		void draw(CameraSystem& camera, float* background_colour);
 		void setCellPositions(SimulationParameters& simparams);
+		bool updateCellMesh(SimulationParameters& simparams);
 	};
 	
 	struct BoundaryGlyphLayer : public Layer
 	{
-		int m_boundary_glyph_mode;
+		int m_glyph_mode;
 		std::vector<std::pair<Point,Point>> m_velocity_glyphs;
 		std::vector<std::pair<Point,Boundary::Condition>> m_pressure_glyphs;
 		Mesh m_glyph;
@@ -133,8 +135,8 @@ private:
 		std::shared_ptr<Texture2D> m_pnm_glyph_tx;
 
 		void draw(CameraSystem& camera, float* background_colour);
-
 		void setGlyphs(SimulationParameters& simparams);
+		bool updateGlyphMesh(SimulationParameters& simparams);
 	};
 	
 	struct GeometryLayer : public Layer
@@ -163,13 +165,12 @@ public:
 		);
 
 	/**
-	 * The main render loop. Render a frame, swap buffer
-	 * and poll events until the window gets closed.
+	 * The main render loop. Render a frame, swap buffer and poll events
+	 * until the window gets closed.
 	 */
 	void paint();
 
 	void pushSimParams();
-
 
 	void setWindowSize(int width, int height)
 	{
@@ -221,7 +222,9 @@ private:
 	/** Local simparams copy */
 	SimulationParameters m_simparams;
 
+	/** FIFO for incomming simulation parameters */
 	MTQueue<SimulationParameters>& m_inbox;
+	/** FIFO for outgoing simulation parameters */
 	MTQueue<SimulationParameters>& m_outbox;
 
 	/** Active camera */
@@ -236,9 +239,9 @@ private:
 	//int m_i_begin, m_i_end, m_j_begin, m_j_end;
 	//std::vector<Boundary::BoundaryPiece> m_boundary_conditions;
 	//bool m_modify_cond;
-
-	/** Upload field data of a specified timestep to texture ojects */
-	void updateTextures(unsigned int timestep);
+	
+	/** Merge visualization layers */
+	void postProcessing();
 
 	/***********************************************************************
 	 * Initialize graphics resources, e.g. shader programs, textures, meshes
@@ -252,34 +255,8 @@ private:
 
 	bool createFramebuffers();
 
-
-	/****************************************************
-	 * Drawing method for the single visualization layers
-	 ***************************************************/
-
-	/** Draw overlay grid */
-	void drawOverlayGrid();
-
-	/** Draw active field data or visualization, i.e. velocity, pressure, LIC,.. etc. */
-	void drawField();
-
-	void postProcessing();
-
-
-
-	//void drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece);
-		/* BoundaryPiece holds all of the following... */
-		//Boundary::Direction dir,
-		//Boundary::Condition cond,
-		//Boundary::Grid grid_type, 
-		//Real condition_value, 
-		//Range range
-
-
 	//void addBoundaryPieceToBar(std::string mode = "RW");
-
 	//void reloadSimParams(SimulationParameters& sim_params);
-
 
 	/****************************
 	 * AntTweakBar helper methods
