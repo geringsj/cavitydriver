@@ -85,12 +85,12 @@ void CreateGnuplotOutput(std::vector<Real>* expec, std::vector<Real>* variance, 
 		line.append(" ");
 		for (unsigned int j = 0; j < 6; j++)
 		{
-			line.append(std::to_string(expec[i][j]));
+			line.append(std::to_string(expec[j][i]));
 			line.append(" ");
 		}
 		for (unsigned int j = 0; j < 6; j++)
 		{
-			line.append(std::to_string(variance[i][j]));
+			line.append(std::to_string(variance[j][i]));
 			if(j < 5) line.append(" ");
 			else line.append("\n");
 		}
@@ -135,7 +135,7 @@ int main()
 #if defined(_WIN32)
 		params = "cavitybaker.exe 0 --re=";
 		params.append(std::to_string(re));
-		params.append(" --iterMax=100 --tEnd=0.5 --xLength=1 --yLength=1 --iMax=128 --jMax=128 --name=uncertainty");
+		params.append(" --iterMax=100 --tEnd=16.5 --xLength=1 --yLength=1 --iMax=128 --jMax=128 --name=uncertainty");
 		params.append(std::to_string(i));
 #endif
 
@@ -227,7 +227,7 @@ int main()
 			for (unsigned int j = 0; j < 6; j++)
 			{
 				Expectation(expec[j], values[j]);
-				Variance(variance[j], expec[j][i], values[j]);
+				Variance(variance[j], expec[j].back(), values[j]);
 				values[j].clear();
 			}
 			timestep = time[i];
@@ -243,18 +243,18 @@ int main()
 	for (unsigned int j = 0; j < 6; j++)
 	{
 		Expectation(expec[j], values[j]);
-		Variance(variance[j], expec[j][expec[j].size()-1], values[j]);
+		Variance(variance[j], expec[j].back(), values[j]);
 		values[j].clear();
 	}
 
-	for (auto e : expec)
-	{
-		for (auto ee : e)
-		{
-			printf(" exp: %f ", ee);
-		}
-		printf("\n");
-	}
+	//for (auto e : expec)
+	//{
+	//	for (auto ee : e)
+	//	{
+	//		printf(" exp: %f ", ee);
+	//	}
+	//	printf("\n");
+	//}
 
-	//CreateGnuplotOutput(expec, variance, new_time);
+	CreateGnuplotOutput(expec, variance, new_time);
 }
