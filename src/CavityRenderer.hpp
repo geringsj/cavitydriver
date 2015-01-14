@@ -84,6 +84,66 @@ private:
 		float m_field_of_view;
 	};
 
+	struct Layer
+	{
+		bool m_show;
+		GLSLProgram m_prgm;
+		std::shared_ptr<FramebufferObject> m_fbo;
+
+		virtual void draw(CameraSystem& camera, float* background_colour) = 0;
+	};
+
+	struct FieldLayer : public Layer
+	{
+		Mesh m_quad;
+		std::shared_ptr<Texture2D> m_pressure_tx;
+		std::shared_ptr<Texture2D> m_velocity_tx;
+
+		void draw(CameraSystem& camera, float* background_colour);
+	};
+
+	struct OverlayGridLayer : public Layer
+	{
+		GLfloat m_colour[3];
+		Mesh m_grid;
+
+		void draw(CameraSystem& camera, float* background_colour);
+		bool updateGridMesh(SimulationParameters& m_simparams);
+	};
+	
+	struct BoundaryCellsLayer : public Layer
+	{
+		std::vector<Point> m_cell_positions;
+		Mesh m_cell;
+		std::shared_ptr<Texture2D> m_cell_tx;
+		//std::shared_ptr<Texture2D> m_cell_positions_tx;
+
+		void draw(CameraSystem& camera, float* background_colour);
+		void setCellPositions(SimulationParameters& simparams);
+		bool updateCellMesh(SimulationParameters& simparams);
+	};
+	
+	struct BoundaryGlyphLayer : public Layer
+	{
+		int m_glyph_mode;
+		std::vector<std::pair<Point,Point>> m_velocity_glyphs;
+		std::vector<std::pair<Point,Boundary::Condition>> m_pressure_glyphs;
+		Mesh m_glyph;
+
+		std::shared_ptr<Texture2D> m_velocity_glyph_tx;
+		std::shared_ptr<Texture2D> m_pdlt_glyph_tx;
+		std::shared_ptr<Texture2D> m_pnm_glyph_tx;
+
+		void draw(CameraSystem& camera, float* background_colour);
+		void setGlyphs(SimulationParameters& simparams);
+		bool updateGlyphMesh(SimulationParameters& simparams);
+	};
+	
+	struct GeometryLayer : public Layer
+	{
+		void draw(CameraSystem& camera, float* background_colour);
+	};
+
 public:
 	CavityRenderer(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationParameters>& outbox);
 	~CavityRenderer();
@@ -105,13 +165,12 @@ public:
 		);
 
 	/**
-	 * The main render loop. Render a frame, swap buffer
-	 * and poll events until the window gets closed.
+	 * The main render loop. Render a frame, swap buffer and poll events
+	 * until the window gets closed.
 	 */
 	void paint();
 
 	void pushSimParams();
-
 
 	void setWindowSize(int width, int height)
 	{
@@ -120,11 +179,11 @@ public:
 
 		m_cam_sys.setAspectRatio((float)m_window_width/(float)m_window_height);
 
-		m_field_fbo->resize(width,height);
-		m_grid_fbo->resize(width,height);
-		m_boundary_gylphs_fbo->resize(width,height);
-		m_boundary_cells_fbo->resize(width,height);
-		m_geometry_fbo->resize(width,height);
+		m_field_layer.m_fbo->resize(width,height);
+		m_overlayGrid_layer.m_fbo->resize(width,height);
+		m_boundaryGlyph_layer.m_fbo->resize(width,height);
+		m_boundaryCells_layer.m_fbo->resize(width,height);
+		m_geometry_layer.m_fbo->resize(width,height);
 	}
 
 
@@ -150,58 +209,26 @@ private:
 	GLfloat m_window_background_colour[3];
 	TwBar* bar;
 
+	/* Individual layers of the visualization */
+	FieldLayer m_field_layer;
+	OverlayGridLayer m_overlayGrid_layer;
+	BoundaryCellsLayer m_boundaryCells_layer;
+	BoundaryGlyphLayer m_boundaryGlyph_layer;
+	GeometryLayer m_geometry_layer;
+
 	GLSLProgram m_postProc_prgm;
 	Mesh m_screen_quad;
 
-	/* FBOs for visualization layers */
-	std::shared_ptr<FramebufferObject> m_field_fbo;
-	std::shared_ptr<FramebufferObject> m_grid_fbo;
-	std::shared_ptr<FramebufferObject> m_boundary_gylphs_fbo;
-	std::shared_ptr<FramebufferObject> m_boundary_cells_fbo;
-	std::shared_ptr<FramebufferObject> m_geometry_fbo;
-
-	/* local simparams copy */
+	/** Local simparams copy */
 	SimulationParameters m_simparams;
 
+	/** FIFO for incomming simulation parameters */
 	MTQueue<SimulationParameters>& m_inbox;
+	/** FIFO for outgoing simulation parameters */
 	MTQueue<SimulationParameters>& m_outbox;
 
 	/** Active camera */
 	CameraSystem m_cam_sys;
-
-	/* Grid related variables*/
-	Mesh m_grid;
-	GLSLProgram m_grid_prgm; /**< Store the programm data for the grid rendering programm. */
-	GLfloat m_grid_colour[3];
-
-	/* Boundary glyph variables*/
-	std::shared_ptr<Texture2D> m_boundary_velocity_glyph_tx;
-	std::shared_ptr<Texture2D> m_boundary_pdlt_glyph_tx;
-	std::shared_ptr<Texture2D> m_boundary_pnm_glyph_tx;
-	GLSLProgram m_glyph_prgm;
-	int m_boundary_glyph_mode;
-
-	/* Boundary cells variables*/
-	std::shared_ptr<Texture2D> m_boundary_cell_tx;
-	std::shared_ptr<Texture2D> m_boundary_cell_positions_tx;
-	GLSLProgram m_boundary_cell_prgm;
-	Mesh m_boundary_cell;
-
-	/* Field related variables */
-	Mesh m_field_quad;
-	GLSLProgram m_field_prgm;
-	std::shared_ptr<Texture2D> m_pressure_tx;
-	std::shared_ptr<Texture2D> m_velocity_tx;
-
-	/*****************
-	 *Visibility flags
-	 *****************/
-	bool m_show_field;
-	bool m_show_grid;
-	bool m_show_boundary_glyphs;
-	bool m_show_boundary_cells;
-	bool m_show_geometry;
-
 
 	//int m_nmbr_boundary_piece, m_max_boundary_piece;
 	//Boundary::Direction m_direction_enum;
@@ -212,62 +239,24 @@ private:
 	//int m_i_begin, m_i_end, m_j_begin, m_j_end;
 	//std::vector<Boundary::BoundaryPiece> m_boundary_conditions;
 	//bool m_modify_cond;
-
-
-	/** Upload field data of a specified timestep to texture ojects */
-	void updateTextures(unsigned int timestep);
+	
+	/** Merge visualization layers */
+	void postProcessing();
 
 	/***********************************************************************
 	 * Initialize graphics resources, e.g. shader programs, textures, meshes
 	 **********************************************************************/
 
 	bool createGLSLPrograms();
-	/** Create overlay grid (really just a grid made of lines) */
-	bool createOverlayGrid();
 
-	bool createBoundaryCell();
-
-	bool createGeometry();
+	bool createMeshes();
 
 	bool createTextures();
 
 	bool createFramebuffers();
 
-
-	/****************************************************
-	 * Drawing method for the single visualization layers
-	 ***************************************************/
-
-	/** Draw overlay grid */
-	void drawOverlayGrid();
-
-	/** Draw active field data or visualization, i.e. velocity, pressure, LIC,.. etc. */
-	void drawField();
-
-	/** Draw geometric shapes */
-	void drawGeometry();
-
-	void drawBoundaryGlyphs();
-
-	void drawBoundaryCells();
-
-	void postProcessing();
-
-
-
-	//void drawBoundaryCondition(Boundary::BoundaryPiece boundarypiece);
-		/* BoundaryPiece holds all of the following... */
-		//Boundary::Direction dir,
-		//Boundary::Condition cond,
-		//Boundary::Grid grid_type, 
-		//Real condition_value, 
-		//Range range
-
-
 	//void addBoundaryPieceToBar(std::string mode = "RW");
-
 	//void reloadSimParams(SimulationParameters& sim_params);
-
 
 	/****************************
 	 * AntTweakBar helper methods

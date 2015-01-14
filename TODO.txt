@@ -3,6 +3,9 @@ hokay, so heres the thing:
 
 what needs to be done in each file:
 
+general:
+-	debug karman street
+
 Vis team:
 -   arrowVertex.glsl
 	* Fix the scaling so that we are in the range of [0,1]
