@@ -5,6 +5,7 @@
 #include <sstream>
 #include <algorithm>
 #include <numeric>
+#include <random>
 
 #include "src/Structs.hpp"
 
@@ -116,9 +117,27 @@ int main()
 	int re = 1000;
 	unsigned int max_sim = 2;
 	std::string params;
+
+	/**
+	 * First delte the old Data from previous simulations.
+	 */
+	std::string filename_rm;
 	for (unsigned int i = 0; i < max_sim; i++)
 	{
-		re = min_re + (rand() % (int)(max_re - min_re + 1)); // TODO make it fulfill the requirements of the assignement
+
+		filename_rm = "./uncertainty/uncertainty";
+		filename_rm.append(std::to_string(i));
+		filename_rm.append(".txt");
+		remove(filename_rm.c_str());
+	}
+
+	std::default_random_engine generator;
+	std::uniform_int_distribution<int> distribution(1000, 2000);
+
+	for (unsigned int i = 0; i < max_sim; i++)
+	{
+		//re = min_re + (rand() % (int)(max_re - min_re + 1));
+		re = distribution(generator); // This is better then the code above
 		
 #if defined(__linux)
 		params = "./cavitybaker 0 --re=";
@@ -246,15 +265,6 @@ int main()
 		Variance(variance[j], expec[j].back(), values[j]);
 		values[j].clear();
 	}
-
-	//for (auto e : expec)
-	//{
-	//	for (auto ee : e)
-	//	{
-	//		printf(" exp: %f ", ee);
-	//	}
-	//	printf("\n");
-	//}
 
 	CreateGnuplotOutput(expec, variance, new_time);
 }
