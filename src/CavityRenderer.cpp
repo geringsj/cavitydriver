@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+double CavityRenderer::last_mouse_x = 0.0;
+double CavityRenderer::last_mouse_y = 0.0;
+
 void CavityRenderer::FieldLayer::draw(CameraSystem& camera, float* background_colour)
 {
 	// expensive quick solution for field selection
@@ -537,8 +540,6 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 	// Init tweak bar entries
 	initPainterTweakBar();
 
-	std::cout<<"Succesfully intialized painter."<<std::endl;
-
 	return true;
 }
 
@@ -579,91 +580,6 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	// Initialize AntTweakBar
 	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
 
-	// Create a tweak bar
-	bar = TwNewBar("CavityBaker-Settings");
-	TwWindowSize(window_width, window_height);
-	addIntParam("m_window_width", "label='Window width' group='Window' ", &m_window_width, "RO");
-	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
-	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
-	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
-	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_cam_sys.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
-	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_cam_sys.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
-	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_overlayGrid_layer.m_show);
-	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_overlayGrid_layer.m_colour, " label='Grid color' group='Grid' ");
-
-	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
-	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_boundaryGlyph_layer.m_show);
-	addIntParam("m_boundary_glyph_mode", " label='Glyph display mode' group='Boundary' ", &m_boundaryGlyph_layer.m_glyph_mode, "RW", 0, 1);
-
-
-	
-	addIntParam("useComplexGeometry", " label='Scenario' group='Simulation Parameters' ", &m_simparams.useComplexGeometry, "RW", 0, 4);
-
-	Real test; float __float; double __double;
-	const char* _double = typeid(__double).name();
-	const char* _float = typeid(__float).name();
-	if (strcmp(typeid(test).name(), _double) == 0)
-	{
-		addDoubleParam("alpha", " step=0.1 label='alpha' group='Simulation Parameters' ", &m_simparams.alpha);
-		addDoubleParam("deltaT", " step=0.1 label='deltaT' group='Simulation Parameters' ", &m_simparams.deltaT);
-		addDoubleParam("deltaVec", " step=0.1 label='deltaVec' group='Simulation Parameters' ", &m_simparams.deltaVec);
-		addDoubleParam("eps", " step=0.001 label='eps' group='Simulation Parameters' ", &m_simparams.eps);
-		addDoubleParam("gx", " step=0.1 label='gx' group='Simulation Parameters' ", &m_simparams.gx);
-		addDoubleParam("gy", " step=0.1 label='gy' group='Simulation Parameters' ", &m_simparams.gy);
-		addDoubleParam("KarmanAngle", " step=0.1 label='KarmanAngle' group='Simulation Parameters' ", &m_simparams.KarmanAngle);
-		addDoubleParam("KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' group='Simulation Parameters' ", &m_simparams.KarmanObjectWidth);
-		addDoubleParam("pi", " step=0.1 label='pi' group='Simulation Parameters' ", &m_simparams.pi);
-		addDoubleParam("re", " step=0.1 label='re' group='Simulation Parameters' ", &m_simparams.re);
-		addDoubleParam("tau", " step=0.1 label='tau' group='Simulation Parameters' ", &m_simparams.tau);
-		addDoubleParam("tEnd", " step=0.1 label='tEnd' group='Simulation Parameters' ", &m_simparams.tEnd);
-		addDoubleParam("ui", " step=0.1 label='ui' group='Simulation Parameters' ", &m_simparams.ui);
-		addDoubleParam("vi", " step=0.1 label='vi' group='Simulation Parameters' ", &m_simparams.vi);
-		addDoubleParam("xLength", " step=0.1 label='xLength' group='Simulation Parameters' ", &m_simparams.xLength);
-		addDoubleParam("yLength", " step=0.1 label='yLength' group='Simulation Parameters' ", &m_simparams.yLength);
-		addDoubleParam("omg", " step=0.1 label='omega' group='Simulation Parameters' ", &m_simparams.omg);
-	}
-	if (strcmp(typeid(test).name(), _float) == 0)
-	{
-		addFloatParam("alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
-		addFloatParam("deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
-		addFloatParam("deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
-		addFloatParam("eps", " step=0.001 label='eps' ", &m_simparams.eps);
-		addFloatParam("gx", " step=0.1 label='gx' ", &m_simparams.gx);
-		addFloatParam("gy", " step=0.1 label='gy' ", &m_simparams.gy);
-		addFloatParam("KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle);
-		addFloatParam("KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth);
-		addFloatParam("pi", " step=0.1 label='pi' ", &m_simparams.pi);
-		addFloatParam("re", " step=0.1 label='re' ", &m_simparams.re);
-		addFloatParam("tau", " step=0.1 label='tau' ", &m_simparams.tau);
-		addFloatParam("tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd);
-		addFloatParam("ui", " step=0.1 label='ui' ", &m_simparams.ui);
-		addFloatParam("vi", " step=0.1 label='vi' ", &m_simparams.vi);
-		addFloatParam("xLength", " step=0.1 label='xLength' ", &m_simparams.xLength);
-		addFloatParam("yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
-		addFloatParam("omg", " step=0.1 label='omega' ", &m_simparams.omg);
-	}
-	addIntParam("iterMax", " label='iterMax' group='Simulation Parameters' ", &m_simparams.iterMax);
-	addIntParam("iMax", " label='iMax' group='Simulation Parameters' ", &m_simparams.iMax);
-	addIntParam("jMax", " label='jMax' group='Simulation Parameters' ", &m_simparams.jMax);
-	addIntParam("xCells", " label='xCells' group='Simulation Parameters' ", &m_simparams.xCells);
-	addIntParam("yCells", " label='yCells' group='Simulation Parameters' ", &m_simparams.yCells);
-	//TODO
-	//addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
-
-	//TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
-	//for (auto b : sim_params.boundary_conditions)
-	//	m_boundary_conditions.push_back(b);
-	//m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
-	//addBoolParam("m_modify_cond", " label='Modify boundary piece' ", &m_modify_cond);
-	//addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
-	//addBoundaryPieceToBar("RW");
-
-	//addButtonParam("m_boundarypiece", " label='Add boundary condition' ", BoundaryPiece);
-	//addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
-	//addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
-
-	addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
-
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window, this);
 	glfwSetWindowSizeCallback(m_window, (GLFWwindowposfun)windowResizeCallback);
@@ -697,6 +613,8 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	// Init layers where necessary
 	m_boundaryCells_layer.setCellPositions(m_simparams);
 	m_boundaryGlyph_layer.setGlyphs(m_simparams);
+
+	initBakeryTweakBar();
 
 	return true;
 }
@@ -944,6 +862,95 @@ bool CavityRenderer::createFramebuffers()
 	m_geometry_layer.m_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	return true;
+}
+
+void CavityRenderer::initBakeryTweakBar()
+{
+	// Create a tweak bar
+	bar = TwNewBar("CavityBaker-Settings");
+	TwWindowSize(m_window_width, m_window_height);
+	addIntParam("m_window_width", "label='Window width' group='Window' ", &m_window_width, "RO");
+	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
+	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
+	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
+	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_cam_sys.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
+	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_cam_sys.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
+	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_overlayGrid_layer.m_show);
+	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_overlayGrid_layer.m_colour, " label='Grid color' group='Grid' ");
+
+	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
+	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_boundaryGlyph_layer.m_show);
+	addIntParam("m_boundary_glyph_mode", " label='Glyph display mode' group='Boundary' ", &m_boundaryGlyph_layer.m_glyph_mode, "RW", 0, 1);
+
+
+	
+	addIntParam("useComplexGeometry", " label='Scenario' group='Simulation Parameters' ", &m_simparams.useComplexGeometry, "RW", 0, 4);
+
+	Real test; float __float; double __double;
+	const char* _double = typeid(__double).name();
+	const char* _float = typeid(__float).name();
+	if (strcmp(typeid(test).name(), _double) == 0)
+	{
+		addDoubleParam("alpha", " step=0.1 label='alpha' group='Simulation Parameters' ", &m_simparams.alpha);
+		addDoubleParam("deltaT", " step=0.1 label='deltaT' group='Simulation Parameters' ", &m_simparams.deltaT);
+		addDoubleParam("deltaVec", " step=0.1 label='deltaVec' group='Simulation Parameters' ", &m_simparams.deltaVec);
+		addDoubleParam("eps", " step=0.001 label='eps' group='Simulation Parameters' ", &m_simparams.eps);
+		addDoubleParam("gx", " step=0.1 label='gx' group='Simulation Parameters' ", &m_simparams.gx);
+		addDoubleParam("gy", " step=0.1 label='gy' group='Simulation Parameters' ", &m_simparams.gy);
+		addDoubleParam("KarmanAngle", " step=0.1 label='KarmanAngle' group='Simulation Parameters' ", &m_simparams.KarmanAngle);
+		addDoubleParam("KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' group='Simulation Parameters' ", &m_simparams.KarmanObjectWidth);
+		addDoubleParam("pi", " step=0.1 label='pi' group='Simulation Parameters' ", &m_simparams.pi);
+		addDoubleParam("re", " step=0.1 label='re' group='Simulation Parameters' ", &m_simparams.re);
+		addDoubleParam("tau", " step=0.1 label='tau' group='Simulation Parameters' ", &m_simparams.tau);
+		addDoubleParam("tEnd", " step=0.1 label='tEnd' group='Simulation Parameters' ", &m_simparams.tEnd);
+		addDoubleParam("ui", " step=0.1 label='ui' group='Simulation Parameters' ", &m_simparams.ui);
+		addDoubleParam("vi", " step=0.1 label='vi' group='Simulation Parameters' ", &m_simparams.vi);
+		addDoubleParam("xLength", " step=0.1 label='xLength' group='Simulation Parameters' ", &m_simparams.xLength);
+		addDoubleParam("yLength", " step=0.1 label='yLength' group='Simulation Parameters' ", &m_simparams.yLength);
+		addDoubleParam("omg", " step=0.1 label='omega' group='Simulation Parameters' ", &m_simparams.omg);
+	}
+	if (strcmp(typeid(test).name(), _float) == 0)
+	{
+		addFloatParam("alpha", " step=0.1 label='alpha' ", &m_simparams.alpha);
+		addFloatParam("deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT);
+		addFloatParam("deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec);
+		addFloatParam("eps", " step=0.001 label='eps' ", &m_simparams.eps);
+		addFloatParam("gx", " step=0.1 label='gx' ", &m_simparams.gx);
+		addFloatParam("gy", " step=0.1 label='gy' ", &m_simparams.gy);
+		addFloatParam("KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle);
+		addFloatParam("KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth);
+		addFloatParam("pi", " step=0.1 label='pi' ", &m_simparams.pi);
+		addFloatParam("re", " step=0.1 label='re' ", &m_simparams.re);
+		addFloatParam("tau", " step=0.1 label='tau' ", &m_simparams.tau);
+		addFloatParam("tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd);
+		addFloatParam("ui", " step=0.1 label='ui' ", &m_simparams.ui);
+		addFloatParam("vi", " step=0.1 label='vi' ", &m_simparams.vi);
+		addFloatParam("xLength", " step=0.1 label='xLength' ", &m_simparams.xLength);
+		addFloatParam("yLength", " step=0.1 label='yLength' ", &m_simparams.yLength);
+		addFloatParam("omg", " step=0.1 label='omega' ", &m_simparams.omg);
+	}
+	addIntParam("iterMax", " label='iterMax' group='Simulation Parameters' ", &m_simparams.iterMax);
+	addIntParam("iMax", " label='iMax' group='Simulation Parameters' ", &m_simparams.iMax);
+	addIntParam("jMax", " label='jMax' group='Simulation Parameters' ", &m_simparams.jMax);
+	addIntParam("xCells", " label='xCells' group='Simulation Parameters' ", &m_simparams.xCells);
+	addIntParam("yCells", " label='yCells' group='Simulation Parameters' ", &m_simparams.yCells);
+	//TODO
+	//addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
+
+	//TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
+	//for (auto b : sim_params.boundary_conditions)
+	//	m_boundary_conditions.push_back(b);
+	//m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
+	//addBoolParam("m_modify_cond", " label='Modify boundary piece' ", &m_modify_cond);
+	//addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
+	//addBoundaryPieceToBar("RW");
+
+	//addButtonParam("m_boundarypiece", " label='Add boundary condition' ", BoundaryPiece);
+	//addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
+	//addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
+
+	addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
+
 }
 
 void CavityRenderer::initPainterTweakBar()

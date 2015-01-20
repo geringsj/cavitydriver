@@ -197,6 +197,20 @@ public:
 		m_geometry_layer.m_fbo->resize(width,height);
 	}
 
+	void zoomCamera(float factor)
+	{
+		m_cam_sys.accessFieldOfView() -= factor;
+	}
+
+	void moveCamera(float dx, float dy, float dz, float speed)
+	{
+		m_cam_sys.Translation(glm::vec3(dx,dy,dz),speed);
+	}
+
+	CameraSystem& getCamera()
+	{
+		return m_cam_sys;
+	}
 
 	//void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
 	//int getMaxBoundaryPiece() { return m_max_boundary_piece; }
@@ -273,6 +287,7 @@ private:
 	 * AntTweakBar helper methods
 	 ***************************/
 
+	void initBakeryTweakBar();
 	void initPainterTweakBar();
 
 	void addFloatParam(const char* name, const char* def, void* var,
@@ -306,8 +321,11 @@ private:
 	/************************************************************************
 	 * Static GLFW callback functions - Primarily calls AntTweakBar functions
 	 ***********************************************************************/
+	static double last_mouse_x;
+	static double last_mouse_y;
+
 	inline static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-	{ 
+	{
 		/* get rid of stupid warnings: */
 		if( 1 || window || mods)
 		TwEventMouseButtonGLFW(button, action);
@@ -316,13 +334,33 @@ private:
 	{
 		/* get rid of stupid warnings: */
 		if( 1 || window)
-		TwMouseMotion(int(x), int(y));
+		if( !TwMouseMotion(int(x), int(y)))
+		{
+			CavityRenderer* renderer = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
+
+			double dx = last_mouse_x - x;
+			double dy = last_mouse_y - y;
+			
+			last_mouse_x = x;
+			last_mouse_y = y;
+
+			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+			{
+				//TODO decent zoom depented movement speed
+				float speed = std::pow(renderer->getCamera().getFieldOfView()*0.001,2.0);
+				renderer->moveCamera(dx,-dy,0.0f,speed);
+			}
+		}
 	}
 	inline static void mouseWheelCallback(GLFWwindow* window, double x_offset, double y_offset)
 	{
 		/* get rid of stupid warnings: */
 		if( 1 || window || x_offset)
-		TwEventMouseWheelGLFW((int)y_offset);
+		if( !TwEventMouseWheelGLFW((int)y_offset) )
+		{
+			CavityRenderer* renderer = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
+			renderer->zoomCamera(y_offset);
+		}
 	}
 	inline static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
