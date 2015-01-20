@@ -6,25 +6,15 @@ int main(int argc, char** argv)
 {
 	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
 
-	/**
-	 * This is just a test but the range should
-	 * match the inner range of p.
-	 */
-	SimulationParameters simparam("inputvals");
-	Index begin = Index(1, 1);
-	Index end = Index(simparam.iMax, simparam.jMax);
-	Range range = Range(begin,end);
-	/**
-	 * This is just a test but the range should
-	 * match the inner range of p.
-	 */
+	SimulationParameters simparam("ChannelFlow.conf");
 
-	//CavityRenderer cavity_renderer;
-	//if (cavity_renderer.initVis(640, 480, simparam))
-	//{
-	//	cavity_renderer.createGrid(range);
-	//	cavity_renderer.paint();
-	//}
+	// Don't really need these, but current implementation of Renderer is quite chatty
+	MTQueue<SimulationParameters> outbox;
+	MTQueue<SimulationParameters> inbox;
+
+	CavityRenderer cavity_renderer(inbox,outbox);
+	cavity_renderer.initPainterVis(800,450,simparam,"out/field_");
+	cavity_renderer.paint();
 
 	return 0;
 }

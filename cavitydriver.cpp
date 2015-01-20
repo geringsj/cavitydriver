@@ -1,5 +1,6 @@
 
 #include "src/VTKOutput.hpp"
+#include "src/BinaryOutput.hpp"
 #include "src/SimulationParameters.hpp"
 #include "src/Domain.hpp"
 #include "src/Computation.hpp"
@@ -202,6 +203,10 @@ int main(int argc, char** argv)
 	printUncertainty(domain, t, simparam.name);
 #endif
 
+	// testing binary output
+	BinaryOutput binary_output(domain, "out");
+	binary_output.write();
+
 	std::chrono::steady_clock::time_point t_start = std::chrono::steady_clock::now();
 
 	/* main loop */
@@ -222,6 +227,9 @@ int main(int argc, char** argv)
 		if ((nextVTKWrite += dt) > simparam.deltaVec)
 		{ vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0; }
 #endif
+
+		// further testing
+		binary_output.write();
 
 #ifdef WITHUNCER
 			printUncertainty(domain, t, simparam.name);

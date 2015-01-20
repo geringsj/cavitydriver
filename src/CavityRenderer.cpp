@@ -4,7 +4,144 @@
 
 void CavityRenderer::FieldLayer::draw(CameraSystem& camera, float* background_colour)
 {
+	// expensive quick solution for field selection
+	updateFieldTexture(m_current_field);
 
+	m_fbo->bind();
+	glClearColor(
+		background_colour[0],
+		background_colour[1],
+		background_colour[2], 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, m_fbo->getWidth(), m_fbo->getHeight());
+
+	if(m_show)
+	{
+		m_prgm.use();
+
+		glEnable(GL_TEXTURE_2D);
+		glActiveTexture(GL_TEXTURE0);
+		m_prgm.setUniform("field_tx2D",0);
+		m_field_tx->bindTexture();
+
+		m_prgm.setUniform("min_values",m_field_min_values[m_current_field]);
+		m_prgm.setUniform("max_values",m_field_max_values[m_current_field]);
+
+		m_prgm.setUniform("mode",m_display_mode);
+
+		glm::mat4 proj_mat = glm::perspective(camera.getFieldOfView(), camera.getAspectRatio(), 0.1f, 100.0f);
+		glm::mat4 model_mat = glm::mat4(1.0f);
+		glm::mat4 view_mat = camera.GetViewMatrix();
+		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+		m_prgm.setUniform("mvp_matrix", mvp_mat);
+
+		m_quad.draw();
+	}
+}
+
+void CavityRenderer::FieldLayer::setFieldData(std::string path)
+{
+	// variables for field/image attributes
+	int dim_x;
+	int dim_y;
+
+	// construct first filename
+	unsigned int i = 0;
+	std::string filename = path;
+	filename.append(std::to_string(i));
+	filename.append(".pfm");
+
+	std::ifstream file(filename);
+
+	while(file.is_open())
+	{
+		file.close();
+
+		unsigned long header_end_pos;
+		if(!Renderer::IO::readPfmHeader(filename.c_str(), header_end_pos, dim_x, dim_y)) {std::cout<<"Failed to open pfm header of file \""<<filename<<"\""<<std::endl;}
+
+		//TODO do something if image size stays not the same
+		m_field_data.push_back(std::vector<float>( dim_x * dim_y * 3));
+
+		if(!Renderer::IO::readPfmData(filename.c_str(), m_field_data.back().data(), header_end_pos)) {std::cout<<"Failed to read pfm data of file \""<<filename<<"\""<<std::endl;}
+
+		//TODO compute min/max
+		m_field_max_values.push_back(glm::vec3(std::numeric_limits<float>::min()));
+		m_field_min_values.push_back(glm::vec3(std::numeric_limits<float>::max()));
+
+		//m_field_max_values.push_back(glm::vec3(0.0));
+		//m_field_min_values.push_back(glm::vec3(1.0));
+
+		unsigned int index = 0;
+		for(int x=0; x<dim_x; x++)
+		{
+			for(int y=0; y<dim_y; y++)
+			{
+				for(int c=0; c<3; c++)
+				{
+					m_field_max_values.back()[c] = std::max(m_field_max_values.back()[c],m_field_data.back()[index]);
+					m_field_min_values.back()[c] = std::min(m_field_max_values.back()[c],m_field_data.back()[index]);
+					index++;
+				}
+			}
+		}
+
+		i++;
+		filename = path;
+		filename.append(std::to_string(i));
+		filename.append(".pfm");
+		file.open(filename);
+	}
+
+	m_field_dimension.i = dim_x;
+	m_field_dimension.j = dim_y;
+	m_num_fields = m_field_data.size();
+}
+
+bool CavityRenderer::FieldLayer::updateFieldTexture(unsigned int frame)
+{
+	if(frame < m_field_data.size())
+	{
+		m_field_tx = std::make_shared<Texture2D>( "m_field_tx",
+												GL_RGB32F,
+												m_field_dimension.i,
+												m_field_dimension.j,
+												GL_RGB, GL_FLOAT,
+												m_field_data[frame].data());
+
+		m_field_tx->texParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		m_field_tx->texParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool CavityRenderer::FieldLayer::updateFieldMesh(SimulationParameters& simparams)
+{
+	float x_length = (float)simparams.xLength / (float)simparams.iMax;
+	float y_length = (float)simparams.yLength / (float)simparams.jMax;
+
+
+	float left_i = 0.0f;
+	float right_i = left_i +(simparams.xCells + 2) * x_length;
+
+	float bottom_j =  0.0f;
+	float top_j = bottom_j + (simparams.yCells + 2) * y_length;
+	
+	std::array< VertexUV, 4 > vertex_array = {{ VertexUV(left_i,bottom_j,-1.0,0.0,0.0),
+											VertexUV(left_i,top_j,-1.0,0.0,1.0),
+											VertexUV(right_i,top_j,-1.0,1.0,1.0),
+											VertexUV(right_i,bottom_j,-1.0,1.0,0.0) }};
+
+	std::array< GLuint, 6 > index_array = {{ 0,2,1,2,0,3 }};
+
+	if(!(m_quad.bufferDataFromArray(vertex_array.data(),index_array.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
+	m_quad.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
+	m_quad.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
+
+	return true;
 }
 
 void CavityRenderer::OverlayGridLayer::draw(CameraSystem& camera, float* background_colour)
@@ -183,6 +320,8 @@ bool CavityRenderer::BoundaryCellsLayer::updateCellMesh(SimulationParameters& si
 	if(!(m_cell.bufferDataFromArray(cell_vertex_array.data(),cell_index_array.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
 	m_cell.setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,sizeof(VertexUV),0);
 	m_cell.setVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(VertexUV),(GLvoid*) (sizeof(float)*3));
+
+	return true;
 }
 
 void CavityRenderer::BoundaryGlyphLayer::draw(CameraSystem& camera, float* background_colour)
@@ -321,17 +460,25 @@ CavityRenderer::~CavityRenderer()
 {
 }
 
-bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int window_height, SimulationParameters& sim_params)
+bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int window_height, SimulationParameters& sim_params, std::string fields_filename)
 {
 	m_window_width = window_width;
 	m_window_height = window_height;
-	m_window_background_colour[0] = 0.2f;
-	m_window_background_colour[1] = 0.2f;
-	m_window_background_colour[2] = 0.2f;
+	m_window_background_colour[0] = 0.2f; m_window_background_colour[1] = 0.2f; m_window_background_colour[2] = 0.2f;
+
+	m_cam_sys = CameraSystem(
+		glm::vec3(0.0f, 0.0f, 1.0),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, -1.0f),
+		glm::vec3(1.0f, 0.0f, 0.0f));
+	m_cam_sys.setAspectRatio((float)window_width/(float)window_height);
+	m_cam_sys.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
+
+	m_field_layer.m_show = true;
+	m_overlayGrid_layer.m_show = true;
+	m_boundaryCells_layer.m_show = true;
 
 	m_simparams = sim_params;
-
-	m_overlayGrid_layer.m_show = true;
 
 	/* Initialize the library */
 	if (!glfwInit()) return false;
@@ -350,73 +497,6 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 
 	// Initialize AntTweakBar
 	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
-
-	// Create a tweak bar
-	bar = TwNewBar("Cavity-TweakBar");
-	TwWindowSize(window_width, window_height);
-	// TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar with GLFW and OpenGL.' "); // Message added to the help bar.
-	// Add 'bgColor' to 'bar': it is a modifable variable of type TW_TYPE_COLOR3F (3 floats color)
-	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' ");
-	//addFloatParam("m_zoom", " label='Zoom' ", &m_zoom, "RW",0.0f, 999.0f);
-	addBoolParam("m_show_grid", " label='Show grid' ", &m_overlayGrid_layer.m_show);
-	TwAddSeparator(bar, "SimulationParameters", " label='SimulationParameters' ");
-
-	Real test; float __float; double __double;
-	const char* _double = typeid(__double).name();
-	const char* _float = typeid(__float).name();
-	if (strcmp(typeid(test).name(), _double) == 0)
-	{
-		addDoubleParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
-		addDoubleParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT, "RO");
-		addDoubleParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec, "RO");
-		addDoubleParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps, "RO");
-		addDoubleParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx, "RO");
-		addDoubleParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy, "RO");
-		addDoubleParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle, "RO");
-		addDoubleParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth, "RO");
-		addDoubleParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi, "RO");
-		addDoubleParam("m_re", " step=0.1 label='re' ", &m_simparams.re, "RO");
-		addDoubleParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau, "RO");
-		addDoubleParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd, "RO");
-		addDoubleParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui, "RO");
-		addDoubleParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi, "RO");
-		addDoubleParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength, "RO");
-		addDoubleParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength, "RO");
-		addDoubleParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg, "RO");
-	}
-	if (strcmp(typeid(test).name(), _float) == 0)
-	{
-		addFloatParam("m_alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
-		addFloatParam("m_deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT, "RO");
-		addFloatParam("m_deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec, "RO");
-		addFloatParam("m_eps", " step=0.001 label='eps' ", &m_simparams.eps, "RO");
-		addFloatParam("m_gx", " step=0.1 label='gx' ", &m_simparams.gx, "RO");
-		addFloatParam("m_gy", " step=0.1 label='gy' ", &m_simparams.gy, "RO");
-		addFloatParam("m_KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle, "RO");
-		addFloatParam("m_KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth, "RO");
-		addFloatParam("m_pi", " step=0.1 label='pi' ", &m_simparams.pi, "RO");
-		addFloatParam("m_re", " step=0.1 label='re' ", &m_simparams.re, "RO");
-		addFloatParam("m_tau", " step=0.1 label='tau' ", &m_simparams.tau, "RO");
-		addFloatParam("m_tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd, "RO");
-		addFloatParam("m_ui", " step=0.1 label='ui' ", &m_simparams.ui, "RO");
-		addFloatParam("m_vi", " step=0.1 label='vi' ", &m_simparams.vi, "RO");
-		addFloatParam("m_xLength", " step=0.1 label='xLength' ", &m_simparams.xLength, "RO");
-		addFloatParam("m_yLength", " step=0.1 label='yLength' ", &m_simparams.yLength, "RO");
-		addFloatParam("m_omg", " step=0.1 label='omega' ", &m_simparams.omg, "RO");
-	}
-	addIntParam("m_iterMax", " label='iterMax' ", &m_simparams.iterMax, "RO");
-	addIntParam("m_iMax", " label='iMax' ", &m_simparams.iMax, "RO");
-	addIntParam("m_jMax", " label='jMax' ", &m_simparams.jMax, "RO");
-	addIntParam("m_xCells", " label='xCells' ", &m_simparams.xCells, "RO");
-	addIntParam("m_yCells", " label='yCells' ", &m_simparams.yCells, "RO");
-	addStringParam("m_name", " label='name' ", &m_simparams.name, "RO");
-
-	TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
-	//for (auto b : sim_params.boundary_conditions)
-	//	m_boundary_conditions.push_back(b);
-	//m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
-	//addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
-	//addBoundaryPieceToBar("RO");
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window,this);
@@ -442,14 +522,22 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 	/* Apparently glewInit() causes a GL ERROR 1280, so let's just catch that... */
 	glGetError();
 
+	// Create resources
+	if(!createGLSLPrograms()) { return false; }
+	if(!createMeshes()) { return false; }
+	if(!createTextures()) { return false; }
+	if(!createFramebuffers()) { return false; }
 
-	m_cam_sys = CameraSystem(
-		glm::vec3(0.0f, 0.0f, 1.0),
-		glm::vec3(0.0f, 1.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f),
-		glm::vec3(1.0f, 0.0f, 0.0f));
+	// Init layers where necessary
+	m_boundaryCells_layer.setCellPositions(m_simparams);
+	m_boundaryGlyph_layer.setGlyphs(m_simparams);
+	m_field_layer.setFieldData(fields_filename);
+	if(!m_field_layer.updateFieldMesh(m_simparams)) { return false; }
 
-	createGLSLPrograms();
+	// Init tweak bar entries
+	initPainterTweakBar();
+
+	std::cout<<"Succesfully intialized painter."<<std::endl;
 
 	return true;
 }
@@ -559,7 +647,8 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	addIntParam("jMax", " label='jMax' group='Simulation Parameters' ", &m_simparams.jMax);
 	addIntParam("xCells", " label='xCells' group='Simulation Parameters' ", &m_simparams.xCells);
 	addIntParam("yCells", " label='yCells' group='Simulation Parameters' ", &m_simparams.yCells);
-	addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
+	//TODO
+	//addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
 
 	//TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
 	//for (auto b : sim_params.boundary_conditions)
@@ -617,10 +706,10 @@ bool CavityRenderer::createGLSLPrograms()
 	/* Arrow texture programm */
 	m_boundaryGlyph_layer.m_prgm.init();
 	
-	std::string arrow_vertex = readShaderFile("./shader/arrowVertex.glsl");
+	std::string arrow_vertex = Renderer::IO::readShaderFile("./shader/arrowVertex.glsl");
 	if (!m_boundaryGlyph_layer.m_prgm.compileShaderFromString(&arrow_vertex, GL_VERTEX_SHADER)) { std::cout << m_boundaryGlyph_layer.m_prgm.getLog(); return false; };
 	
-	std::string arrow_fragment = readShaderFile("./shader/arrowFragment.glsl");
+	std::string arrow_fragment = Renderer::IO::readShaderFile("./shader/arrowFragment.glsl");
 	if (!m_boundaryGlyph_layer.m_prgm.compileShaderFromString(&arrow_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_boundaryGlyph_layer.m_prgm.getLog(); return false; };
 	
 	m_boundaryGlyph_layer.m_prgm.bindAttribLocation(0, "v_position");
@@ -628,13 +717,27 @@ bool CavityRenderer::createGLSLPrograms()
 	
 	m_boundaryGlyph_layer.m_prgm.link();
 
+	/* Field programm */
+	m_field_layer.m_prgm.init();
+	
+	std::string field_vertex = Renderer::IO::readShaderFile("./shader/fieldVertex.glsl");
+	if (!m_field_layer.m_prgm.compileShaderFromString(&field_vertex, GL_VERTEX_SHADER)) { std::cout << m_field_layer.m_prgm.getLog(); return false; };
+	
+	std::string field_fragment = Renderer::IO::readShaderFile("./shader/fieldFragment.glsl");
+	if (!m_field_layer.m_prgm.compileShaderFromString(&field_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_field_layer.m_prgm.getLog(); return false; };
+	
+	m_field_layer.m_prgm.bindAttribLocation(0, "v_position");
+	m_field_layer.m_prgm.bindAttribLocation(1, "v_uv");
+	
+	if (!m_field_layer.m_prgm.link()) { std::cout << m_field_layer.m_prgm.getLog(); return false; };
+
 	/* Grid programm */
 	m_overlayGrid_layer.m_prgm.init();
 	
-	std::string grid_vertex = readShaderFile("./shader/gridVertex.glsl");
+	std::string grid_vertex = Renderer::IO::readShaderFile("./shader/gridVertex.glsl");
 	if (!m_overlayGrid_layer.m_prgm.compileShaderFromString(&grid_vertex, GL_VERTEX_SHADER)) { std::cout << m_overlayGrid_layer.m_prgm.getLog(); return false; };
 	
-	std::string grid_fragment = readShaderFile("./shader/gridFragment.glsl");
+	std::string grid_fragment = Renderer::IO::readShaderFile("./shader/gridFragment.glsl");
 	if (!m_overlayGrid_layer.m_prgm.compileShaderFromString(&grid_fragment, GL_FRAGMENT_SHADER)) { std::cout << m_overlayGrid_layer.m_prgm.getLog(); return false; };
 	
 	m_overlayGrid_layer.m_prgm.bindAttribLocation(0, "in_position");
@@ -644,10 +747,10 @@ bool CavityRenderer::createGLSLPrograms()
 	/* Boundary cells program */
 	m_boundaryCells_layer.m_prgm.init();
 
-	std::string boundary_vertex_shdr = readShaderFile("./shader/boundaryCellVertex.glsl");
+	std::string boundary_vertex_shdr = Renderer::IO::readShaderFile("./shader/boundaryCellVertex.glsl");
 	if (!m_boundaryCells_layer.m_prgm.compileShaderFromString(&boundary_vertex_shdr, GL_VERTEX_SHADER)) { std::cout << m_boundaryCells_layer.m_prgm.getLog(); return false; };
 
-	std::string boundary_fragment_shdr = readShaderFile("./shader/boundaryCellFragment.glsl");
+	std::string boundary_fragment_shdr = Renderer::IO::readShaderFile("./shader/boundaryCellFragment.glsl");
 	if (!m_boundaryCells_layer.m_prgm.compileShaderFromString(&boundary_fragment_shdr, GL_FRAGMENT_SHADER)) { std::cout << m_boundaryCells_layer.m_prgm.getLog(); return false; };
 
 	m_boundaryCells_layer.m_prgm.bindAttribLocation(0, "in_position");
@@ -658,10 +761,10 @@ bool CavityRenderer::createGLSLPrograms()
 	/* Post processing program */
 	m_postProc_prgm.init();
 
-	std::string postProc_vertex_shdr = readShaderFile("./shader/postProcVertex.glsl");
+	std::string postProc_vertex_shdr = Renderer::IO::readShaderFile("./shader/postProcVertex.glsl");
 	if (!m_postProc_prgm.compileShaderFromString(&postProc_vertex_shdr, GL_VERTEX_SHADER)) { std::cout << m_postProc_prgm.getLog(); return false; };
 
-	std::string postProc_fragment_shdr = readShaderFile("./shader/postProcFragment.glsl");
+	std::string postProc_fragment_shdr = Renderer::IO::readShaderFile("./shader/postProcFragment.glsl");
 	if (!m_postProc_prgm.compileShaderFromString(&postProc_fragment_shdr, GL_FRAGMENT_SHADER)) { std::cout << m_postProc_prgm.getLog(); return false; };
 
 	m_postProc_prgm.bindAttribLocation(0, "v_position");
@@ -795,27 +898,27 @@ bool CavityRenderer::createTextures()
 	unsigned long begin_pos;
 	int x_dim, y_dim;
 	char* m_img_data;
-	readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmHeader("arrow.ppm", begin_pos, x_dim, y_dim);
 	m_img_data = new char[x_dim * y_dim * 3];
-	readPpmData("arrow.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmData("arrow.ppm", m_img_data, begin_pos, x_dim, y_dim);
 	m_boundaryGlyph_layer.m_velocity_glyph_tx = std::make_shared<Texture2D>("m_velocity_glyph_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
 	delete[] m_img_data;
 
-	readPpmHeader("boundary_cell.ppm", begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmHeader("boundary_cell.ppm", begin_pos, x_dim, y_dim);
 	m_img_data = new char[x_dim * y_dim * 3];
-	readPpmData("boundary_cell.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmData("boundary_cell.ppm", m_img_data, begin_pos, x_dim, y_dim);
 	m_boundaryCells_layer.m_cell_tx = std::make_shared<Texture2D>("m_cell_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
 	delete[] m_img_data;
 
-	readPpmHeader("boundary_p_dlt_glyph.ppm", begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmHeader("boundary_p_dlt_glyph.ppm", begin_pos, x_dim, y_dim);
 	m_img_data = new char[x_dim * y_dim * 3];
-	readPpmData("boundary_p_dlt_glyph.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmData("boundary_p_dlt_glyph.ppm", m_img_data, begin_pos, x_dim, y_dim);
 	m_boundaryGlyph_layer.m_pdlt_glyph_tx = std::make_shared<Texture2D>("m_pdlt_glyph_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
 	delete[] m_img_data;
 
-	readPpmHeader("boundary_p_nm_glyph.ppm", begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmHeader("boundary_p_nm_glyph.ppm", begin_pos, x_dim, y_dim);
 	m_img_data = new char[x_dim * y_dim * 3];
-	readPpmData("boundary_p_nm_glyph.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	Renderer::IO::readPpmData("boundary_p_nm_glyph.ppm", m_img_data, begin_pos, x_dim, y_dim);
 	m_boundaryGlyph_layer.m_pnm_glyph_tx = std::make_shared<Texture2D>("m_pnm_glyph_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
 	delete[] m_img_data;
 
@@ -841,6 +944,96 @@ bool CavityRenderer::createFramebuffers()
 	m_geometry_layer.m_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	return true;
+}
+
+void CavityRenderer::initPainterTweakBar()
+{
+	bar = TwNewBar("CavityBaker-Settings");
+	TwWindowSize(m_window_width, m_window_height);
+	addIntParam("m_window_width", "label='Window width' group='Window' ", &m_window_width, "RO");
+	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
+	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
+
+	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
+	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_cam_sys.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
+	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_cam_sys.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
+
+	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_overlayGrid_layer.m_show);
+	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_overlayGrid_layer.m_colour, " label='Grid color' group='Grid' ");
+
+	addBoolParam("m_show_field", " label='Show field' group='Field' ", &m_field_layer.m_show);
+	addIntParam("m_current_field", " label='Frame' group='Field' ", &m_field_layer.m_current_field, "RW", 0, m_field_layer.m_num_fields);
+	addIntParam("m_display_mode", " label='Mode' group='Field' ", &m_field_layer.m_display_mode, "RW", 0, 3);
+
+	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
+	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_boundaryGlyph_layer.m_show);
+	addIntParam("m_boundary_glyph_mode", " label='Glyph display mode' group='Boundary' ", &m_boundaryGlyph_layer.m_glyph_mode, "RW", 0, 1);
+	
+	addIntParam("useComplexGeometry", " label='Scenario' group='Simulation Parameters' ", &m_simparams.useComplexGeometry, "RO", 0, 4);
+
+	Real test; float __float; double __double;
+	const char* _double = typeid(__double).name();
+	const char* _float = typeid(__float).name();
+	if (strcmp(typeid(test).name(), _double) == 0)
+	{
+		addDoubleParam("alpha", " step=0.1 label='alpha' group='Simulation Parameters' ", &m_simparams.alpha, "RO");
+		addDoubleParam("deltaT", " step=0.1 label='deltaT' group='Simulation Parameters' ", &m_simparams.deltaT, "RO");
+		addDoubleParam("deltaVec", " step=0.1 label='deltaVec' group='Simulation Parameters' ", &m_simparams.deltaVec, "RO");
+		addDoubleParam("eps", " step=0.001 label='eps' group='Simulation Parameters' ", &m_simparams.eps, "RO");
+		addDoubleParam("gx", " step=0.1 label='gx' group='Simulation Parameters' ", &m_simparams.gx, "RO");
+		addDoubleParam("gy", " step=0.1 label='gy' group='Simulation Parameters' ", &m_simparams.gy, "RO");
+		addDoubleParam("KarmanAngle", " step=0.1 label='KarmanAngle' group='Simulation Parameters' ", &m_simparams.KarmanAngle, "RO");
+		addDoubleParam("KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' group='Simulation Parameters' ", &m_simparams.KarmanObjectWidth, "RO");
+		addDoubleParam("pi", " step=0.1 label='pi' group='Simulation Parameters' ", &m_simparams.pi, "RO");
+		addDoubleParam("re", " step=0.1 label='re' group='Simulation Parameters' ", &m_simparams.re, "RO");
+		addDoubleParam("tau", " step=0.1 label='tau' group='Simulation Parameters' ", &m_simparams.tau, "RO");
+		addDoubleParam("tEnd", " step=0.1 label='tEnd' group='Simulation Parameters' ", &m_simparams.tEnd, "RO");
+		addDoubleParam("ui", " step=0.1 label='ui' group='Simulation Parameters' ", &m_simparams.ui, "RO");
+		addDoubleParam("vi", " step=0.1 label='vi' group='Simulation Parameters' ", &m_simparams.vi, "RO");
+		addDoubleParam("xLength", " step=0.1 label='xLength' group='Simulation Parameters' ", &m_simparams.xLength, "RO");
+		addDoubleParam("yLength", " step=0.1 label='yLength' group='Simulation Parameters' ", &m_simparams.yLength, "RO");
+		addDoubleParam("omg", " step=0.1 label='omega' group='Simulation Parameters' ", &m_simparams.omg, "RO");
+	}
+	if (strcmp(typeid(test).name(), _float) == 0)
+	{
+		addFloatParam("alpha", " step=0.1 label='alpha' ", &m_simparams.alpha, "RO");
+		addFloatParam("deltaT", " step=0.1 label='deltaT' ", &m_simparams.deltaT, "RO");
+		addFloatParam("deltaVec", " step=0.1 label='deltaVec' ", &m_simparams.deltaVec, "RO");
+		addFloatParam("eps", " step=0.001 label='eps' ", &m_simparams.eps, "RO");
+		addFloatParam("gx", " step=0.1 label='gx' ", &m_simparams.gx, "RO");
+		addFloatParam("gy", " step=0.1 label='gy' ", &m_simparams.gy, "RO");
+		addFloatParam("KarmanAngle", " step=0.1 label='KarmanAngle' ", &m_simparams.KarmanAngle, "RO");
+		addFloatParam("KarmanObjectWidth", " step=0.1 label='KarmanObjectWidth' ", &m_simparams.KarmanObjectWidth, "RO");
+		addFloatParam("pi", " step=0.1 label='pi' ", &m_simparams.pi, "RO");
+		addFloatParam("re", " step=0.1 label='re' ", &m_simparams.re, "RO");
+		addFloatParam("tau", " step=0.1 label='tau' ", &m_simparams.tau, "RO");
+		addFloatParam("tEnd", " step=0.1 label='tEnd' ", &m_simparams.tEnd, "RO");
+		addFloatParam("ui", " step=0.1 label='ui' ", &m_simparams.ui, "RO");
+		addFloatParam("vi", " step=0.1 label='vi' ", &m_simparams.vi, "RO");
+		addFloatParam("xLength", " step=0.1 label='xLength' ", &m_simparams.xLength, "RO");
+		addFloatParam("yLength", " step=0.1 label='yLength' ", &m_simparams.yLength, "RO");
+		addFloatParam("omg", " step=0.1 label='omega' ", &m_simparams.omg, "RO");
+	}
+	addIntParam("iterMax", " label='iterMax' group='Simulation Parameters' ", &m_simparams.iterMax, "RO");
+	addIntParam("iMax", " label='iMax' group='Simulation Parameters' ", &m_simparams.iMax, "RO");
+	addIntParam("jMax", " label='jMax' group='Simulation Parameters' ", &m_simparams.jMax, "RO");
+	addIntParam("xCells", " label='xCells' group='Simulation Parameters' ", &m_simparams.xCells, "RO");
+	addIntParam("yCells", " label='yCells' group='Simulation Parameters' ", &m_simparams.yCells, "RO");
+	addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name, "RO");
+
+	//TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
+	//for (auto b : sim_params.boundary_conditions)
+	//	m_boundary_conditions.push_back(b);
+	//m_max_boundary_piece = (int)sim_params.boundary_conditions.size();
+	//addBoolParam("m_modify_cond", " label='Modify boundary piece' ", &m_modify_cond);
+	//addIntParam("m_nmbr_boundary_piece", " label='Show boundary piece: ' ", &m_nmbr_boundary_piece, "RW", 0, m_max_boundary_piece);
+	//addBoundaryPieceToBar("RW");
+
+	//addButtonParam("m_boundarypiece", " label='Add boundary condition' ", BoundaryPiece);
+	//addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
+	//addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
+
+	addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
 }
 
 //void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
@@ -918,6 +1111,10 @@ void CavityRenderer::postProcessing()
 	glActiveTexture(GL_TEXTURE2);
 	m_postProc_prgm.setUniform("boundary_glyphs_tx2D",2);
 	m_boundaryGlyph_layer.m_fbo->bindColorbuffer(0);
+
+	glActiveTexture(GL_TEXTURE3);
+	m_postProc_prgm.setUniform("field_tx2D",3);
+	m_field_layer.m_fbo->bindColorbuffer(0);
 
 	m_postProc_prgm.setUniform("background_colour",glm::vec3(m_window_background_colour[0],
 															m_window_background_colour[1],
@@ -1159,7 +1356,7 @@ void CavityRenderer::removeParam(const char* name)
 }
 
 
-const std::string CavityRenderer::readShaderFile(const char* const path)
+const std::string Renderer::IO::readShaderFile(const char* const path)
 {
 	std::ifstream inFile(path, std::ios::in);
 	std::ostringstream source;
@@ -1171,7 +1368,7 @@ const std::string CavityRenderer::readShaderFile(const char* const path)
 	return source.str();
 }
 
-bool CavityRenderer::readPpmHeader(const char* filename, unsigned long& headerEndPos, int& imgDimX, int& imgDimY)
+bool Renderer::IO::readPpmHeader(const char* filename, unsigned long& headerEndPos, int& imgDimX, int& imgDimY)
 {
 	int currentComponent = 0;
 	bool firstline = false;
@@ -1278,7 +1475,7 @@ bool CavityRenderer::readPpmHeader(const char* filename, unsigned long& headerEn
 	return true;
 }
 
-bool CavityRenderer::readPpmData(const char* filename, char* imageData, unsigned long dataBegin, int imgDimX, int imgDimY)
+bool Renderer::IO::readPpmData(const char* filename, char* imageData, unsigned long dataBegin, int imgDimX, int imgDimY)
 {
 	std::ifstream file(filename, std::ios::in | std::ios::binary);
 	/*
@@ -1314,4 +1511,48 @@ bool CavityRenderer::readPpmData(const char* filename, char* imageData, unsigned
 	file.close();
 	delete[] buffer;
 	return true;
+}
+
+bool Renderer::IO::readPfmHeader(const char* filename, unsigned long& headerEndPos, int& imgDimX, int& imgDimY)
+{
+	std::string buffer;
+	std::ifstream file(filename, std::ios::in | std::ios::binary);
+
+	if( !file.is_open() )
+		return false;
+
+	file.seekg(0, std::ios::beg);
+	std::getline(file, buffer, '\n');
+	if(buffer ==  "PF")
+		return false;
+
+	std::getline(file, buffer, ' ');
+	imgDimX = std::stoi(buffer);
+	std::getline(file, buffer, '\n');
+	imgDimY = std::stoi(buffer);
+
+	std::getline(file, buffer);
+
+	headerEndPos = static_cast<unsigned long>(file.tellg());
+
+	file.close();
+
+	return true;
+}
+
+bool Renderer::IO::readPfmData(const char* filename, float* imageData, unsigned long dataBegin)
+{
+	std::ifstream file(filename, std::ios::in | std::ios::binary);
+
+	if (!file.is_open()) return false;
+	/*
+	/ Determine the length from the beginning of the image data to the end of the file.
+	*/
+	file.seekg(0, file.end);
+	unsigned long length = static_cast<unsigned long>(file.tellg());
+	length = length - dataBegin;
+	file.seekg(dataBegin, std::ios::beg);
+	file.read( reinterpret_cast<char*>(imageData), length);
+
+	file.close();
 }

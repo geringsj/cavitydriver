@@ -95,11 +95,21 @@ private:
 
 	struct FieldLayer : public Layer
 	{
+		Dimension m_field_dimension;
+		std::vector<std::vector<float>> m_field_data;
+		std::vector<glm::vec3> m_field_max_values;
+		std::vector<glm::vec3> m_field_min_values;
+		int m_num_fields;
+		int m_current_field;
+		int m_display_mode;
+
 		Mesh m_quad;
-		std::shared_ptr<Texture2D> m_pressure_tx;
-		std::shared_ptr<Texture2D> m_velocity_tx;
+		std::shared_ptr<Texture2D> m_field_tx;
 
 		void draw(CameraSystem& camera, float* background_colour);
+		void setFieldData(std::string path);
+		bool updateFieldTexture(unsigned int frame);
+		bool updateFieldMesh(SimulationParameters& simparams);
 	};
 
 	struct OverlayGridLayer : public Layer
@@ -108,7 +118,7 @@ private:
 		Mesh m_grid;
 
 		void draw(CameraSystem& camera, float* background_colour);
-		bool updateGridMesh(SimulationParameters& m_simparams);
+		bool updateGridMesh(SimulationParameters& simparams);
 	};
 	
 	struct BoundaryCellsLayer : public Layer
@@ -155,7 +165,8 @@ public:
 	bool initPainterVis(
 		unsigned int window_width, /**< Width of the window in pixels [>=0]. */
 		unsigned int window_height, /**< Height of the window in pixels [>=0]. */
-		SimulationParameters& sim_params
+		SimulationParameters& sim_params,
+		std::string fields_filename
 		);
 
 	bool initBakeryVis(
@@ -261,6 +272,9 @@ private:
 	/****************************
 	 * AntTweakBar helper methods
 	 ***************************/
+
+	void initPainterTweakBar();
+
 	void addFloatParam(const char* name, const char* def, void* var,
 		std::string mode = "RW",
 		float min = std::numeric_limits<float>::min(),
@@ -329,7 +343,12 @@ private:
 		TwWindowSize(width, height);
 	}
 
+};
 
+namespace Renderer
+{
+namespace IO
+{
 	/***************************************
 	 * Utility methods e.g. for file loading
 	 **************************************/
@@ -356,6 +375,10 @@ private:
 	* \return Returns true if the ppm header was succesfully read, false otherwise
 	*/
 	bool readPpmData(const char* filename, char* imageData, unsigned long dataBegin, int imgDimX, int imgDimY);
-};
+
+	bool readPfmHeader(const char* filename, unsigned long& headerEndPos, int& imgDimX, int& imgDimY);
+	bool readPfmData(const char* filename, float* imageData, unsigned long dataBegin);
+}
+}
 
 #endif
