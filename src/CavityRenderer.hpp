@@ -103,12 +103,18 @@ private:
 		int m_current_field;
 		int m_display_mode;
 
+		bool m_play_animation = false;
+		double m_requested_frametime = 0.033;
+		double m_time_tracker = 0.0;
+		double m_elapsed_time;
+
 		Mesh m_quad;
 		std::shared_ptr<Texture2D> m_field_tx;
 
 		void draw(CameraSystem& camera, float* background_colour);
 		void setFieldData(std::string path);
-		bool updateFieldTexture(unsigned int frame);
+		bool setFieldTexture(unsigned int requested_frame);
+		void updateFieldTexture(double current_time);
 		bool updateFieldMesh(SimulationParameters& simparams);
 	};
 

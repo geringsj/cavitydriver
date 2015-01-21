@@ -7,9 +7,6 @@ double CavityRenderer::last_mouse_y = 0.0;
 
 void CavityRenderer::FieldLayer::draw(CameraSystem& camera, float* background_colour)
 {
-	// expensive quick solution for field selection
-	updateFieldTexture(m_current_field);
-
 	m_fbo->bind();
 	glClearColor(
 		background_colour[0],
@@ -101,16 +98,18 @@ void CavityRenderer::FieldLayer::setFieldData(std::string path)
 	m_num_fields = m_field_data.size();
 }
 
-bool CavityRenderer::FieldLayer::updateFieldTexture(unsigned int frame)
+bool CavityRenderer::FieldLayer::setFieldTexture(unsigned int requested_frame)
 {
-	if(frame < m_field_data.size())
+	if(requested_frame < m_field_data.size())
 	{
+		m_current_field = requested_frame;
+
 		m_field_tx = std::make_shared<Texture2D>( "m_field_tx",
 												GL_RGB32F,
 												m_field_dimension.i,
 												m_field_dimension.j,
 												GL_RGB, GL_FLOAT,
-												m_field_data[frame].data());
+												m_field_data[requested_frame].data());
 
 		m_field_tx->texParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		m_field_tx->texParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -119,6 +118,36 @@ bool CavityRenderer::FieldLayer::updateFieldTexture(unsigned int frame)
 	}
 
 	return false;
+}
+
+void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
+{
+	if(m_play_animation)
+	{
+		m_elapsed_time += current_time - m_time_tracker;
+
+		if(m_elapsed_time > m_requested_frametime)
+		{
+			m_current_field = (m_current_field + (int)std::floor(m_elapsed_time / m_requested_frametime)) % m_field_data.size();
+			m_elapsed_time = 0.0;
+		}
+	}
+	else
+	{
+		m_elapsed_time = 0.0;
+	}
+
+	m_time_tracker = current_time;
+
+	m_field_tx = std::make_shared<Texture2D>( "m_field_tx",
+											GL_RGB32F,
+											m_field_dimension.i,
+											m_field_dimension.j,
+											GL_RGB, GL_FLOAT,
+											m_field_data[m_current_field].data());
+
+	m_field_tx->texParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	m_field_tx->texParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 bool CavityRenderer::FieldLayer::updateFieldMesh(SimulationParameters& simparams)
@@ -536,6 +565,7 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 	m_boundaryGlyph_layer.setGlyphs(m_simparams);
 	m_field_layer.setFieldData(fields_filename);
 	if(!m_field_layer.updateFieldMesh(m_simparams)) { return false; }
+	m_field_layer.setFieldTexture(0);
 
 	// Init tweak bar entries
 	initPainterTweakBar();
@@ -971,6 +1001,8 @@ void CavityRenderer::initPainterTweakBar()
 	addBoolParam("m_show_field", " label='Show field' group='Field' ", &m_field_layer.m_show);
 	addIntParam("m_current_field", " label='Frame' group='Field' ", &m_field_layer.m_current_field, "RW", 0, m_field_layer.m_num_fields);
 	addIntParam("m_display_mode", " label='Mode' group='Field' ", &m_field_layer.m_display_mode, "RW", 0, 3);
+	addBoolParam("m_play_animation", " label='Play animation' group='Field' ", &m_field_layer.m_play_animation);
+	addDoubleParam("m_requested_frametime", " step=0.001 label='Frametime' group='Field' ", &m_field_layer.m_requested_frametime, "RW");
 
 	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
 	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_boundaryGlyph_layer.m_show);
@@ -1054,6 +1086,7 @@ void CavityRenderer::paint()
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(m_window))
 	{
+		m_field_layer.updateFieldTexture(glfwGetTime());
 		m_field_layer.draw(m_cam_sys,m_window_background_colour);
 		m_boundaryGlyph_layer.draw(m_cam_sys,m_window_background_colour);
 		m_boundaryCells_layer.draw(m_cam_sys,m_window_background_colour);
@@ -1064,6 +1097,7 @@ void CavityRenderer::paint()
 		postProcessing();
 
 		// Draw TB
+		TwRefreshBar(bar);
 		TwDraw();
 
 		/* Swap front and back buffers */
