@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <numeric>
 #include <random>
+#include <iostream>
 
 #include "src/Structs.hpp"
 
@@ -104,22 +105,62 @@ void CreateGnuplotOutput(std::vector<Real>* expec, std::vector<Real>* variance, 
 	}
 }
 
+#if defined(__linux)
+#include "sys/stat.h"
+#endif
+#if defined(_WIN64)
+#include <Windows.h>
+#endif
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+void checkOutputPath()
+{
+	std::string filename("./uncertainty/");
+
+	// Test if the directory exits, if not create it.
+	std::filebuf test_dir;
+	test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
+	if (!test_dir.is_open())
+	{
+		// Directory doesn't exist.
+#if defined(_WIN64)
+		CreateDirectory(filename.c_str(), NULL);
+#elif defined(_WIN32)
+		CreateDirectory(filename.c_str(), NULL);
+#elif defined(__linux)
+		mkdir(filename.c_str(), 0700);
+#endif
+	}
+}
+
+
 int main()
 {
+	checkOutputPath();
+
 	/**
 	 * Use max_sim to control the number of simulations that are started.
 	 * First we create the configuration files for the simulations, by
 	 * choosing a random re number. This is handled differently for linux
-	 * and windows (TODO: look at the linux stuff...).
+	 * and windows
 	 */
-	int min_re = 1000;
-	int max_re = 2000;
-	int re = 1000;
-	unsigned int max_sim = 2;
+	Real min_re = 1000;
+	Real max_re = 2000;
+	Real re = 1000;
+	unsigned int max_sim = 1500;
 	std::string params;
 
+/* ATTENTION: FROM HERE UNTIL THE OTHER 'ATTENTION' POINT,
+ * YOU MAY WANT TO RUN THE CODE PARTS (THIS AND THE CODE AFTER THIS)
+ * SEPARATELY. 
+ * SO: FIRST GENERATE THE CONFIG FILES, RUN SIMULATIONS ON A LOT OF COMPUTERS,
+ *     THEN LET THE SECOND PART OF THIS PROGRAM COMPUTE EXPECTED VALUES AND VARIANCE
+ */
+	std::string re_numbers("");
+
 	/**
-	 * First delte the old Data from previous simulations.
+	 * First delete the old Data from previous simulations.
 	 */
 	std::string filename_rm;
 	for (unsigned int i = 0; i < max_sim; i++)
@@ -132,15 +173,16 @@ int main()
 	}
 
 	std::default_random_engine generator;
-	std::uniform_int_distribution<int> distribution(1000, 2000);
+	std::random_device rd;
+	std::normal_distribution<Real> distribution(1500, (max_re - min_re)/6.0);
 
 	for (unsigned int i = 0; i < max_sim; i++)
 	{
-		//re = min_re + (rand() % (int)(max_re - min_re + 1));
-		re = distribution(generator); // This is better then the code above
+		re = distribution(rd);
+		re_numbers.append(std::to_string(re) + " \n");
 		
 #if defined(__linux)
-		params = "./cavitybaker 0 --re=";
+		params = "./bin/cavitybaker 0 --re=";
 		params.append(std::to_string(re));
 		params.append(" --iterMax=100 --tEnd=16.5 --xLength=1 --yLength=1 --iMax=128 --jMax=128 --name=uncertainty");
 		params.append(std::to_string(i));
@@ -161,6 +203,12 @@ int main()
 		std::system(params.c_str());
 	}
 
+	std::cout << re_numbers;
+/* ATTENTION: FIRST CODE PART ENDS HERE. */
+	//return 0;
+
+/* ATTENTION: YOU MAY WANT TO DO THE FOLLOWING COMPUTATIONS
+ * IN A DISTRIBUTED MANNER. */
 	/**
 	 * After the configuration files have been created the simualtions are
 	 * done sequentially. Each simulation outputs the values for u and v
@@ -169,7 +217,7 @@ int main()
 	for (unsigned int i = 0; i < max_sim; i++)
 	{
 #if defined(__linux)
-		params = "./cavitydriver uncertainty";
+		params = "./bin/cavitydriver uncertainty";
 		params.append(std::to_string(i));
 #endif
 #if defined(_WIN64)
@@ -183,6 +231,7 @@ int main()
 		std::system(params.c_str());
 	}
 
+/* ATTENTION: SECOND PART OF THE CODE STARTS HERE. */
 	/**
 	 * For each simulation there is one txt file with all values.
 	 * In each line there are the values for the three positions at
