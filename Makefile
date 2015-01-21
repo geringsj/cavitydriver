@@ -51,6 +51,15 @@ baker: LDFLAGS +=  -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexte
 baker: CPPFLAGS +=  -pthread -Wl,--no-as-needed
 baker: build $(BAKER_BIN)
 
+UNCER=cavityuncertainty.cpp
+UNCER_BIN=bin/cavityuncertainty
+#UNCER_OBJECTS=$(filter-out src/%Renderer.o src/%System.o,$(OBJECTS)) 
+uncertainty: $(UNCER_BIN)
+
+$(UNCER_BIN): $(UNCER)
+	$(CXX) $(CPPFLAGS) -o $(UNCER_BIN) $(UNCER) $(LDFLAGS)
+
+
 build:
 	@mkdir -p bin
 	@mkdir -p out

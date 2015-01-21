@@ -16,87 +16,77 @@
 
 #include <chrono>
 
+// #define WITHUNCER
+
 #ifdef WITHUNCER
-#if defined(__linux)
-#include "sys/stat.h"
-#endif
-#if defined(_WIN64)
-#include <Windows.h>
-#endif
-#if defined(_WIN32)
-#include <Windows.h>
-#endif
-void checkOutputPath()
-{
-	std::string filename;
-	filename.append("./uncertainty/");
-
-	// Test if the directory exits, if not create it.
-	std::filebuf test_dir;
-	test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
-	if (!test_dir.is_open())
+	#if defined(__linux)
+	#include "sys/stat.h"
+	#endif
+	#if defined(_WIN64)
+	#include <Windows.h>
+	#endif
+	#if defined(_WIN32)
+	#include <Windows.h>
+	#endif
+	void checkOutputPath()
 	{
-		// Directory doesn't exist.
-#if defined(_WIN64)
-		CreateDirectory(filename.c_str(), NULL);
-#elif defined(_WIN32)
-		CreateDirectory(filename.c_str(), NULL);
-#elif defined(__linux)
-		mkdir(filename.c_str(), 0700);
-#endif
-	}
-}
-
-void printUncertainty(Domain& domain, Real time, std::string name)
-{
-	std::string filename;
-	filename.append("./uncertainty/");
-	filename.append(name);
-	filename.append(".txt");
-
-	std::string lines;
-	std::string line;
-	std::ifstream read_uncer(filename);
-	if (read_uncer.is_open())
-	{
-		while (getline(read_uncer, line))
+		std::string filename("./uncertainty/");
+	
+		// Test if the directory exits, if not create it.
+		std::filebuf test_dir;
+		test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
+		if (!test_dir.is_open())
 		{
-			lines.append(line);
-			lines.append("\n");
+			// Directory doesn't exist.
+	#if defined(_WIN64)
+			CreateDirectory(filename.c_str(), NULL);
+	#elif defined(_WIN32)
+			CreateDirectory(filename.c_str(), NULL);
+	#elif defined(__linux)
+			mkdir(filename.c_str(), 0700);
+	#endif
 		}
-		read_uncer.close();
 	}
-
-	Real u_val_120_5 = domain.u()(120, 5);
-	Real u_val_64_64 = domain.u()(64, 64);
-	Real u_val_5_120 = domain.u()(5, 120);
-	Real v_val_120_5 = domain.v()(120, 5);
-	Real v_val_64_64 = domain.v()(64, 64);
-	Real v_val_5_120 = domain.v()(5, 120);
-
-	std::string values = "";
-	values.append(std::to_string(u_val_120_5));
-	values.append(",");
-	values.append(std::to_string(v_val_120_5));
-	values.append(" | ");
-	values.append(std::to_string(u_val_64_64));
-	values.append(",");
-	values.append(std::to_string(v_val_64_64));
-	values.append(" | ");
-	values.append(std::to_string(u_val_5_120));
-	values.append(",");
-	values.append(std::to_string(v_val_5_120));
-	values.append(" | ");
-	values.append(std::to_string(time));
-
-	std::ofstream write_uncer(filename);
-	if (write_uncer.is_open())
+	
+	void appendCurrentData(Domain& domain, std::string& log, Real time)
 	{
-		write_uncer << lines;
-		write_uncer << values;
-		write_uncer.close();
+		Real u_val_120_5 = domain.u()(120, 5);
+		Real v_val_120_5 = domain.v()(120, 5);
+		Real u_val_64_64 = domain.u()(64, 64);
+		Real v_val_64_64 = domain.v()(64, 64);
+		Real u_val_5_120 = domain.u()(5, 120);
+		Real v_val_5_120 = domain.v()(5, 120);
+	
+		log.append(std::to_string(u_val_120_5));
+		log.append(",");
+		log.append(std::to_string(v_val_120_5));
+		log.append(" | ");
+		log.append(std::to_string(u_val_64_64));
+		log.append(",");
+		log.append(std::to_string(v_val_64_64));
+		log.append(" | ");
+		log.append(std::to_string(u_val_5_120));
+		log.append(",");
+		log.append(std::to_string(v_val_5_120));
+		log.append(" | ");
+		log.append(std::to_string(time));
+		log.append("\n");
+	
 	}
-}
+	void printUncertainty(std::string name, std::string log)
+	{
+		std::string filename;
+		filename.append("./uncertainty/");
+		filename.append(name);
+		filename.append(".txt");
+	
+		std::ofstream write_uncer(filename);
+		if (write_uncer.is_open())
+		{
+			write_uncer << log;
+			write_uncer.close();
+		}
+	}
 #endif
 
 int main(int argc, char** argv)
@@ -191,16 +181,16 @@ int main(int argc, char** argv)
 	Real t = 0.0, dt = 0.0, res = 42.;
 	int it = 0, step=0;
 
-#ifndef WITHUNCER
+#ifdef WITHUNCER
+	checkOutputPath();
+	std::string uncertainty_log("");
+	appendCurrentData(domain, uncertainty_log, 0.0);
+	Real nextUncWrite = 0.0;
+#else
 	/* write initial state of velocities and pressure */
 	VTKOutput vtkoutput(domain, "out", communication);
 	vtkoutput.writeVTKFile(0.0); /* first vtk frame: all zero */
 	Real nextVTKWrite = 0.0;
-#endif
-
-#ifdef WITHUNCER
-	checkOutputPath();
-	printUncertainty(domain, t, simparam.name);
 #endif
 
 	// testing binary output
@@ -222,27 +212,30 @@ int main(int argc, char** argv)
 		communication.exchangeGridBoundaryValues
 			(domain, Communication::Handle::Velocities);
 
-#ifndef WITHUNCER
+#ifdef WITHUNCER
+		if((nextUncWrite += dt) >= 0.05)
+		{
+			appendCurrentData(domain, uncertainty_log, t);
+			nextUncWrite = 0.0;
+		}
+#else
 		/* maybe write vtk */
-		if ((nextVTKWrite += dt) > simparam.deltaVec)
+		if((nextVTKWrite += dt) > simparam.deltaVec)
 		{ vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0; }
-#endif
 
 		// further testing
 		binary_output.write();
-
-#ifdef WITHUNCER
-			printUncertainty(domain, t, simparam.name);
 #endif
 
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		Delta maxVelocities(domain.u().getMaxValue(), domain.v().getMaxValue());
 		maxVelocities = communication.getGlobalMaxVelocities(maxVelocities);
 
+#ifdef WITHUNCER
+		dt = 0.002;
+#else
 		dt = Computation::computeTimestepFromMaxVelocities
 			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
-#ifdef WITHUNCER
-		dt = 0.002; // just a wild guess... TODO make it better
 #endif
 		t += dt; /* for status output */
 
@@ -309,6 +302,10 @@ int main(int argc, char** argv)
 	log_info("[P%i] Overall time: %fs | avg. frame time: %fs | avg. SOR time: %fs",
 		communication.getRank(), time_span.count(),
 		t_frame_avg/(double)(step-1), t_sor_avg/(double)(step-1) );
+
+#ifdef WITHUNCER
+	printUncertainty(simparam.name, uncertainty_log);
+#endif
 
 	/* end of magic */
 	return 0;
