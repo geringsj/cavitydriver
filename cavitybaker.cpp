@@ -300,7 +300,7 @@ void runVisualization(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationPa
 {
 	CavityRenderer cavity_renderer(inbox,outbox);
 	cavity_renderer.initBakeryVis(window_width,window_height,initial_params);
-	cavity_renderer.paint();
+	cavity_renderer.paintBakery();
 }
 
 int main(int argc, char** argv)

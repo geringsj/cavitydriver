@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <memory>
+#include <random>
 #include <vector>
 #include <typeinfo>
 
@@ -53,6 +54,7 @@ private:
 		void zoom(float factor) { m_field_of_view = (60.0/m_aspect_ratio) * factor; }
 		//! return the view matrix
 		glm::mat4 GetViewMatrix() { return glm::lookAt(cam_pos,cam_pos+forward_vector,up_vector); }
+		glm::mat4 GetProjectionMatrix() { return glm::perspective(m_field_of_view*3.14f/180.0f,m_aspect_ratio, 0.1f, 100.0f); }
 		//! returns the camera position
 		glm::vec3 GetCamPos() { return cam_pos; }
 		glm::vec3& accessCamPos() { return cam_pos; }
@@ -90,11 +92,22 @@ private:
 		GLSLProgram m_prgm;
 		std::shared_ptr<FramebufferObject> m_fbo;
 
+		virtual bool createResources(SimulationParameters& simparams) = 0;
 		virtual void draw(CameraSystem& camera, float* background_colour) = 0;
 	};
 
 	struct FieldLayer : public Layer
 	{
+		GLSLProgram m_ibfvAdvection_prgm;
+		GLSLProgram m_ibfvMerge_prgm;
+		std::shared_ptr<FramebufferObject> m_ibfv_fbo0;
+		std::shared_ptr<FramebufferObject> m_ibfv_fbo1;
+		Mesh m_field_quad;
+		Mesh m_ibfv_grid;
+		Mesh m_fullscreen_quad;
+		std::shared_ptr<Texture2D> m_field_tx;
+		std::shared_ptr<Texture2D> m_ibfvBackground_tx;
+
 		Dimension m_field_dimension;
 		std::vector<std::vector<float>> m_field_data;
 		std::vector<glm::vec3> m_field_max_values;
@@ -108,14 +121,11 @@ private:
 		double m_time_tracker = 0.0;
 		double m_elapsed_time;
 
-		Mesh m_quad;
-		std::shared_ptr<Texture2D> m_field_tx;
-
+		bool createResources(SimulationParameters& simparams);
 		void draw(CameraSystem& camera, float* background_colour);
 		void setFieldData(std::string path);
 		bool setFieldTexture(unsigned int requested_frame);
 		void updateFieldTexture(double current_time);
-		bool updateFieldMesh(SimulationParameters& simparams);
 	};
 
 	struct OverlayGridLayer : public Layer
@@ -123,7 +133,9 @@ private:
 		GLfloat m_colour[3];
 		Mesh m_grid;
 
+		bool createResources(SimulationParameters& simparams);
 		void draw(CameraSystem& camera, float* background_colour);
+
 		bool updateGridMesh(SimulationParameters& simparams);
 	};
 	
@@ -134,7 +146,9 @@ private:
 		std::shared_ptr<Texture2D> m_cell_tx;
 		//std::shared_ptr<Texture2D> m_cell_positions_tx;
 
+		bool createResources(SimulationParameters& simparams);
 		void draw(CameraSystem& camera, float* background_colour);
+
 		void setCellPositions(SimulationParameters& simparams);
 		bool updateCellMesh(SimulationParameters& simparams);
 	};
@@ -150,14 +164,27 @@ private:
 		std::shared_ptr<Texture2D> m_pdlt_glyph_tx;
 		std::shared_ptr<Texture2D> m_pnm_glyph_tx;
 
+		bool createResources(SimulationParameters& simparams);
 		void draw(CameraSystem& camera, float* background_colour);
+
 		void setGlyphs(SimulationParameters& simparams);
 		bool updateGlyphMesh(SimulationParameters& simparams);
 	};
 	
 	struct GeometryLayer : public Layer
 	{
+		bool createResources(SimulationParameters& simparams);
 		void draw(CameraSystem& camera, float* background_colour);
+	};
+
+	struct InterfaceLayer : public Layer
+	{
+		Mesh m_domainIndicators;
+
+		bool createResources(SimulationParameters& simparams);
+		void draw(CameraSystem& camera, float* background_colour);
+
+		bool updateResources(SimulationParameters& simparams);
 	};
 
 public:
@@ -186,6 +213,7 @@ public:
 	 * until the window gets closed.
 	 */
 	void paint();
+	void paintBakery();
 
 	void pushSimParams();
 
@@ -195,12 +223,6 @@ public:
 		m_window_height = height;
 
 		m_cam_sys.setAspectRatio((float)m_window_width/(float)m_window_height);
-
-		m_field_layer.m_fbo->resize(width,height);
-		m_overlayGrid_layer.m_fbo->resize(width,height);
-		m_boundaryGlyph_layer.m_fbo->resize(width,height);
-		m_boundaryCells_layer.m_fbo->resize(width,height);
-		m_geometry_layer.m_fbo->resize(width,height);
 	}
 
 	void zoomCamera(float factor)
@@ -246,6 +268,7 @@ private:
 	BoundaryCellsLayer m_boundaryCells_layer;
 	BoundaryGlyphLayer m_boundaryGlyph_layer;
 	GeometryLayer m_geometry_layer;
+	InterfaceLayer m_interface_layer;
 
 	GLSLProgram m_postProc_prgm;
 	Mesh m_screen_quad;
@@ -281,8 +304,6 @@ private:
 	bool createGLSLPrograms();
 
 	bool createMeshes();
-
-	bool createTextures();
 
 	bool createFramebuffers();
 

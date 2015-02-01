@@ -168,8 +168,20 @@
   <ItemGroup>
     <None Include="..\shader\arrowFragment.glsl" />
     <None Include="..\shader\arrowVertex.glsl" />
+    <None Include="..\shader\boundaryCellFragment.glsl" />
+    <None Include="..\shader\boundaryCellVertex.glsl" />
+    <None Include="..\shader\fieldFragment.glsl" />
+    <None Include="..\shader\fieldVertex.glsl" />
     <None Include="..\shader\gridFragment.glsl" />
     <None Include="..\shader\gridVertex.glsl" />
+    <None Include="..\shader\ibfvAdvectionFragment.glsl" />
+    <None Include="..\shader\ibfvAdvectionVertex.glsl" />
+    <None Include="..\shader\ibfvMergeFragment.glsl" />
+    <None Include="..\shader\ibfvMergeVertex.glsl" />
+    <None Include="..\shader\interfaceFragment.glsl" />
+    <None Include="..\shader\interfaceVertex.glsl" />
+    <None Include="..\shader\postProcFragment.glsl" />
+    <None Include="..\shader\postProcVertex.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

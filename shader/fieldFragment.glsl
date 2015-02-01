@@ -3,6 +3,7 @@
 uniform int mode;
 
 uniform sampler2D field_tx2D;
+uniform sampler2D ibfv_tx2D;
 uniform vec3 min_values;
 uniform vec3 max_values;
 
@@ -50,5 +51,15 @@ void main()
 	else if(mode == 3) // pressure
 	{
 		frag_colour.rgb = transferFuncton(scaleValue(field_uvp.b,min_values.z,max_values.z));
+	}
+	else if(mode == 4)
+	{
+		frag_colour.rgb = texture(ibfv_tx2D,uv).xyz;
+	}
+	else if(mode == 5) //combine 2 and 4
+	{
+		float magnitude = sqrt(field_uvp.r * field_uvp.r + field_uvp.g * field_uvp.g);
+		frag_colour.rgb = transferFuncton(scaleValue(magnitude,min_values.z,max_values.z))/2.0;
+		frag_colour.rgb += texture(ibfv_tx2D,uv).xyz/2.0;
 	}
 }

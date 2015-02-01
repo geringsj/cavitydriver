@@ -6,7 +6,7 @@ int main(int argc, char** argv)
 {
 	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
 
-	SimulationParameters simparam("ChannelFlow.conf");
+	SimulationParameters simparam("drivencavity.conf");
 
 	// Don't really need these, but current implementation of Renderer is quite chatty
 	MTQueue<SimulationParameters> outbox;

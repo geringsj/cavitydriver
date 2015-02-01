@@ -6,19 +6,16 @@ what needs to be done in each file:
 general:
 -	debug karman street
 
-Vis team:
--   arrowVertex.glsl
-	* Fix the scaling so that we are in the range of [0,1]
+cavitybaker:
+-	debug crash with string in anttweakbar
 
--	arrowFragment.glsl
-	* Check the alpha sampling
-	
--	CavityRenderer.cpp/hpp
-	* Check the arrow rendering and improve it
-	* Cleanup
-	* Make communication with Bakery possible		[not quite done]
-	* Rename init(...) to initVis to match the naming	[done]
-	* Fill the bar in initVis with read only parameters	[done]
+cavitypainter:
+-	make ibfv prettier!
+-	improve noise texture generate, i.e. spatial and temporal filtering
+-	add dye injection
+-	add various background source textures
+
+
 Vis team
 
 -	main.cpp:

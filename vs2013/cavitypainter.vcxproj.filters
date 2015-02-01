@@ -49,5 +49,41 @@
     <None Include="..\shader\arrowVertex.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\shader\boundaryCellFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\boundaryCellVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\fieldFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\fieldVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\ibfvAdvectionFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\ibfvAdvectionVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\ibfvMergeFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\ibfvMergeVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\interfaceFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\interfaceVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\postProcFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\postProcVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
