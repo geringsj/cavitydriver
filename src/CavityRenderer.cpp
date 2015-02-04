@@ -866,13 +866,13 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2f; m_window_background_colour[1] = 0.2f; m_window_background_colour[2] = 0.2f;
 
-	m_cam_sys = CameraSystem(
+	m_activeCamera = CameraSystem(
 		glm::vec3(0.0f, 0.0f, 1.0),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f));
-	m_cam_sys.setAspectRatio((float)window_width/(float)window_height);
-	m_cam_sys.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
+	m_activeCamera.setAspectRatio((float)window_width/(float)window_height);
+	m_activeCamera.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
 
 	m_field_layer.m_show = true;
 	m_overlayGrid_layer.m_show = true;
@@ -951,13 +951,13 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 	m_window_height = window_height;
 	m_window_background_colour[0] = 0.2f; m_window_background_colour[1] = 0.2f; m_window_background_colour[2] = 0.2f;
 
-	m_cam_sys = CameraSystem(
+	m_activeCamera = CameraSystem(
 		glm::vec3(0.0f, 0.0f, 1.0),
 		glm::vec3(0.0f, 1.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f));
-	m_cam_sys.setAspectRatio((float)window_width/(float)window_height);
-	m_cam_sys.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
+	m_activeCamera.setAspectRatio((float)window_width/(float)window_height);
+	m_activeCamera.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
 
 	m_overlayGrid_layer.m_show = true;
 	m_boundaryCells_layer.m_show = true;
@@ -1089,9 +1089,9 @@ void CavityRenderer::initBakeryTweakBar()
 	addIntParam("m_window_width", "label='Window width' group='Window' ", &m_window_width, "RO");
 	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
-	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
-	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_cam_sys.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
-	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_cam_sys.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
+	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_activeCamera.accessFieldOfView(), "RW", 1.0f, 180.0f);
+	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_activeCamera.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
+	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_activeCamera.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
 	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_overlayGrid_layer.m_show);
 	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_overlayGrid_layer.m_colour, " label='Grid color' group='Grid' ");
 
@@ -1178,9 +1178,9 @@ void CavityRenderer::initPainterTweakBar()
 	addIntParam("m_window_height", "label='Window height' group='Window' ", &m_window_height, "RO");
 	TwAddVarRW(bar, "m_window_background_colour", TW_TYPE_COLOR3F, &m_window_background_colour, " label='Background color' group='Window' ");
 
-	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_cam_sys.accessFieldOfView(), "RW", 1.0f, 180.0f);
-	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_cam_sys.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
-	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_cam_sys.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
+	addFloatParam("m_fieldOfView", " step=0.1 label='Field of View' group='Camera' ", &m_activeCamera.accessFieldOfView(), "RW", 1.0f, 180.0f);
+	addFloatParam("x", " step=0.01 label='X postion' group='Camera' ", &m_activeCamera.accessCamPos().x, "RW", 0.0f, (float)m_simparams.xLength);
+	addFloatParam("y", " step=0.01 label='Y position' group='Camera' ", &m_activeCamera.accessCamPos().y, "RW", 0.0f, (float)m_simparams.yLength);
 
 	addBoolParam("m_show_grid", " label='Show grid' group='Grid' ", &m_overlayGrid_layer.m_show);
 	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_overlayGrid_layer.m_colour, " label='Grid color' group='Grid' ");
@@ -1285,12 +1285,12 @@ void CavityRenderer::paint()
 		glfwGetFramebufferSize(m_window, &width, &height);
 		glViewport(0, 0, width, height);
 
-		m_field_layer.draw(m_cam_sys,m_window_background_colour);
-		m_boundaryGlyph_layer.draw(m_cam_sys,m_window_background_colour);
-		m_boundaryCells_layer.draw(m_cam_sys,m_window_background_colour);
-		m_geometry_layer.draw(m_cam_sys,m_window_background_colour);
-		m_overlayGrid_layer.draw(m_cam_sys,m_window_background_colour);
-		m_interface_layer.draw(m_cam_sys,m_window_background_colour);
+		m_field_layer.draw(m_activeCamera,m_window_background_colour);
+		m_boundaryGlyph_layer.draw(m_activeCamera,m_window_background_colour);
+		m_boundaryCells_layer.draw(m_activeCamera,m_window_background_colour);
+		m_geometry_layer.draw(m_activeCamera,m_window_background_colour);
+		m_overlayGrid_layer.draw(m_activeCamera,m_window_background_colour);
+		m_interface_layer.draw(m_activeCamera,m_window_background_colour);
 
 		// Draw TB
 		TwRefreshBar(bar);
@@ -1323,11 +1323,11 @@ void CavityRenderer::paintBakery()
 		glfwGetFramebufferSize(m_window, &width, &height);
 		glViewport(0, 0, width, height);
 
-		m_boundaryGlyph_layer.draw(m_cam_sys,m_window_background_colour);
-		m_boundaryCells_layer.draw(m_cam_sys,m_window_background_colour);
-		m_geometry_layer.draw(m_cam_sys,m_window_background_colour);
-		m_overlayGrid_layer.draw(m_cam_sys,m_window_background_colour);
-		m_interface_layer.draw(m_cam_sys,m_window_background_colour);
+		m_boundaryGlyph_layer.draw(m_activeCamera,m_window_background_colour);
+		m_boundaryCells_layer.draw(m_activeCamera,m_window_background_colour);
+		m_geometry_layer.draw(m_activeCamera,m_window_background_colour);
+		m_overlayGrid_layer.draw(m_activeCamera,m_window_background_colour);
+		m_interface_layer.draw(m_activeCamera,m_window_background_colour);
 
 		// Draw TB
 		TwRefreshBar(bar);

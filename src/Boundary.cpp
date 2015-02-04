@@ -117,6 +117,8 @@ std::vector<Range> Boundary::getInnerRanges(
 		case Grid::G:
 			return getInnerRanges(m_inner_extent, m_boundaries_V);
 			break;
+		case Grid::T:
+			/* don't know what to do :( */
 		default:
 			return std::vector<Range>(); /* empty... */
 			break;
@@ -469,6 +471,8 @@ void Boundary::setBoundary(
 		case Grid::P:
 			workBoundaries(&m_boundaries_P[0], Grid::P, gf);
 			break;
+		case Grid::T:
+			/* still don't know what to do :( */
 		default:
 			break;
 	}

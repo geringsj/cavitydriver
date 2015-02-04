@@ -66,6 +66,21 @@ namespace Computation
 			/**< The Reynolds number from simulation parameters SimParams. */
 			);
 
+	/**
+	 * Compute the temperature T at the beginning of each timestep
+	 * 
+	 * Implements chapter 7.1 and 7.3 formulas
+	 */
+	void computeTemperature(
+		Domain& domain,
+		/**< Domain where to get and store T */
+		const Real deltaT,
+		/**< Time step (as computed by Computation::computeTimestep.) */
+		const Real Re,
+		/**< The Reynolds number (from simulation parameters SimParams.) */
+		const Real Pr
+		/**< The Prandtl number (should propably be stores in simulation parameters)*/
+		);
 
 	/** 
 	 * Compute the "preliminary velocities" F, G (, H), 

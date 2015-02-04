@@ -222,22 +222,22 @@ public:
 		m_window_width=width;
 		m_window_height = height;
 
-		m_cam_sys.setAspectRatio((float)m_window_width/(float)m_window_height);
+		m_activeCamera.setAspectRatio((float)m_window_width/(float)m_window_height);
 	}
 
 	void zoomCamera(float factor)
 	{
-		m_cam_sys.accessFieldOfView() -= factor;
+		m_activeCamera.accessFieldOfView() -= factor;
 	}
 
 	void moveCamera(float dx, float dy, float dz, float speed)
 	{
-		m_cam_sys.Translation(glm::vec3(dx,dy,dz),speed);
+		m_activeCamera.Translation(glm::vec3(dx,dy,dz),speed);
 	}
 
 	CameraSystem& getCamera()
 	{
-		return m_cam_sys;
+		return m_activeCamera;
 	}
 
 	//void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
@@ -282,7 +282,9 @@ private:
 	MTQueue<SimulationParameters>& m_outbox;
 
 	/** Active camera */
-	CameraSystem m_cam_sys;
+	CameraSystem m_activeCamera;
+	CameraSystem m_perspectiveCamera_tgt;
+	CameraSystem m_topCamera_tgt;
 
 	//int m_nmbr_boundary_piece, m_max_boundary_piece;
 	//Boundary::Direction m_direction_enum;

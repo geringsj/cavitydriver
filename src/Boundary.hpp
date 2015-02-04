@@ -42,7 +42,7 @@ public:
 		NOSLIP=0, INFLOW=1, OUTFLOW=2,SLIP=3
 	};
 	enum class Grid {
-		U, V, P, F, G /* , W, H */
+		U, V, P, F, G, T /* , W, H */
 	};
 
 	struct BoundaryPiece {

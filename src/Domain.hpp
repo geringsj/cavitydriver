@@ -16,7 +16,7 @@ typedef std::vector<Range> Ranges;
  * Implements the Domain we will be working on, managing dimensions, grids and properties.
  * 
  * @author becherml, friesfn, geringsj
- * @date 11/2014
+ * @date 02/2015
  *
  * The Domain class represents the domain the simulation is computed on.
  * Therefore it stores and manages all grids and their properties.
@@ -81,6 +81,7 @@ public:
 		Real in_vinit = 0.0,
 		//Real in_winit = 0.0,
 		Real in_pinit = 0.0,
+		Real in_tinit = 0.0,
 
 		/* color for SOR Red/Black pattern */
 		Color firstCellColor = Color::Red
@@ -94,11 +95,12 @@ public:
 	Dimension getDimension() const { return m_dimension; }
 
 	const Range getWholeInnerRange() const { return m_whole_inner_range; }
-	const Ranges* getInnerRanges() const { return m_inner_ranges; };
-	const Ranges& getInnerRangeU() const { return m_inner_ranges[0]; };
-	const Ranges& getInnerRangeV() const { return m_inner_ranges[1]; };
+	const Ranges* getInnerRanges() const { return m_inner_ranges; }
+	const Ranges& getInnerRangeU() const { return m_inner_ranges[0]; }
+	const Ranges& getInnerRangeV() const { return m_inner_ranges[1]; }
 	//Rang&es getInnerRangeW() const { return m_inner_ranges[2]; };
-	const Ranges& getInnerRangeP() const { return m_inner_ranges[3]; };
+	const Ranges& getInnerRangeP() const { return m_inner_ranges[3]; }
+	const Ranges& getInnerRangeT() const { return m_inner_ranges[4]; }
 
 	Point getDelta() const { return m_delta; }
 
@@ -113,6 +115,7 @@ public:
 	GridFunction& G() { return m_preliminary_velocities_FGH.m_v ; }
 	GridFunction& H() { return m_preliminary_velocities_FGH.m_w ; }
 	GridFunction& rhs() { return m_p_rhs; }
+	GridFunction& t() { return m_temperature; }
 
 	Real g(int dim) const
 	{ if(dim == 0) return gx(); if(dim == 1) return gy(); return gy();/*TODO later do gz*/ }
@@ -134,6 +137,7 @@ public:
 	void setPressureBoundaries();
 	void setPreliminaryVelocitiesBoundaries();
 	void setVelocitiesBoundaries();
+	void setTemperatureBoundaries();
 
 private:
 	/**
@@ -150,8 +154,9 @@ private:
 	 * [1] -> inner Range of V
 	 * [2] -> inner Range of W (maye we will need it ...)
 	 * [3] -> inner Range of pressure P
+	 * [4] -> inner Range of temperature T
 	 */
-	Ranges m_inner_ranges[4];
+	Ranges m_inner_ranges[5];
 	Range m_whole_inner_range;
 
 	/**
@@ -182,6 +187,11 @@ private:
 	Real m_force_gx;
 	Real m_force_gy;
 	//Real m_force_gz;
+
+	/**
+	 * Temperature
+	 */
+	GridFunction m_temperature;
 };
 
 #endif
