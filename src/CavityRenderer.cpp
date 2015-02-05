@@ -61,9 +61,9 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	}
 
 	// Build index array
-	for(GLuint j=0; j<jSubdivisions; j++)
+	for(GLuint j=0; j<static_cast<GLuint>(jSubdivisions); j++)
 	{
-		for(GLuint i=0; i<iSubdivisions; i++)
+		for(GLuint i=0; i<static_cast<GLuint>(iSubdivisions); i++)
 		{
 			ibfv_index_array.push_back(i + j*(iSubdivisions+1));
 			ibfv_index_array.push_back(i+iSubdivisions+1 + j*(iSubdivisions+1));
@@ -159,7 +159,7 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 
 void CavityRenderer::FieldLayer::draw(CameraSystem& camera, float* background_colour)
 {
-	if(m_show)
+	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
 	{
 		m_prgm.use();
 
@@ -370,7 +370,7 @@ bool CavityRenderer::OverlayGridLayer::createResources(SimulationParameters& sim
 
 void CavityRenderer::OverlayGridLayer::draw(CameraSystem& camera, float* background_colour)
 {
-	if(m_show)
+	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
 	{
 		m_prgm.use();
 		glm::mat4 proj_mat = camera.GetProjectionMatrix();
@@ -406,6 +406,7 @@ bool CavityRenderer::OverlayGridLayer::updateGridMesh(SimulationParameters& simp
 
 	float right_shift = top_right_i / 2.0f;
 	float up_shift = top_right_j / 2.0f;
+	up_shift = up_shift*right_shift; /* get rid of compiler warning unused variables */
 
 	grid_vertex_array.push_back(Gridvertex(bottom_left_i, bottom_left_j, -1.0f, 1.0f));
 	grid_index_array.push_back(0);
@@ -482,7 +483,7 @@ bool CavityRenderer::BoundaryCellsLayer::createResources(SimulationParameters& s
 
 void CavityRenderer::BoundaryCellsLayer::draw(CameraSystem& camera, float* background_colour)
 {
-	if(m_show)
+	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
 	{
 		m_prgm.use();
 		
@@ -541,7 +542,8 @@ void CavityRenderer::BoundaryCellsLayer::setCellPositions(SimulationParameters& 
 
 		for_range(i, j, range)
 		{
-			float pos[] = { (float)(i) * x_length/1.0 + x_length / 2.0f, (float)(j) * y_length/1.0 + y_length/2.0f };
+			float pos[2] = 
+				{ float((float)(i) * x_length + x_length / 2.0), float((float)(j) * y_length + y_length/2.0) };
 			switch(boundary_piece.direction)
 			{
 			case Boundary::Direction::Up:
@@ -606,7 +608,7 @@ bool CavityRenderer::BoundaryGlyphLayer::createResources(SimulationParameters& s
 
 void CavityRenderer::BoundaryGlyphLayer::draw(CameraSystem& camera, float* background_colour)
 {
-	if(m_show)
+	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
 	{
 		m_prgm.use();
 
@@ -664,7 +666,7 @@ void CavityRenderer::BoundaryGlyphLayer::setGlyphs(SimulationParameters& simpara
 
 		for_range(i, j, range)
 		{
-			float pos[] = { (float)(i) * x_length/1.0 + x_length / 2.0f, (float)(j) * y_length/1.0 + y_length/2.0f };
+			float pos[] = { float((float)(i) * x_length/1.0 + x_length / 2.0f), float((float)(j) * y_length/1.0 + y_length/2.0f) };
 			switch(boundary_piece.direction)
 			{
 			case Boundary::Direction::Up:
@@ -718,12 +720,14 @@ bool CavityRenderer::BoundaryGlyphLayer::updateGlyphMesh(SimulationParameters& s
 
 bool CavityRenderer::GeometryLayer::createResources(SimulationParameters& simparams)
 {
+	if( 1 || (&simparams + 1)) /* get rid of compiler warning */
 	return true;
 }
 
 void CavityRenderer::GeometryLayer::draw(CameraSystem& camera, float* background_colour)
 {
-
+ if(0 && background_colour)/* get rid of compiler warning*/
+	 background_colour = (float*)(&camera);
 }
 
 bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simparams)
@@ -786,10 +790,13 @@ bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simpa
 	
 	m_prgm.link();
 
+	return true;
 }
 
 void CavityRenderer::InterfaceLayer::draw(CameraSystem& camera, float* background_colour)
 {
+	if(!background_colour)
+		background_colour = background_colour + 0;
 	m_prgm.use();
 	glm::mat4 proj_mat = camera.GetProjectionMatrix();
 	glm::mat4 model_mat = glm::mat4(1.0f);
@@ -845,6 +852,8 @@ bool CavityRenderer::InterfaceLayer::updateResources(SimulationParameters& simpa
 		return false;
 	m_domainIndicators.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
 	m_domainIndicators.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(GLfloat)*3));
+
+	return true;
 }
 
 
@@ -1493,13 +1502,13 @@ void TW_CALL Bake(void* clientData)
 
 void CavityRenderer::addFloatParam(const char* name, const char* def, void* var, std::string mode, float min, float max)
 {
-	if (mode == "RW")
+	if (mode.compare("RW") == 0)
 	{
 		TwAddVarRW(bar, name, TW_TYPE_FLOAT, var, def);
 		TwSetParam(bar, name, "min", TW_PARAM_FLOAT, 1, &min);
 		TwSetParam(bar, name, "max", TW_PARAM_FLOAT, 1, &max);
 	}
-	if (mode == "RO")
+	if (mode.compare("RO") == 0)
 	{
 		TwAddVarRO(bar, name, TW_TYPE_FLOAT, var, def);
 	}
@@ -1507,13 +1516,13 @@ void CavityRenderer::addFloatParam(const char* name, const char* def, void* var,
 
 void CavityRenderer::addDoubleParam(const char* name, const char* def, void* var, std::string mode, double min, double max)
 {
-	if (mode == "RW")
+	if (mode.compare("RW") == 0)
 	{
 		TwAddVarRW(bar, name, TW_TYPE_DOUBLE, var, def);
 		TwSetParam(bar, name, "min", TW_PARAM_DOUBLE, 1, &min);
 		TwSetParam(bar, name, "max", TW_PARAM_DOUBLE, 1, &max);
 	}
-	if (mode == "RO")
+	if (mode.compare("RO") == 0)
 	{
 		TwAddVarRO(bar, name, TW_TYPE_DOUBLE, var, def);
 	}
@@ -1521,13 +1530,13 @@ void CavityRenderer::addDoubleParam(const char* name, const char* def, void* var
 
 void CavityRenderer::addIntParam(const char* name, const char* def, void* var, std::string mode, int min, int max)
 {
-	if (mode == "RW")
+	if (mode.compare("RW") == 0)
 	{
 		TwAddVarRW(bar, name, TW_TYPE_INT32, var, def);
 		TwSetParam(bar, name, "min", TW_PARAM_INT32, 1, &min);
 		TwSetParam(bar, name, "max", TW_PARAM_INT32, 1, &max);
 	}
-	if (mode == "RO")
+	if (mode.compare("RO") == 0)
 	{
 		TwAddVarRO(bar, name, TW_TYPE_INT32, var, def);
 	}
@@ -1535,11 +1544,11 @@ void CavityRenderer::addIntParam(const char* name, const char* def, void* var, s
 
 void CavityRenderer::addBoolParam(const char* name, const char* def, void* var, std::string mode)
 {
-	if (mode == "RW")
+	if (mode.compare("RW") == 0)
 	{
 		TwAddVarRW(bar, name, TW_TYPE_BOOLCPP, var, def);
 	}
-	if (mode == "RO")
+	if (mode.compare("RO") == 0)
 	{
 		TwAddVarRO(bar, name, TW_TYPE_BOOLCPP, var, def);
 	}
@@ -1547,11 +1556,11 @@ void CavityRenderer::addBoolParam(const char* name, const char* def, void* var, 
 
 void CavityRenderer::addVec3Param(const char* name, const char* def, void* var, std::string mode)
 {
-	if (mode == "RW")
+	if (mode.compare("RW") == 0)
 	{
 		TwAddVarRW(bar, name, TW_TYPE_DIR3F, var, def);
 	}
-	if (mode == "RO")
+	if (mode.compare("RO") == 0)
 	{
 		TwAddVarRO(bar, name, TW_TYPE_DIR3F, var, def);
 	}
@@ -1564,11 +1573,11 @@ void CavityRenderer::addButtonParam(const char* name, const char* def, TwButtonC
 
 void CavityRenderer::addStringParam(const char* name, const char* def, void* var, std::string mode)
 {
-	if (mode == "RW")
+	if (mode.compare("RW") == 0)
 	{
 		TwAddVarRW(bar, name, TW_TYPE_CDSTRING, var, def);
 	}
-	if (mode == "RO")
+	if (mode.compare("RO") == 0)
 	{
 		TwAddVarRO(bar, name, TW_TYPE_CDSTRING, var, def);
 	}
@@ -1577,8 +1586,8 @@ void CavityRenderer::addStringParam(const char* name, const char* def, void* var
 void CavityRenderer::addEnumParam(const char* name, const char* def, void* var, TwEnumVal* _enum, int size, std::string mode)
 {
 	TwType enumType = TwDefineEnum(def, _enum, size);
-	if (mode == "RW") TwAddVarRW(bar, name, enumType, var, NULL);
-	if (mode == "RO") TwAddVarRO(bar, name, enumType, var, NULL);
+	if (mode.compare("RW") == 0) TwAddVarRW(bar, name, enumType, var, NULL);
+	if (mode.compare("RO") == 0) TwAddVarRO(bar, name, enumType, var, NULL);
 }
 
 void CavityRenderer::modifyIntParam(const char* name, int min, int max)
@@ -1750,6 +1759,7 @@ bool Renderer::IO::readPpmData(const char* filename, char* imageData, unsigned l
 	return true;
 }
 
+//#include "Debug.hpp"
 bool Renderer::IO::readPfmHeader(const char* filename, unsigned long& headerEndPos, int& imgDimX, int& imgDimY)
 {
 	std::string buffer;
@@ -1760,8 +1770,11 @@ bool Renderer::IO::readPfmHeader(const char* filename, unsigned long& headerEndP
 
 	file.seekg(0, std::ios::beg);
 	std::getline(file, buffer, '\n');
-	if(buffer ==  "PF")
+	if(buffer.compare("PF\n") == 0)
+	{
+		//debug("failing: buffer=\"%s\"", buffer.c_str());
 		return false;
+	}
 
 	std::getline(file, buffer, ' ');
 	imgDimX = std::stoi(buffer);
@@ -1792,4 +1805,6 @@ bool Renderer::IO::readPfmData(const char* filename, float* imageData, unsigned 
 	file.read( reinterpret_cast<char*>(imageData), length);
 
 	file.close();
+
+	return true;
 }

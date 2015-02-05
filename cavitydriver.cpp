@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 		/* outer forces */
 		simparam.gx, simparam.gy,
 		/* initial grid values */
-		simparam.ui, simparam.vi, simparam.pi,
+		simparam.ui, simparam.vi, simparam.pi, /* T: */ 0.0,
 		/* color pattern */
 		communication.getFirstCellColor());
 

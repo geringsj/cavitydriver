@@ -13,7 +13,11 @@ int main(int argc, char** argv)
 	MTQueue<SimulationParameters> inbox;
 
 	CavityRenderer cavity_renderer(inbox,outbox);
-	cavity_renderer.initPainterVis(800,450,simparam,"out/field_");
+	if( !cavity_renderer.initPainterVis(800,450,simparam,"out/field_") )
+	{
+		log_err("could not start painter");
+		exit(EXIT_FAILURE);
+	}
 	cavity_renderer.paint();
 
 	return 0;
