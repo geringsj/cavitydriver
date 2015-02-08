@@ -14,7 +14,7 @@ void main()
 	
 	// Adevected vertex position
 	vec3 position = vec3(v_position.xy*2.0 - vec2(1.0),v_position.z);
-	position.xy = position.xy + 0.05 * texture(field_tx2D,uv).xy;
+	position.xy = position.xy + 0.1 * texture(field_tx2D,uv).xy;
 	
 	//gl_Position = mvp_matrix * vec4(position,1.0);
 	gl_Position = vec4(position,1.0);

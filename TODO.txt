@@ -11,8 +11,10 @@ cavitybaker:
 
 cavitypainter:
 -	make ibfv prettier!
--	improve noise texture generate, i.e. spatial and temporal filtering
--	add dye injection
+-	improve noise texture generation, i.e. spatial and temporal filtering
+-	use array textures for noise, interpolate between ~4 noise texture hoping to reduce temporal aliasing
+-	add dye injection points on mouse click (render field with uv coords offscreen)
+-	implement streamlines (in field layer)
 -	add various background source textures
 
 

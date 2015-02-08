@@ -90,23 +90,30 @@ private:
 	{
 		bool m_show;
 		GLSLProgram m_prgm;
-		std::shared_ptr<FramebufferObject> m_fbo;
 
 		virtual bool createResources(SimulationParameters& simparams) = 0;
-		virtual void draw(CameraSystem& camera, float* background_colour) = 0;
+		virtual void draw(CameraSystem& camera) = 0;
 	};
 
 	struct FieldLayer : public Layer
 	{
 		GLSLProgram m_ibfvAdvection_prgm;
 		GLSLProgram m_ibfvMerge_prgm;
+		GLSLProgram m_dyeInjection_prgm;
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo0;
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo1;
 		Mesh m_field_quad;
 		Mesh m_ibfv_grid;
+		Mesh m_dye_blob;
 		Mesh m_fullscreen_quad;
+		std::vector<std::shared_ptr<Mesh>> m_streamlines;
 		std::shared_ptr<Texture2D> m_field_tx;
 		std::shared_ptr<Texture2D> m_ibfvBackground_tx;
+		std::shared_ptr<Texture2D> m_dyeBlob_tx;
+
+		// coordinates given in uv space of field
+		std::vector<Point> m_dye_seedpoints;
+		std::vector<Point> m_streamline_seedpoints;
 
 		Dimension m_field_dimension;
 		std::vector<std::vector<float>> m_field_data;
@@ -116,16 +123,18 @@ private:
 		int m_current_field;
 		int m_display_mode;
 
+		bool m_show_streamlines = false;
 		bool m_play_animation = false;
 		double m_requested_frametime = 0.033;
 		double m_time_tracker = 0.0;
 		double m_elapsed_time;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 		void setFieldData(std::string path);
 		bool setFieldTexture(unsigned int requested_frame);
 		void updateFieldTexture(double current_time);
+		void addDyeSeedpoint(float x, float y);
 	};
 
 	struct OverlayGridLayer : public Layer
@@ -134,7 +143,7 @@ private:
 		Mesh m_grid;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		bool updateGridMesh(SimulationParameters& simparams);
 	};
@@ -147,7 +156,7 @@ private:
 		//std::shared_ptr<Texture2D> m_cell_positions_tx;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		void setCellPositions(SimulationParameters& simparams);
 		bool updateCellMesh(SimulationParameters& simparams);
@@ -165,7 +174,7 @@ private:
 		std::shared_ptr<Texture2D> m_pnm_glyph_tx;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		void setGlyphs(SimulationParameters& simparams);
 		bool updateGlyphMesh(SimulationParameters& simparams);
@@ -174,7 +183,7 @@ private:
 	struct GeometryLayer : public Layer
 	{
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 	};
 
 	struct InterfaceLayer : public Layer
@@ -182,7 +191,7 @@ private:
 		Mesh m_domainIndicators;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		bool updateResources(SimulationParameters& simparams);
 	};
@@ -306,8 +315,6 @@ private:
 	bool createGLSLPrograms();
 
 	bool createMeshes();
-
-	bool createFramebuffers();
 
 	//void addBoundaryPieceToBar(std::string mode = "RW");
 	//void reloadSimParams(SimulationParameters& sim_params);
