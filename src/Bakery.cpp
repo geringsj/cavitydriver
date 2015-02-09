@@ -86,6 +86,12 @@ namespace Bakery {
 					return (field(i,j) != 1.0);
 				};
 				break;
+			case Boundary::Grid::T:
+				canGoThere = [&field](int i, int j)
+				{
+					return (field(i,j) != 1.0);
+				};
+				break;
 			case Boundary::Grid::U:
 				canGoThere = [&field](int i, int j)
 				{
@@ -155,6 +161,12 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
 			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
 			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+		/* set T */
+		setOuterBoundaries(simpams, inner, Boundary::Grid::T,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
+			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundaries(simpams, 
 			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
@@ -173,6 +185,38 @@ namespace Bakery {
 			Boundary::Condition::NOSLIP, 0.0);
 		}
 
+		void getHeatPlate(SimulationParameters& simpams, Range inner, Real inflowVal)
+		{
+		/* set P */
+		setOuterBoundaries(simpams, inner, Boundary::Grid::P,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
+			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+		/* set T */
+		setOuterBoundaries(simpams, inner, Boundary::Grid::T,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::INFLOW, inflowVal, /* DOWN */
+			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
+		/* set U */
+		setOuterBoundaries(simpams, 
+			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
+			Boundary::Grid::U,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0);
+		/* set V */
+		setOuterBoundaries(simpams, 
+			Range(inner.begin, Index(inner.end.i, inner.end.j-1)),
+			Boundary::Grid::V,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0,
+			Boundary::Condition::NOSLIP, 0.0);
+		}
+
 		void getChannelFlow(SimulationParameters& simpams, Range inner, Real inflowVal)
 		{
 		/* set P */
@@ -181,6 +225,12 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
 			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
 			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
+		/* set T */
+		setOuterBoundaries(simpams, inner, Boundary::Grid::T,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
+			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundaries(simpams,
 			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
@@ -207,6 +257,12 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
 			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
 			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
+		/* set T */
+		setOuterBoundaries(simpams, inner, Boundary::Grid::T,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
+			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundaries(simpams,
 			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
@@ -233,6 +289,12 @@ namespace Bakery {
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
 			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
 			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
+		/* set T */
+		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::T,
+			Boundary::Condition::OUTFLOW, 0.0, /* UP */
+			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
+			Boundary::Condition::OUTFLOW, 0.0, /* LEFT */
+			Boundary::Condition::OUTFLOW, 0.0); /* RIGHT */
 		/* set U */
 		setOuterBoundariesWithObstacle(simpams, 
 			Range(inner.begin, Index(inner.end.i-1, inner.end.j)),
@@ -289,6 +351,12 @@ namespace Bakery {
 						dir, Boundary::Condition::OUTFLOW, Boundary::Grid::P,
 						0.0, Range(ind,ind) ) );
 				break;
+			case Boundary::Grid::T:
+				simpams.boundary_conditions.push_back(
+					Boundary::BoundaryPiece(
+						dir, Boundary::Condition::OUTFLOW, Boundary::Grid::T,
+						0.0, Range(ind,ind) ) );
+				break;
 			default:
 				simpams.boundary_conditions.push_back(
 					Boundary::BoundaryPiece(
@@ -334,6 +402,11 @@ namespace Bakery {
 				if(simpams.xLength < 5.0*simpams.yLength)
 					simpams.xLength = 5.0 * simpams.yLength;
 				/* boundaries are set below, after rasterizing floating object */
+				break;
+			case Setting::HeatPlate:
+				if(simpams.gy == 0.0)
+					simpams.gy = -1.0;
+				getHeatPlate(simpams, inner, inflowVal);
 				break;
 		}
 
@@ -421,26 +494,42 @@ namespace Bakery {
 			}
 
 			/* collect object boundaries in inner */
-			/* for P */
+			/* for P and T */
 			for_range(i,j,inner)
 			if(field(i,j) == 0.0 || field(i,j) > 1.0)
 			{
 				/* left */
 				if(field(i-1,j) == 1.0)
+				{
 					addObjectBoundary
 						(Boundary::Grid::P, Boundary::Direction::Left, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::T, Boundary::Direction::Left, Index(i,j), simpams);
+				}
 				/* right */
 				if(field(i+1,j) == 1.0)
+				{
 					addObjectBoundary
 						(Boundary::Grid::P, Boundary::Direction::Right, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::T, Boundary::Direction::Right, Index(i,j), simpams);
+				}
 				/* up */
 				if(field(i,j+1) == 1.0)
+				{
 					addObjectBoundary
 						(Boundary::Grid::P, Boundary::Direction::Up, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::T, Boundary::Direction::Up, Index(i,j), simpams);
+				}
 				/* down */
 				if(field(i,j-1) == 1.0)
+				{
 					addObjectBoundary
 						(Boundary::Grid::P, Boundary::Direction::Down, Index(i,j), simpams);
+					addObjectBoundary
+						(Boundary::Grid::T, Boundary::Direction::Down, Index(i,j), simpams);
+				}
 			}
 			/* for U, not allowed on 1.0, 2.0 and 4.0*/
 			for_range(i,j,inner)

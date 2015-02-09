@@ -116,6 +116,7 @@ public:
 	GridFunction& H() { return m_preliminary_velocities_FGH.m_w ; }
 	GridFunction& rhs() { return m_p_rhs; }
 	GridFunction& t() { return m_temperature; }
+	GridFunction& tcache() { return m_temperature_computationcache; }
 
 	Real g(int dim) const
 	{ if(dim == 0) return gx(); if(dim == 1) return gy(); return gy();/*TODO later do gz*/ }
@@ -192,6 +193,7 @@ private:
 	 * Temperature
 	 */
 	GridFunction m_temperature;
+	GridFunction m_temperature_computationcache;
 };
 
 #endif

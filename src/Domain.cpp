@@ -35,7 +35,8 @@ Domain::Domain(
 
 		m_force_gx(in_gx), m_force_gy(in_gy), // m_force_gz(in_gz),
 
-		m_temperature(Dimension(dimension[0]+2,dimension[0]+2))
+		m_temperature(Dimension(dimension[0]+2,dimension[0]+2)),
+		m_temperature_computationcache(Dimension(dimension[0]+2,dimension[0]+2))
 {
 	m_inner_ranges[0] = m_boundary.getInnerRanges(Boundary::Grid::U);
 	m_inner_ranges[1] = m_boundary.getInnerRanges(Boundary::Grid::V);
@@ -67,7 +68,10 @@ Domain::Domain(
 
 	/* init temperature */
 	for_vecrange(i,j,m_inner_ranges[4])
+	{
 		t()(i,j) = in_tinit;
+		tcache()(i,j) = 0.0;
+	}
 
 	/* and don't forget the boundaries */
 	this->setVelocitiesBoundaries();

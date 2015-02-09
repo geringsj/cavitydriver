@@ -7,17 +7,17 @@
 namespace Computation
 {
 
-	Real computeTimestep(Domain& domain, const Real tau, const Real Re)
+	Real computeTimestep(Domain& domain, const Real tau, const Real Re, const Real Pr)
 	{
 		Real uMax = domain.getVelocity().m_u.getMaxValue();
 		Real vMax = domain.getVelocity().m_v.getMaxValue();
 		Delta maxVels(uMax, vMax);
 
-		return computeTimestepFromMaxVelocities(maxVels, domain.getDelta(), tau, Re);
+		return computeTimestepFromMaxVelocities(maxVels, domain.getDelta(), tau, Re, Pr);
 	}
 
 	Real computeTimestepFromMaxVelocities(
-			Delta maxVelocities, Delta cellsDelta, const Real tau, const Real Re)
+			Delta maxVelocities, Delta cellsDelta, const Real tau, const Real Re, const Real Pr)
 	{
 		Real uMax = maxVelocities.x;
 		Real vMax = maxVelocities.y;
@@ -25,17 +25,27 @@ namespace Computation
 		Real dxx = pow(cellsDelta.x, 2.0);
 		Real dyy = pow(cellsDelta.y, 2.0);
 
-		Real result = std::fmin(
-				(dxx * dyy * Re) / (2.0*(dxx+dyy)), std::fmin(
-					cellsDelta.x / std::fabs(uMax),
-					cellsDelta.y / std::fabs(vMax) ));
+		Real result = 
+			std::fmin(
+				std::fmin(
+					(dxx * dyy * Re) / (2.0*(dxx+dyy))
+					,
+					(Re * Pr) / (2.0 * (1.0/dxx + 1.0/dyy) ) // temperature
+				)
+				,
+				std::fmin(
+					cellsDelta.x / std::fabs(uMax)
+					,
+					cellsDelta.y / std::fabs(vMax)
+				)
+			);
 
 		return tau * result; /* tau is some safety factor in (0,1] */
 	}
 
 
 	void computePreliminaryVelocities(
-			Domain& domain, const Real deltaT, const Real Re, const Real alpha)
+			Domain& domain, const Real deltaT, const Real Re, const Real alpha, const Real beta)
 	{
 		for(uint D=0; D<DIMENSIONS; D++)
 		{
@@ -67,6 +77,12 @@ namespace Computation
 					domain.getVelocity()[D],domain.getVelocity()[Gdim],domain.getDelta(),
 					1+D,1+Gdim);
 
+			auto Tintp = 
+				[&domain, D](int i, int j)
+				{
+					return (domain.t()(i,j) + domain.t()(i +(D==1),j +(D==2))) / 2.0;
+				};
+
 			/* the formula: */
 			for_vecrange(i,j,domain.getInnerRanges()[D])
 			{
@@ -78,6 +94,7 @@ namespace Computation
 					 - (FFf(i,j) + alpha*FFfdc(i,j))
 					 - (FGg(i,j) + alpha*FGgdc(i,j))
 					 + domain.g(D)
+					 - domain.g(D) * beta * Tintp(i,j)// temperature
 					);
 			}
 		}
@@ -117,6 +134,47 @@ namespace Computation
 					domain.getPreliminaryVelocity()[D]( i,j ) - deltaT*Pdf(i,j);
 			}
 		}
+	}
+
+	void computeNewTemperature(
+		Domain& domain,
+		const Real deltaT,
+		const Real Re,
+		const Real Pr,
+		const Real alpha )
+	{
+		auto Txx = Derivatives::getDerivative(domain.t(), domain.getDelta(), Derivatives::Direction::xx);
+		auto Tyy = Derivatives::getDerivative(domain.t(), domain.getDelta(), Derivatives::Direction::yy);
+
+		auto TUx = Derivatives::getProductFirstDerivative(
+				domain.t(), domain.u(),domain.getDelta(),
+				Derivatives::Function::T, Derivatives::Function::U);
+		auto TUxdc = Derivatives::getProductFirstDerivativeDCS(
+				domain.t(), domain.u(),domain.getDelta(),
+				Derivatives::Function::T, Derivatives::Function::U);
+
+		auto TVy = Derivatives::getProductFirstDerivative(
+				domain.t(), domain.v(),domain.getDelta(),
+				Derivatives::Function::T, Derivatives::Function::V);
+		auto TVydc = Derivatives::getProductFirstDerivativeDCS(
+				domain.t(), domain.v(),domain.getDelta(),
+				Derivatives::Function::T, Derivatives::Function::V);
+
+		// compute endresult into cache
+		for_vecrange(i,j,domain.getInnerRangeT())
+		{
+			domain.tcache()(i,j) =
+				domain.t()(i,j) +
+				deltaT*(
+					(Txx(i,j) + Tyy(i,j))/(Re*Pr)
+					- (TUx(i,j) + TUxdc(i,j)*alpha)
+					- (TVy(i,j) + TVydc(i,j)*alpha)
+				);
+		}
+
+		// copy final result to T field
+		for_vecrange(i,j,domain.getInnerRangeT())
+			domain.t()(i,j) = domain.tcache()(i,j);
 	}
 };
 

@@ -138,6 +138,10 @@ namespace Derivatives
 					FinX = 0;
 					FinY = 0;
 					FinZ = 1;
+				case Function::T:
+					FinX = 0;
+					FinY = 0;
+					FinZ = 0;
 					break;
 				default:
 					log_err("function dimension could not be assigned");
@@ -162,6 +166,12 @@ namespace Derivatives
 					GinX = 0;
 					GinY = 0;
 					GinZ = 1;
+				case Function::T:
+					GinX = 0;
+					GinY = 0;
+					GinZ = 0;
+					log_err("never use T as second function!");
+					return [](int i, int j){ return 100e100*i*j; };
 					break;
 				default:
 					log_err("function dimension could not be assigned");
@@ -229,6 +239,11 @@ namespace Derivatives
 					FinY = 0;
 					FinZ = 1;
 					break;
+				case Function::T:
+					FinX = 0;
+					FinY = 0;
+					FinZ = 0;
+					break;
 				default:
 					log_err("function dimension could not be assigned");
 					break;
@@ -252,6 +267,13 @@ namespace Derivatives
 					GinX = 0;
 					GinY = 0;
 					GinZ = 1;
+					break;
+				case Function::T:
+					GinX = 0;
+					GinY = 0;
+					GinZ = 0;
+					log_err("never use T as second function!");
+					return [](int i, int j){ return 100e100*i*j; };
 					break;
 				default:
 					log_err("function dimension could not be assigned");
@@ -336,6 +358,8 @@ namespace Derivatives
 			GridFunction& gf1, GridFunction& gf2, Delta d, 
 			Function f1, Function f2)
 	{
+		if(f2 == Function::T)
+			return genFG_g(gf2, gf1, d, f2, f1);
 		return genFG_g(gf1, gf2, d, f1, f2);
 	}
 	std::function<Real(int, int)> getProductFirstDerivative(
@@ -351,6 +375,8 @@ namespace Derivatives
 			GridFunction& gf1, GridFunction& gf2, Delta d, 
 			Function f1, Function f2)
 	{
+		if(f2 == Function::T)
+			return genFG_gdc(gf2, gf1, d, f2, f1);
 		return genFG_gdc(gf1, gf2, d, f1, f2);
 	}
 	std::function<Real(int, int)> getProductFirstDerivativeDCS(

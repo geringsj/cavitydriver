@@ -80,6 +80,7 @@ private:
 	std::vector<Entry> m_boundaries_U[4];
 	std::vector<Entry> m_boundaries_V[4];
 	std::vector<Entry> m_boundaries_P[4];
+	std::vector<Entry> m_boundaries_T[4];
 
 	void computeNOSLIP(GridFunction& g, const Index bindex, const Index iindex, const Direction dir, const Grid grid) const;
 	void computeSLIP(GridFunction& g, const Index bindex, const Index iindex, const Direction dir, const Grid grid) const;

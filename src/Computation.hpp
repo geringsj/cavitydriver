@@ -41,8 +41,10 @@ namespace Computation
 			/**< Domain where to get dy, dx, uMax, vMax from. */
 			const Real tau, 
 			/**< Some safety factor from simulation parameters SimParams. */
-			const Real Re 
+			const Real Re,
 			/**< The Reynolds number from simulation parameters SimParams. */
+			const Real Pr 
+			/**< The Prandtl number for temperature. */
 			); 
 
 	/** 
@@ -62,8 +64,10 @@ namespace Computation
 			/**< The grid width in each dimension. */
 			const Real tau, 
 			/**< Some safety factor from simulation parameters SimParams. */
-			const Real Re
+			const Real Re,
 			/**< The Reynolds number from simulation parameters SimParams. */
+			const Real Pr 
+			/**< The Prandtl number for temperature. */
 			);
 
 	/**
@@ -71,15 +75,19 @@ namespace Computation
 	 * 
 	 * Implements chapter 7.1 and 7.3 formulas
 	 */
-	void computeTemperature(
+	void computeNewTemperature(
 		Domain& domain,
 		/**< Domain where to get and store T */
 		const Real deltaT,
 		/**< Time step (as computed by Computation::computeTimestep.) */
 		const Real Re,
 		/**< The Reynolds number (from simulation parameters SimParams.) */
-		const Real Pr
-		/**< The Prandtl number (should propably be stores in simulation parameters)*/
+		const Real Pr,
+		/**< The Prandtl number (from simulation parameters SimParams.) */
+		const Real alpha
+		/**< Factor for weighted mean of 'original central difference 
+		 * and the Donor-Cell Scheme'. See script chapter "3.2.4", page 22ff. 
+		 * This value is stored in SimParams. */
 		);
 
 	/** 
@@ -97,10 +105,13 @@ namespace Computation
 			/**< Time step as computed by Computation::computeTimestep. */
 			const Real Re, 
 			/**< The Reynolds number from simulation parameters SimParams. */
-			const Real alpha 
+			const Real alpha,
 			/**< Factor for weighted mean of 'original central difference 
 			 * and the Donor-Cell Scheme'. See script chapter "3.2.4", page 22ff. 
 			 * This value is stored in SimParams. */
+			const Real beta
+			/**< Volume expansion coefficient for temperature.
+			 * See script chapter 6, equations 6.2 and 6.3 */
 			);
 
 
