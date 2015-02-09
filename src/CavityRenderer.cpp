@@ -41,16 +41,16 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	if( right_i > top_j)
 	{
 		jSubdivisions =  base_subdivisions;
-		iSubdivisions = std::floor(base_subdivisions * (right_i/top_j));
+		iSubdivisions = (int)std::floor(base_subdivisions * (right_i/top_j));
 	}
 	else
 	{
 		iSubdivisions = base_subdivisions;
-		jSubdivisions = std::floor(base_subdivisions * (top_j/right_i));
+		jSubdivisions = (int)std::floor(base_subdivisions * (top_j/right_i));
 	}
 
-	iStep = 1.0/(float)iSubdivisions;
-	jStep = 1.0/(float)jSubdivisions;
+	iStep = 1.0f/(float)iSubdivisions;
+	jStep = 1.0f/(float)jSubdivisions;
 
 	for(float j = 0.0; j<1.0+(jStep*0.1); j=j+jStep) // use (jStep*0.1) as temporary epsilon
 	{
@@ -92,8 +92,8 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	m_fullscreen_quad.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
 
 	// Dye injection sprite
-	float blob_size = (1.0/(float)simparams.xLength);
-	blob_size = 0.05;
+	float blob_size = (1.0f/(float)simparams.xLength);
+	blob_size = 0.05f;
 	std::array< VertexUV, 4 > dyeBlobSprite_va = {{ VertexUV(-blob_size,-blob_size,-1.0,0.0,0.0),
 											VertexUV(-blob_size,blob_size,-1.0,0.0,1.0),
 											VertexUV(blob_size,blob_size,-1.0,1.0,1.0),
@@ -169,6 +169,23 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	if (!m_dyeInjection_prgm.link())
 		{ std::cout << m_dyeInjection_prgm.getLog(); return false; };
 
+	// Shader program for picking within the field
+	m_fieldPicking_prgm.init();
+	std::string fieldPicking_vertex = Renderer::IO::readShaderFile("./shader/fieldPickingVertex.glsl");
+	if(!m_fieldPicking_prgm.compileShaderFromString(&fieldPicking_vertex, GL_VERTEX_SHADER))
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+	
+	std::string fieldPicking_fragment = Renderer::IO::readShaderFile("./shader/fieldPickingFragment.glsl");
+	if (!m_fieldPicking_prgm.compileShaderFromString(&fieldPicking_fragment, GL_FRAGMENT_SHADER))
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+	
+	m_fieldPicking_prgm.bindAttribLocation(0, "v_position");
+	m_fieldPicking_prgm.bindAttribLocation(1, "v_uv");
+	
+	if (!m_fieldPicking_prgm.link())
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+	
+
 	// Create framebuffers "ping-pong" ibfv rendering
 	m_ibfv_fbo0 = std::make_shared<FramebufferObject>(10*(float)simparams.iMax,10*(float)simparams.jMax,false,false);
 	m_ibfv_fbo0->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
@@ -229,6 +246,22 @@ void CavityRenderer::FieldLayer::draw(CameraSystem& camera)
 		{
 			//TODO draw streamlines
 		}
+	}
+}
+
+void CavityRenderer::FieldLayer::drawFieldPicking(CameraSystem& camera)
+{
+	if(m_show)
+	{
+		m_fieldPicking_prgm.use();
+
+		glm::mat4 proj_mat = camera.GetProjectionMatrix();
+		glm::mat4 model_mat = glm::mat4(1.0f);
+		glm::mat4 view_mat = camera.GetViewMatrix();
+		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+		m_fieldPicking_prgm.setUniform("mvp_matrix", mvp_mat);
+
+		m_field_quad.draw();
 	}
 }
 
@@ -348,7 +381,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 	// Generate noise texture
 	std::mt19937 rg(std::chrono::system_clock::now().time_since_epoch().count());
-	float scale = 1.0/(float)rg.max();
+	float scale = 1.0f/(float)rg.max();
 	int size = m_ibfvBackground_tx->getWidth() * m_ibfvBackground_tx->getHeight();
 	GLfloat* noise_data = new GLfloat[size * 3];
 	for(int i=0;i<size;i++)
@@ -802,8 +835,8 @@ bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simpa
 	std::vector<VertexUV> domainIndicator_va;
 
 	// compute size of domain indicators
-	float domain_sizeX = (float)simparams.xLength * (1.0 + 2.0/(float)simparams.iMax);
-	float domain_sizeY = (float)simparams.yLength * (1.0 + 2.0/(float)simparams.jMax); 
+	float domain_sizeX = (float)simparams.xLength * (1.0f + 2.0f/(float)simparams.iMax);
+	float domain_sizeY = (float)simparams.yLength * (1.0f + 2.0f/(float)simparams.jMax); 
 	float domainIndicator_size = std::min( std::max(domain_sizeX,domain_sizeY)/100.0f ,
 											std::min(domain_sizeX,domain_sizeY) );
 
@@ -945,7 +978,7 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f));
 	m_activeCamera.setAspectRatio((float)window_width/(float)window_height);
-	m_activeCamera.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
+	m_activeCamera.accessFieldOfView() = (60.0f * ((float)window_height/(float)window_width));
 
 	m_field_layer.m_show = true;
 	m_overlayGrid_layer.m_show = true;
@@ -1012,6 +1045,10 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 	// TODO geometry layer
 
 	if(!m_interface_layer.createResources(sim_params)) { return false; }
+
+	// some additional resource intialization
+	m_fieldPicking_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height,false,false);
+	m_fieldPicking_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 
 	// Init tweak bar entries
 	initPainterTweakBar();
@@ -1326,8 +1363,17 @@ void CavityRenderer::paint()
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(m_window))
 	{
+		// Field picking render pass
+		m_fieldPicking_fbo->bind();
+		glClearColor(0.0f,0.0f,0.0f,0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glViewport(0, 0, m_fieldPicking_fbo->getWidth(), m_fieldPicking_fbo->getHeight());
+		m_field_layer.drawFieldPicking(m_activeCamera);
+
+		// Update field
 		m_field_layer.updateFieldTexture(glfwGetTime());
 
+		// Render all layers to screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(
 			m_window_background_colour[0],
