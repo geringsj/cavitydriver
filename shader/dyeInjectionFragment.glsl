@@ -13,6 +13,6 @@ void main()
 	if(mask_value < 0.5)
 		discard;
 	else
-		fragColour = vec4(1.0,0.0,0.7,1.0);
+		fragColour = vec4(0.8,0.0,0.6,1.0);
 		
 }

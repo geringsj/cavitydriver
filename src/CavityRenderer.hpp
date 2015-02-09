@@ -3,6 +3,7 @@
 
 #include <array>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <memory>
 #include <random>
@@ -138,6 +139,7 @@ private:
 		bool setFieldTexture(unsigned int requested_frame);
 		void updateFieldTexture(double current_time);
 		void addDyeSeedpoint(float x, float y);
+		void clearDye();
 	};
 
 	struct OverlayGridLayer : public Layer
@@ -229,6 +231,26 @@ public:
 
 	void pushSimParams();
 
+	void addDyeSeedpoint(int x, int y)
+	{
+		if(m_fieldPicking_fbo != nullptr)
+		{
+			GLfloat* data = new GLfloat[4];
+			m_fieldPicking_fbo->bind();
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, data);
+
+			// check if click was inside field
+			if(data[3]>0.5)
+				m_field_layer.addDyeSeedpoint(data[0],data[1]);
+
+			delete[] data;
+		}
+	}
+
+	void clearDye()
+		{ m_field_layer.clearDye(); }
+
 	void setWindowSize(int width, int height)
 	{
 		m_window_width=width;
@@ -253,6 +275,10 @@ public:
 	{
 		return m_activeCamera;
 	}
+	unsigned int getWindowWidth()
+		{ return m_window_width; }
+	unsigned int getWindowHeight()
+		{ return m_window_height; }
 
 	//void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
 	//int getMaxBoundaryPiece() { return m_max_boundary_piece; }
@@ -370,7 +396,21 @@ private:
 	{
 		/* get rid of stupid warnings: */
 		if( 1 || window || mods)
-		TwEventMouseButtonGLFW(button, action);
+		if( !TwEventMouseButtonGLFW(button, action))
+		{
+
+			if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+			{
+				CavityRenderer* renderer = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
+
+				double xPos, yPos;
+				glfwGetCursorPos(window, &xPos, &yPos);
+
+				yPos = renderer->getWindowHeight() - yPos;
+
+				renderer->addDyeSeedpoint(xPos,yPos);
+			}
+		}
 
 		//TODO read value from m_fieldClicking_fbo
 		// if inside field, add dye source

@@ -450,6 +450,11 @@ void CavityRenderer::FieldLayer::addDyeSeedpoint(float x, float y)
 	m_dye_seedpoints.push_back(Point(x,y,0.0));
 }
 
+void CavityRenderer::FieldLayer::clearDye()
+{
+	m_dye_seedpoints.clear();
+}
+
 bool CavityRenderer::OverlayGridLayer::createResources(SimulationParameters& simparams)
 {
 	updateGridMesh(simparams);
@@ -957,6 +962,8 @@ bool CavityRenderer::InterfaceLayer::updateResources(SimulationParameters& simpa
 /* Static tweak bar callback definitions. Implementation see further down. */
 void TW_CALL Bake(void* clientData);
 
+void TW_CALL ClearDye(void* clientData);
+
 CavityRenderer::CavityRenderer(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationParameters>& outbox)
 	: m_inbox(inbox), m_outbox(outbox)
 {
@@ -1032,7 +1039,6 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 	m_field_layer.setFieldData(fields_filename);
 	if(!m_field_layer.createResources(sim_params)) { return false; }
 	if(!m_field_layer.setFieldTexture(0)) { return false; }
-	m_field_layer.addDyeSeedpoint(0.5,0.5);
 
 	if(!m_overlayGrid_layer.createResources(sim_params)) { return false; }
 
@@ -1280,6 +1286,7 @@ void CavityRenderer::initPainterTweakBar()
 	addIntParam("m_display_mode", " label='Mode' group='Field' ", &m_field_layer.m_display_mode, "RW", 0, 5);
 	addBoolParam("m_play_animation", " label='Play animation' group='Field' ", &m_field_layer.m_play_animation);
 	addDoubleParam("m_requested_frametime", " step=0.001 label='Frametime' group='Field' ", &m_field_layer.m_requested_frametime, "RW");
+	addButtonParam("m_clearDye", " label='Clear dye' group='Field' ", ClearDye);
 
 	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
 	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_boundaryGlyph_layer.m_show);
@@ -1349,7 +1356,7 @@ void CavityRenderer::initPainterTweakBar()
 	//addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
 	//addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
 
-	addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
+	//addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
 }
 
 //void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
@@ -1513,6 +1520,13 @@ void TW_CALL Bake(void* clientData)
 
 	// this ones job will be to push updates simulation parameters to communication queue
 	cr->pushSimParams();
+}
+
+void TW_CALL ClearDye(void* clientData)
+{
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+
+	cr->clearDye();
 }
 
 //void CavityRenderer::addBoundaryPieceToBar(std::string mode)

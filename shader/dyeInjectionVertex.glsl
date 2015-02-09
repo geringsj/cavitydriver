@@ -12,7 +12,7 @@ void main()
 	uv = v_uv;
 
 	vec3 shifted_position = v_position;
-	shifted_position.xy += + dye_location[gl_InstanceID];
+	shifted_position.xy += + dye_location[gl_InstanceID]*2.0 - 1.0;
 	
 	gl_Position = vec4(shifted_position,1.0);
 }
