@@ -102,6 +102,7 @@ private:
 		GLSLProgram m_ibfvMerge_prgm;
 		GLSLProgram m_dyeInjection_prgm;
 		GLSLProgram m_fieldPicking_prgm;
+		GLSLProgram m_streamline_prgm;
 
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo0;
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo1;
@@ -125,6 +126,8 @@ private:
 		int m_num_fields;
 		int m_current_field;
 		int m_display_mode;
+		Real m_dx, m_dy;
+		GLfloat m_stream_colour[3];
 
 		bool m_show_streamlines = false;
 		bool m_play_animation = false;
@@ -140,6 +143,9 @@ private:
 		void updateFieldTexture(double current_time);
 		void addDyeSeedpoint(float x, float y);
 		void clearDye();
+		void interpolateUV(Point p, Real& u, Real& v);
+		void addStreamlineSeedpoint(float x, float y);
+		void clearStreamline();
 	};
 
 	struct OverlayGridLayer : public Layer
@@ -250,6 +256,8 @@ public:
 
 	void clearDye()
 		{ m_field_layer.clearDye(); }
+	void clearStreamline()
+		{ m_field_layer.clearStreamline(); }
 
 	void setWindowSize(int width, int height)
 	{
@@ -301,6 +309,8 @@ private:
 	unsigned int m_window_width; /**< Store the window width in pixel. */
 	unsigned int m_window_height; /**< Store the window height in pixel. */
 	GLfloat m_window_background_colour[3];
+	bool m_dye;
+	bool m_stream;
 	TwBar* bar;
 
 	/* Individual layers of the visualization */

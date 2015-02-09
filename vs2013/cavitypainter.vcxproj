@@ -182,6 +182,8 @@
     <None Include="..\shader\interfaceVertex.glsl" />
     <None Include="..\shader\postProcFragment.glsl" />
     <None Include="..\shader\postProcVertex.glsl" />
+    <None Include="..\shader\streamlinesFragment.glsl" />
+    <None Include="..\shader\streamlinesVertex.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

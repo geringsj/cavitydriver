@@ -85,5 +85,11 @@
     <None Include="..\shader\postProcVertex.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\shader\streamlinesFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\streamlinesVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
