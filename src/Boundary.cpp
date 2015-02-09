@@ -139,7 +139,7 @@ std::vector<Range> Boundary::getInnerRanges(
 		pattern(i,j) = -1.0;
 	/* mark all boundary and neighbour inner cells as such */
 	for(int i : {0,1,2,3} )
-	for(auto cell : boundary[i])
+	for(auto& cell : boundary[i])
 	{
 		pattern(cell.iposition) = 1.0;
 		pattern(cell.bposition) = 0.0;
@@ -150,8 +150,8 @@ std::vector<Range> Boundary::getInnerRanges(
 	while(! cells.empty())
 	{
 		Index ci = cells.front(); cells.pop_front();
-		for(int i : {1, -1})
-		for(int j : {1, -1})
+		for(int i : {1, 0, -1})
+		for(int j : {1, 0, -1})
 		{
 			Index ni(ci.i+i, ci.j+j);
 			if( pattern(ni) == -1.0 && IndexIsInRange(ni,inner_extent)) 

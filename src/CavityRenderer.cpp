@@ -386,8 +386,8 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 		Real domain_size_y = (Real)dim_y * m_dy;
 
 		// build streamlines
-		Real start_x = m_dx;
-		Real start_y = 0.0;
+		//Real start_x = m_dx;
+		//Real start_y = 0.0;
 		unsigned int index = 0;
 		for (auto& seedpoint : m_streamline_seedpoints)
 		{
@@ -492,7 +492,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 	//TODO upload position matrices
 	std::string uniform_name;
-	for(int instance=0; instance<m_dye_seedpoints.size(); instance++)
+	for(unsigned int instance=0; instance<m_dye_seedpoints.size(); instance++)
 	{
 		uniform_name = "dye_location[" + std::to_string(instance) + "]";
 		m_dyeInjection_prgm.setUniform(uniform_name.c_str(),glm::vec2((float)m_dye_seedpoints[instance].x,
@@ -926,6 +926,7 @@ bool CavityRenderer::GeometryLayer::createResources(SimulationParameters& simpar
 
 void CavityRenderer::GeometryLayer::draw(CameraSystem& camera)
 {
+	camera.GetRightVector();
 }
 
 bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simparams)
