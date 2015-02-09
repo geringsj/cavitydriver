@@ -5,6 +5,11 @@
 double CavityRenderer::last_mouse_x = 0.0;
 double CavityRenderer::last_mouse_y = 0.0;
 
+void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString)
+{
+	destinationClientString = sourceLibraryString;
+}
+
 bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams)
 {
 	// Create field quad
@@ -1098,6 +1103,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 
 	// Initialize AntTweakBar
 	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
+	TwCopyStdStringToClientFunc(CopyStdStringToClient);
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window, this);
@@ -1248,7 +1254,7 @@ void CavityRenderer::initBakeryTweakBar()
 	addIntParam("xCells", " label='xCells' group='Simulation Parameters' ", &m_simparams.xCells);
 	addIntParam("yCells", " label='yCells' group='Simulation Parameters' ", &m_simparams.yCells);
 	//TODO
-	//addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
+	addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
 
 	//TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
 	//for (auto b : sim_params.boundary_conditions)
@@ -1679,11 +1685,11 @@ void CavityRenderer::addStringParam(const char* name, const char* def, void* var
 {
 	if (mode.compare("RW") == 0)
 	{
-		TwAddVarRW(bar, name, TW_TYPE_CDSTRING, var, def);
+		TwAddVarRW(bar, name, TW_TYPE_STDSTRING, var, def);
 	}
 	if (mode.compare("RO") == 0)
 	{
-		TwAddVarRO(bar, name, TW_TYPE_CDSTRING, var, def);
+		TwAddVarRO(bar, name, TW_TYPE_STDSTRING, var, def);
 	}
 }
 

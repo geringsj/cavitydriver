@@ -6,9 +6,6 @@ what needs to be done in each file:
 general:
 -	debug karman street
 
-cavitybaker:
--	debug crash with string in anttweakbar
-
 cavitypainter:
 -	make ibfv prettier!
 -	improve noise texture generation, i.e. spatial and temporal filtering
