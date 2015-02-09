@@ -8,8 +8,8 @@ double CavityRenderer::last_mouse_y = 0.0;
 bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams)
 {
 	// Create field quad
-	float x_length = (float)simparams.xLength / (float)simparams.iMax;
-	float y_length = (float)simparams.yLength / (float)simparams.jMax;
+	float x_length = (float)simparams.xLength / (float)simparams.iMax; m_dx = x_length;
+	float y_length = (float)simparams.yLength / (float)simparams.jMax; m_dy = y_length;
 
 
 	float left_i = 0.0f;
@@ -41,16 +41,16 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	if( right_i > top_j)
 	{
 		jSubdivisions =  base_subdivisions;
-		iSubdivisions = std::floor(base_subdivisions * (right_i/top_j));
+		iSubdivisions = (int)std::floor(base_subdivisions * (right_i/top_j));
 	}
 	else
 	{
 		iSubdivisions = base_subdivisions;
-		jSubdivisions = std::floor(base_subdivisions * (top_j/right_i));
+		jSubdivisions = (int)std::floor(base_subdivisions * (top_j/right_i));
 	}
 
-	iStep = 1.0/(float)iSubdivisions;
-	jStep = 1.0/(float)jSubdivisions;
+	iStep = 1.0f/(float)iSubdivisions;
+	jStep = 1.0f/(float)jSubdivisions;
 
 	for(float j = 0.0; j<1.0+(jStep*0.1); j=j+jStep) // use (jStep*0.1) as temporary epsilon
 	{
@@ -91,6 +91,19 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	m_fullscreen_quad.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
 	m_fullscreen_quad.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
 
+	// Dye injection sprite
+	float blob_size = (1.0f/(float)simparams.xLength);
+	blob_size = 0.05f;
+	std::array< VertexUV, 4 > dyeBlobSprite_va = {{ VertexUV(-blob_size,-blob_size,-1.0,0.0,0.0),
+											VertexUV(-blob_size,blob_size,-1.0,0.0,1.0),
+											VertexUV(blob_size,blob_size,-1.0,1.0,1.0),
+											VertexUV(blob_size,-blob_size,-1.0,1.0,0.0) }};
+	std::array< GLuint, 6 > dyeBlobSprite_ia = {{ 0,2,1,2,0,3 }};
+
+	if(!(m_dye_blob.bufferDataFromArray(dyeBlobSprite_va.data(),dyeBlobSprite_ia.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
+	m_dye_blob.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
+	m_dye_blob.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
+
 	// Shader program for rendering field quad
 	m_prgm.init();
 	
@@ -122,7 +135,7 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	m_ibfvAdvection_prgm.bindAttribLocation(1, "v_uv");
 	
 	if (!m_ibfvAdvection_prgm.link())
-		{ std::cout << m_prgm.getLog(); return false; };
+		{ std::cout << m_ibfvAdvection_prgm.getLog(); return false; };
 
 	m_ibfvMerge_prgm.init();
 	
@@ -138,8 +151,54 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	m_ibfvMerge_prgm.bindAttribLocation(1, "v_uv");
 	
 	if (!m_ibfvMerge_prgm.link())
-		{ std::cout << m_prgm.getLog(); return false; };
+		{ std::cout << m_ibfvMerge_prgm.getLog(); return false; };
 
+	// Shader program for dye injection
+	m_dyeInjection_prgm.init();
+	std::string dyeInjection_vertex = Renderer::IO::readShaderFile("./shader/dyeInjectionVertex.glsl");
+	if (!m_dyeInjection_prgm.compileShaderFromString(&dyeInjection_vertex, GL_VERTEX_SHADER))
+		{ std::cout << m_dyeInjection_prgm.getLog(); return false; };
+	
+	std::string dyeInjection_fragment = Renderer::IO::readShaderFile("./shader/dyeInjectionFragment.glsl");
+	if (!m_dyeInjection_prgm.compileShaderFromString(&dyeInjection_fragment, GL_FRAGMENT_SHADER))
+		{ std::cout << m_dyeInjection_prgm.getLog(); return false; };
+	
+	m_dyeInjection_prgm.bindAttribLocation(0, "v_position");
+	m_dyeInjection_prgm.bindAttribLocation(1, "v_uv");
+	
+	if (!m_dyeInjection_prgm.link())
+		{ std::cout << m_dyeInjection_prgm.getLog(); return false; };
+
+	// Shader program for picking within the field
+	m_fieldPicking_prgm.init();
+	std::string fieldPicking_vertex = Renderer::IO::readShaderFile("./shader/fieldPickingVertex.glsl");
+	if(!m_fieldPicking_prgm.compileShaderFromString(&fieldPicking_vertex, GL_VERTEX_SHADER))
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+	
+	std::string fieldPicking_fragment = Renderer::IO::readShaderFile("./shader/fieldPickingFragment.glsl");
+	if (!m_fieldPicking_prgm.compileShaderFromString(&fieldPicking_fragment, GL_FRAGMENT_SHADER))
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+	
+	m_fieldPicking_prgm.bindAttribLocation(0, "v_position");
+	m_fieldPicking_prgm.bindAttribLocation(1, "v_uv");
+	
+	if (!m_fieldPicking_prgm.link())
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+
+	// Shader program for streamlines
+	m_streamline_prgm.init();
+	std::string streamline_vertex = Renderer::IO::readShaderFile("./shader/streamlinesVertex.glsl");
+	if (!m_streamline_prgm.compileShaderFromString(&streamline_vertex, GL_VERTEX_SHADER))
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+
+	std::string streamline_fragment = Renderer::IO::readShaderFile("./shader/streamlinesFragment.glsl");
+	if (!m_streamline_prgm.compileShaderFromString(&streamline_fragment, GL_FRAGMENT_SHADER))
+		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+
+	m_streamline_prgm.bindAttribLocation(0, "v_position");
+	
+
+	// Create framebuffers "ping-pong" ibfv rendering
 	m_ibfv_fbo0 = std::make_shared<FramebufferObject>(10*(float)simparams.iMax,10*(float)simparams.jMax,false,false);
 	m_ibfv_fbo0->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
 	m_ibfv_fbo0->bindColorbuffer(0);
@@ -151,15 +210,25 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
-
+	// Create empty texture for holding ibfv background/source image
 	m_ibfvBackground_tx = std::make_shared<Texture2D>("m_ibfvBackground_tx",GL_RGB, 512, 512, GL_RGB, GL_FLOAT, nullptr);
+
+	// Load mask texture for dye injection blob
+	unsigned long begin_pos;
+	int x_dim, y_dim;
+	char* m_img_data;
+	Renderer::IO::readPpmHeader("dye_blob.ppm", begin_pos, x_dim, y_dim);
+	m_img_data = new char[x_dim * y_dim * 3];
+	Renderer::IO::readPpmData("dye_blob.ppm", m_img_data, begin_pos, x_dim, y_dim);
+	m_dyeBlob_tx = std::make_shared<Texture2D>("m_dyeBlob_tx",GL_RGB, x_dim, y_dim, GL_RGB, GL_UNSIGNED_BYTE, m_img_data);
+	delete[] m_img_data;
 
 	return true;
 }
 
-void CavityRenderer::FieldLayer::draw(CameraSystem& camera, float* background_colour)
+void CavityRenderer::FieldLayer::draw(CameraSystem& camera)
 {
-	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
+	if(m_show)
 	{
 		m_prgm.use();
 
@@ -182,6 +251,35 @@ void CavityRenderer::FieldLayer::draw(CameraSystem& camera, float* background_co
 		glm::mat4 view_mat = camera.GetViewMatrix();
 		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
 		m_prgm.setUniform("mvp_matrix", mvp_mat);
+
+		m_field_quad.draw();
+
+		if(m_show_streamlines)
+		{
+			//TODO draw streamlines
+			m_streamline_prgm.use();
+			glm::vec4 col = glm::vec4(m_stream_colour[0], m_stream_colour[1], m_stream_colour[2], 1.0);
+			m_streamline_prgm.setUniform("mvp_matrix", mvp_mat);
+			m_streamline_prgm.setUniform("colour", col);
+			for (auto& streamline : m_streamlines)
+			{
+				streamline->draw();
+			}
+		}
+	}
+}
+
+void CavityRenderer::FieldLayer::drawFieldPicking(CameraSystem& camera)
+{
+	if(m_show)
+	{
+		m_fieldPicking_prgm.use();
+
+		glm::mat4 proj_mat = camera.GetProjectionMatrix();
+		glm::mat4 model_mat = glm::mat4(1.0f);
+		glm::mat4 view_mat = camera.GetViewMatrix();
+		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
+		m_fieldPicking_prgm.setUniform("mvp_matrix", mvp_mat);
 
 		m_field_quad.draw();
 	}
@@ -279,6 +377,46 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 			m_current_field = (m_current_field + (int)std::floor(m_elapsed_time / m_requested_frametime)) % m_field_data.size();
 			m_elapsed_time = 0.0;
 		}
+
+		//Streamlines begin
+		int dim_x = m_field_dimension.i;
+		int dim_y = m_field_dimension.j;
+		Real cell_size = std::sqrt(m_dx*m_dx + m_dy*m_dy);
+		Real domain_size_x = (Real)dim_x * m_dx;
+		Real domain_size_y = (Real)dim_y * m_dy;
+
+		// build streamlines
+		Real start_x = m_dx;
+		Real start_y = 0.0;
+		unsigned int index = 0;
+		for (auto& seedpoint : m_streamline_seedpoints)
+		{
+			std::vector<PointVertex> points;
+			std::vector<unsigned int> points_index;
+			unsigned int vi_index = 0;
+			while (0.0 < seedpoint.x && seedpoint.x < domain_size_x &&
+				0.0 < seedpoint.y && seedpoint.y < domain_size_y)
+			{
+				Point p = seedpoint;
+				Real u, v;
+				interpolateUV(p, u, v);
+
+				if (!((u + v)>0.0))
+					break;
+
+				Real scaling = cell_size / std::sqrt(u*u + v*v);
+				PointVertex p_new(p.x + scaling*u, p.y + scaling * v, -1.0f);
+				points.push_back(p_new);
+				points_index.push_back(vi_index);
+				vi_index++;
+
+				if ((int)points.size() > std::max(dim_x, dim_y))
+					break;
+			}
+			m_streamlines[index]->bufferDataFromArray(points.data(), points_index.data(),sizeof(PointVertex)*points.size(),sizeof(unsigned int) * points_index.size(),GL_LINE_STRIP);
+			index++;
+		}
+		// Streamlines end
 	}
 	else
 	{
@@ -299,9 +437,9 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 	m_field_tx->texParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 
-	//TODO generate noise texture
+	// Generate noise texture
 	std::mt19937 rg(std::chrono::system_clock::now().time_since_epoch().count());
-	float scale = 1.0/(float)rg.max();
+	float scale = 1.0f/(float)rg.max();
 	int size = m_ibfvBackground_tx->getWidth() * m_ibfvBackground_tx->getHeight();
 	GLfloat* noise_data = new GLfloat[size * 3];
 	for(int i=0;i<size;i++)
@@ -347,6 +485,67 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 	m_fullscreen_quad.draw();
 
+	m_dyeInjection_prgm.use();
+	glActiveTexture(GL_TEXTURE0);
+	m_dyeInjection_prgm.setUniform("dyeBlob_tx2D",0);
+	m_dyeBlob_tx->bindTexture();
+
+	//TODO upload position matrices
+	std::string uniform_name;
+	for(int instance=0; instance<m_dye_seedpoints.size(); instance++)
+	{
+		uniform_name = "dye_location[" + std::to_string(instance) + "]";
+		m_dyeInjection_prgm.setUniform(uniform_name.c_str(),glm::vec2((float)m_dye_seedpoints[instance].x,
+																(float)m_dye_seedpoints[instance].y));
+	}
+
+	//TODO instanced draw call
+	m_dye_blob.draw(m_dye_seedpoints.size());
+}
+
+void CavityRenderer::FieldLayer::addDyeSeedpoint(float x, float y)
+{
+	m_dye_seedpoints.push_back(Point(x,y,0.0));
+}
+
+void CavityRenderer::FieldLayer::clearDye()
+{
+	m_dye_seedpoints.clear();
+}
+
+void CavityRenderer::FieldLayer::interpolateUV(Point p, Real& u, Real& v)
+{
+	// step1: find grid cell
+	int i = (int)(p.x / m_dx) + 1;
+	int j = (int)((p.y + (m_dy / 2.0)) / m_dy) + 1;
+
+	// step2: find neighbour cells
+	Real x_1 = (Real)(i - 1) * m_dx;
+	Real x_2 = (Real)i * m_dx;
+	Real y_1 = (Real)(j - 1)*m_dy - (m_dy / 2.0);
+	Real y_2 = (Real)(j)*m_dy - (m_dy / 2.0);
+
+	// step3: bilinear interpolation
+	u = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][(i - 1) * 3 + (j - 1)*m_field_dimension.i] +
+		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][(i)* 3 + (j - 1)*m_field_dimension.i] +
+		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][(i - 1) * 3 + (j)*m_field_dimension.i] +
+		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][(i)* 3 + (j)*m_field_dimension.i]);
+
+	v = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][((i - 1) * 3) + 1 + (j - 1)*m_field_dimension.i] +
+		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][((i)* 3) + 1 + (j - 1)*m_field_dimension.i] +
+		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][((i - 1) * 3) + 1 + (j)*m_field_dimension.i] +
+		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][((i)* 3) + 1 + (j)*m_field_dimension.i]);
+}
+
+void CavityRenderer::FieldLayer::addStreamlineSeedpoint(float x, float y)
+{
+	m_streamline_seedpoints.push_back(Point(x, y, 0.0));
+	m_streamlines.push_back(std::make_shared<Mesh> ());
+}
+
+void CavityRenderer::FieldLayer::clearStreamline()
+{
+	m_streamlines.clear();
 }
 
 bool CavityRenderer::OverlayGridLayer::createResources(SimulationParameters& simparams)
@@ -368,9 +567,9 @@ bool CavityRenderer::OverlayGridLayer::createResources(SimulationParameters& sim
 	return true;
 }
 
-void CavityRenderer::OverlayGridLayer::draw(CameraSystem& camera, float* background_colour)
+void CavityRenderer::OverlayGridLayer::draw(CameraSystem& camera)
 {
-	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
+	if(m_show)
 	{
 		m_prgm.use();
 		glm::mat4 proj_mat = camera.GetProjectionMatrix();
@@ -481,9 +680,9 @@ bool CavityRenderer::BoundaryCellsLayer::createResources(SimulationParameters& s
 	return true;
 }
 
-void CavityRenderer::BoundaryCellsLayer::draw(CameraSystem& camera, float* background_colour)
+void CavityRenderer::BoundaryCellsLayer::draw(CameraSystem& camera)
 {
-	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
+	if(m_show)
 	{
 		m_prgm.use();
 		
@@ -606,9 +805,9 @@ bool CavityRenderer::BoundaryGlyphLayer::createResources(SimulationParameters& s
 	return true;
 }
 
-void CavityRenderer::BoundaryGlyphLayer::draw(CameraSystem& camera, float* background_colour)
+void CavityRenderer::BoundaryGlyphLayer::draw(CameraSystem& camera)
 {
-	if(m_show || (0 && background_colour)/* get rid of compiler warning*/)
+	if(m_show)
 	{
 		m_prgm.use();
 
@@ -621,6 +820,7 @@ void CavityRenderer::BoundaryGlyphLayer::draw(CameraSystem& camera, float* backg
 				//
 				//if(boundary_piece.gridtype == Boundary::Grid::P &&  boundary_piece.condition==Boundary::Condition::OUTFLOW)
 				//	m_boundary_pnm_glyph_tx->bindTexture();
+				m_velocity_glyph_tx->bindTexture();
 
 				glm::mat4 proj_mat = glm::perspective(camera.getFieldOfView(), camera.getAspectRatio(), 0.1f, 100.0f);
 				glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(velocity_glyph.first.x,velocity_glyph.first.y,velocity_glyph.first.z));
@@ -724,10 +924,8 @@ bool CavityRenderer::GeometryLayer::createResources(SimulationParameters& simpar
 	return true;
 }
 
-void CavityRenderer::GeometryLayer::draw(CameraSystem& camera, float* background_colour)
+void CavityRenderer::GeometryLayer::draw(CameraSystem& camera)
 {
- if(0 && background_colour)/* get rid of compiler warning*/
-	 background_colour = (float*)(&camera);
 }
 
 bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simparams)
@@ -736,8 +934,8 @@ bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simpa
 	std::vector<VertexUV> domainIndicator_va;
 
 	// compute size of domain indicators
-	float domain_sizeX = (float)simparams.xLength * (1.0 + 2.0/(float)simparams.iMax);
-	float domain_sizeY = (float)simparams.yLength * (1.0 + 2.0/(float)simparams.jMax); 
+	float domain_sizeX = (float)simparams.xLength * (1.0f + 2.0f/(float)simparams.iMax);
+	float domain_sizeY = (float)simparams.yLength * (1.0f + 2.0f/(float)simparams.jMax); 
 	float domainIndicator_size = std::min( std::max(domain_sizeX,domain_sizeY)/100.0f ,
 											std::min(domain_sizeX,domain_sizeY) );
 
@@ -793,10 +991,8 @@ bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simpa
 	return true;
 }
 
-void CavityRenderer::InterfaceLayer::draw(CameraSystem& camera, float* background_colour)
+void CavityRenderer::InterfaceLayer::draw(CameraSystem& camera)
 {
-	if(!background_colour)
-		background_colour = background_colour + 0;
 	m_prgm.use();
 	glm::mat4 proj_mat = camera.GetProjectionMatrix();
 	glm::mat4 model_mat = glm::mat4(1.0f);
@@ -860,6 +1056,12 @@ bool CavityRenderer::InterfaceLayer::updateResources(SimulationParameters& simpa
 /* Static tweak bar callback definitions. Implementation see further down. */
 void TW_CALL Bake(void* clientData);
 
+void TW_CALL ClearDye(void* clientData);
+
+void TW_CALL ClearStream(void* clientData);
+
+void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString);
+
 CavityRenderer::CavityRenderer(MTQueue<SimulationParameters>& inbox, MTQueue<SimulationParameters>& outbox)
 	: m_inbox(inbox), m_outbox(outbox)
 {
@@ -881,7 +1083,7 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		glm::vec3(1.0f, 0.0f, 0.0f));
 	m_activeCamera.setAspectRatio((float)window_width/(float)window_height);
-	m_activeCamera.accessFieldOfView() = (60.0 * ((float)window_height/(float)window_width));
+	m_activeCamera.accessFieldOfView() = (60.0f * ((float)window_height/(float)window_width));
 
 	m_field_layer.m_show = true;
 	m_overlayGrid_layer.m_show = true;
@@ -948,6 +1150,10 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 
 	if(!m_interface_layer.createResources(sim_params)) { return false; }
 
+	// some additional resource intialization
+	m_fieldPicking_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height,false,false);
+	m_fieldPicking_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
+
 	// Init tweak bar entries
 	initPainterTweakBar();
 
@@ -990,6 +1196,7 @@ bool CavityRenderer::initBakeryVis(unsigned int window_width, unsigned int windo
 
 	// Initialize AntTweakBar
 	TwInit(TW_OPENGL_CORE, NULL); // TwInit(TW_OPENGL, NULL);
+	TwCopyStdStringToClientFunc(CopyStdStringToClient);
 
 	// Set GLFW event callbacks
 	glfwSetWindowUserPointer(m_window, this);
@@ -1069,27 +1276,6 @@ bool CavityRenderer::createMeshes()
 	return true;
 }
 
-bool CavityRenderer::createFramebuffers()
-{
-	//TODO create all framebuffers based on window width and height
-	m_field_layer.m_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
-	m_field_layer.m_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
-
-	m_overlayGrid_layer.m_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
-	m_overlayGrid_layer.m_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
-
-	m_boundaryGlyph_layer.m_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
-	m_boundaryGlyph_layer.m_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
-
-	m_boundaryCells_layer.m_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
-	m_boundaryCells_layer.m_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
-
-	m_geometry_layer.m_fbo = std::make_shared<FramebufferObject>(m_window_width,m_window_height);
-	m_geometry_layer.m_fbo->createColorAttachment(GL_RGBA32F,GL_RGBA,GL_FLOAT);
-
-	return true;
-}
-
 void CavityRenderer::initBakeryTweakBar()
 {
 	// Create a tweak bar
@@ -1161,7 +1347,7 @@ void CavityRenderer::initBakeryTweakBar()
 	addIntParam("xCells", " label='xCells' group='Simulation Parameters' ", &m_simparams.xCells);
 	addIntParam("yCells", " label='yCells' group='Simulation Parameters' ", &m_simparams.yCells);
 	//TODO
-	//addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
+	addStringParam("name", " label='name' group='Simulation Parameters' ", &m_simparams.name);
 
 	//TwAddSeparator(bar, "BoundaryConditions", " label='BoundaryConditions' ");
 	//for (auto b : sim_params.boundary_conditions)
@@ -1199,6 +1385,11 @@ void CavityRenderer::initPainterTweakBar()
 	addIntParam("m_display_mode", " label='Mode' group='Field' ", &m_field_layer.m_display_mode, "RW", 0, 5);
 	addBoolParam("m_play_animation", " label='Play animation' group='Field' ", &m_field_layer.m_play_animation);
 	addDoubleParam("m_requested_frametime", " step=0.001 label='Frametime' group='Field' ", &m_field_layer.m_requested_frametime, "RW");
+	addButtonParam("m_clearDye", " label='Clear dye' group='Field' ", ClearDye);
+	addButtonParam("m_clearStream", "label = 'Clear streamlines' group = 'Field' ", ClearStream);
+	addBoolParam("m_dye", "label = 'Place dye' group = 'Field' ", &m_dye, "RW"); 
+	addBoolParam("m_stream", "label = 'Place streamline' group = 'Field' ", &m_stream, "RW");
+	TwAddVarRW(bar, "m_stream_colour", TW_TYPE_COLOR3F, &m_field_layer.m_stream_colour, " label='Streamline color' group='Field' ");
 
 	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
 	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_boundaryGlyph_layer.m_show);
@@ -1268,7 +1459,7 @@ void CavityRenderer::initPainterTweakBar()
 	//addButtonParam("m_boundarypiece_mod", " label='Modify boundary condition' ", ModifyBoundaryPiece);
 	//addButtonParam("m_boundarypiece_del", " label='Delete boundary condition' ", RemoveBoundaryPiece);
 
-	addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
+	//addButtonParam("m_bake", " label='bake parameters' group='Simulation Parameters' ", Bake);
 }
 
 //void CavityRenderer::reloadSimParams(SimulationParameters& sim_params)
@@ -1282,8 +1473,17 @@ void CavityRenderer::paint()
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(m_window))
 	{
+		// Field picking render pass
+		m_fieldPicking_fbo->bind();
+		glClearColor(0.0f,0.0f,0.0f,0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glViewport(0, 0, m_fieldPicking_fbo->getWidth(), m_fieldPicking_fbo->getHeight());
+		m_field_layer.drawFieldPicking(m_activeCamera);
+
+		// Update field
 		m_field_layer.updateFieldTexture(glfwGetTime());
 
+		// Render all layers to screen
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClearColor(
 			m_window_background_colour[0],
@@ -1294,12 +1494,12 @@ void CavityRenderer::paint()
 		glfwGetFramebufferSize(m_window, &width, &height);
 		glViewport(0, 0, width, height);
 
-		m_field_layer.draw(m_activeCamera,m_window_background_colour);
-		m_boundaryGlyph_layer.draw(m_activeCamera,m_window_background_colour);
-		m_boundaryCells_layer.draw(m_activeCamera,m_window_background_colour);
-		m_geometry_layer.draw(m_activeCamera,m_window_background_colour);
-		m_overlayGrid_layer.draw(m_activeCamera,m_window_background_colour);
-		m_interface_layer.draw(m_activeCamera,m_window_background_colour);
+		m_field_layer.draw(m_activeCamera);
+		m_boundaryGlyph_layer.draw(m_activeCamera);
+		m_boundaryCells_layer.draw(m_activeCamera);
+		m_geometry_layer.draw(m_activeCamera);
+		m_overlayGrid_layer.draw(m_activeCamera);
+		m_interface_layer.draw(m_activeCamera);
 
 		// Draw TB
 		TwRefreshBar(bar);
@@ -1332,11 +1532,11 @@ void CavityRenderer::paintBakery()
 		glfwGetFramebufferSize(m_window, &width, &height);
 		glViewport(0, 0, width, height);
 
-		m_boundaryGlyph_layer.draw(m_activeCamera,m_window_background_colour);
-		m_boundaryCells_layer.draw(m_activeCamera,m_window_background_colour);
-		m_geometry_layer.draw(m_activeCamera,m_window_background_colour);
-		m_overlayGrid_layer.draw(m_activeCamera,m_window_background_colour);
-		m_interface_layer.draw(m_activeCamera,m_window_background_colour);
+		m_boundaryGlyph_layer.draw(m_activeCamera);
+		m_boundaryCells_layer.draw(m_activeCamera);
+		m_geometry_layer.draw(m_activeCamera);
+		m_overlayGrid_layer.draw(m_activeCamera);
+		m_interface_layer.draw(m_activeCamera);
 
 		// Draw TB
 		TwRefreshBar(bar);
@@ -1423,6 +1623,25 @@ void TW_CALL Bake(void* clientData)
 
 	// this ones job will be to push updates simulation parameters to communication queue
 	cr->pushSimParams();
+}
+
+void TW_CALL ClearDye(void* clientData)
+{
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+
+	cr->clearDye();
+}
+
+void TW_CALL ClearStream(void* clientData)
+{
+	CavityRenderer* cr = (CavityRenderer*)clientData;
+
+	cr->clearStreamline();
+}
+
+void TW_CALL CopyStdStringToClient(std::string& destinationClientString, const std::string& sourceLibraryString)
+{
+	destinationClientString = sourceLibraryString;
 }
 
 //void CavityRenderer::addBoundaryPieceToBar(std::string mode)
@@ -1575,11 +1794,11 @@ void CavityRenderer::addStringParam(const char* name, const char* def, void* var
 {
 	if (mode.compare("RW") == 0)
 	{
-		TwAddVarRW(bar, name, TW_TYPE_CDSTRING, var, def);
+		TwAddVarRW(bar, name, TW_TYPE_STDSTRING, var, def);
 	}
 	if (mode.compare("RO") == 0)
 	{
-		TwAddVarRO(bar, name, TW_TYPE_CDSTRING, var, def);
+		TwAddVarRO(bar, name, TW_TYPE_STDSTRING, var, def);
 	}
 }
 

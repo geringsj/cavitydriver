@@ -218,6 +218,13 @@ struct Gridvertex {
 	float x, y, z, w;
 };
 
+struct PointVertex {
+	PointVertex() : x(0), y(0), z(0){}
+	PointVertex(float x_coord, float y_coord, float z_coord) :
+		x(x_coord), y(y_coord), z(z_coord) {}
+	float x, y, z;
+};
+
 struct VertexUV
 {
 	VertexUV() : m_x(0), m_y(0), m_z(0), m_u(0), m_v(0) {}

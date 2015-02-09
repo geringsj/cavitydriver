@@ -3,6 +3,7 @@
 
 #include <array>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <memory>
 #include <random>
@@ -29,13 +30,13 @@ private:
 		//! and up-vector (0,1,0) forward-vector (0,0,1) and right-vector (1,0,0)
 		CameraSystem()
 			: cam_pos(), up_vector(0.0f,1.0f,0.0f), forward_vector(0.0f,0.0f,1.0f),
-			right_vector(1.0f,0.0f,0.0f), translation(1.0), rotation(1.0),
-			m_aspect_ratio(16.0/9.0), m_field_of_view(60.0/m_aspect_ratio) {}
+			right_vector(1.0f,0.0f,0.0f), translation(1.0f), rotation(1.0),
+			m_aspect_ratio(16.0f/9.0f), m_field_of_view(60.0f/m_aspect_ratio) {}
 		//! constructor creates a camera system with the given parameters
 		CameraSystem(glm::vec3 p_cam_pos,glm::vec3 p_up_vector,glm::vec3 p_forward_vector,glm::vec3 p_right_vector)
 			: cam_pos(p_cam_pos), up_vector(p_up_vector), forward_vector(p_forward_vector),
 			right_vector(p_right_vector), translation(1.0), rotation(1.0),
-			m_aspect_ratio(16.0/9.0), m_field_of_view(60.0/m_aspect_ratio) {}
+			m_aspect_ratio(16.0f/9.0f), m_field_of_view(60.0f/m_aspect_ratio) {}
 		~CameraSystem() {};
 		//! rotation around (up,forward,right)-vector v with angle alpha (in degree)
 		void Rotation(glm::vec3 v,float alpha)
@@ -51,7 +52,7 @@ private:
 			translation = glm::translate(glm::mat4(1.0f),step_size*t);
 			cam_pos = glm::vec3(translation * glm::vec4(cam_pos,1.0f));
 		}
-		void zoom(float factor) { m_field_of_view = (60.0/m_aspect_ratio) * factor; }
+		void zoom(float factor) { m_field_of_view = (60.0f/m_aspect_ratio) * factor; }
 		//! return the view matrix
 		glm::mat4 GetViewMatrix() { return glm::lookAt(cam_pos,cam_pos+forward_vector,up_vector); }
 		glm::mat4 GetProjectionMatrix() { return glm::perspective(m_field_of_view*3.14f/180.0f,m_aspect_ratio, 0.1f, 100.0f); }
@@ -90,23 +91,33 @@ private:
 	{
 		bool m_show;
 		GLSLProgram m_prgm;
-		std::shared_ptr<FramebufferObject> m_fbo;
 
 		virtual bool createResources(SimulationParameters& simparams) = 0;
-		virtual void draw(CameraSystem& camera, float* background_colour) = 0;
+		virtual void draw(CameraSystem& camera) = 0;
 	};
 
 	struct FieldLayer : public Layer
 	{
 		GLSLProgram m_ibfvAdvection_prgm;
 		GLSLProgram m_ibfvMerge_prgm;
+		GLSLProgram m_dyeInjection_prgm;
+		GLSLProgram m_fieldPicking_prgm;
+		GLSLProgram m_streamline_prgm;
+
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo0;
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo1;
 		Mesh m_field_quad;
 		Mesh m_ibfv_grid;
+		Mesh m_dye_blob;
 		Mesh m_fullscreen_quad;
+		std::vector<std::shared_ptr<Mesh>> m_streamlines;
 		std::shared_ptr<Texture2D> m_field_tx;
 		std::shared_ptr<Texture2D> m_ibfvBackground_tx;
+		std::shared_ptr<Texture2D> m_dyeBlob_tx;
+
+		// coordinates given in uv space of field
+		std::vector<Point> m_dye_seedpoints;
+		std::vector<Point> m_streamline_seedpoints;
 
 		Dimension m_field_dimension;
 		std::vector<std::vector<float>> m_field_data;
@@ -115,17 +126,26 @@ private:
 		int m_num_fields;
 		int m_current_field;
 		int m_display_mode;
+		Real m_dx, m_dy;
+		GLfloat m_stream_colour[3];
 
+		bool m_show_streamlines = false;
 		bool m_play_animation = false;
 		double m_requested_frametime = 0.033;
 		double m_time_tracker = 0.0;
 		double m_elapsed_time;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
+		void drawFieldPicking(CameraSystem& camera);
 		void setFieldData(std::string path);
 		bool setFieldTexture(unsigned int requested_frame);
 		void updateFieldTexture(double current_time);
+		void addDyeSeedpoint(float x, float y);
+		void clearDye();
+		void interpolateUV(Point p, Real& u, Real& v);
+		void addStreamlineSeedpoint(float x, float y);
+		void clearStreamline();
 	};
 
 	struct OverlayGridLayer : public Layer
@@ -134,7 +154,7 @@ private:
 		Mesh m_grid;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		bool updateGridMesh(SimulationParameters& simparams);
 	};
@@ -147,7 +167,7 @@ private:
 		//std::shared_ptr<Texture2D> m_cell_positions_tx;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		void setCellPositions(SimulationParameters& simparams);
 		bool updateCellMesh(SimulationParameters& simparams);
@@ -165,7 +185,7 @@ private:
 		std::shared_ptr<Texture2D> m_pnm_glyph_tx;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		void setGlyphs(SimulationParameters& simparams);
 		bool updateGlyphMesh(SimulationParameters& simparams);
@@ -174,7 +194,7 @@ private:
 	struct GeometryLayer : public Layer
 	{
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 	};
 
 	struct InterfaceLayer : public Layer
@@ -182,7 +202,7 @@ private:
 		Mesh m_domainIndicators;
 
 		bool createResources(SimulationParameters& simparams);
-		void draw(CameraSystem& camera, float* background_colour);
+		void draw(CameraSystem& camera);
 
 		bool updateResources(SimulationParameters& simparams);
 	};
@@ -217,12 +237,37 @@ public:
 
 	void pushSimParams();
 
+	void addDyeSeedpoint(int x, int y)
+	{
+		if(m_fieldPicking_fbo != nullptr)
+		{
+			GLfloat* data = new GLfloat[4];
+			m_fieldPicking_fbo->bind();
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, data);
+
+			// check if click was inside field
+			if(data[3]>0.5)
+				m_field_layer.addDyeSeedpoint(data[0],data[1]);
+
+			delete[] data;
+		}
+	}
+
+	void clearDye()
+		{ m_field_layer.clearDye(); }
+	void clearStreamline()
+		{ m_field_layer.clearStreamline(); }
+
 	void setWindowSize(int width, int height)
 	{
 		m_window_width=width;
 		m_window_height = height;
 
 		m_activeCamera.setAspectRatio((float)m_window_width/(float)m_window_height);
+
+		if(m_fieldPicking_fbo != nullptr)
+			m_fieldPicking_fbo->resize(width,height);
 	}
 
 	void zoomCamera(float factor)
@@ -239,6 +284,10 @@ public:
 	{
 		return m_activeCamera;
 	}
+	unsigned int getWindowWidth()
+		{ return m_window_width; }
+	unsigned int getWindowHeight()
+		{ return m_window_height; }
 
 	//void setMaxBoundaryPiece(int max_boundary_piece) { m_max_boundary_piece = max_boundary_piece; }
 	//int getMaxBoundaryPiece() { return m_max_boundary_piece; }
@@ -260,6 +309,8 @@ private:
 	unsigned int m_window_width; /**< Store the window width in pixel. */
 	unsigned int m_window_height; /**< Store the window height in pixel. */
 	GLfloat m_window_background_colour[3];
+	bool m_dye;
+	bool m_stream;
 	TwBar* bar;
 
 	/* Individual layers of the visualization */
@@ -271,6 +322,7 @@ private:
 	InterfaceLayer m_interface_layer;
 
 	GLSLProgram m_postProc_prgm;
+	std::shared_ptr<FramebufferObject> m_fieldPicking_fbo;
 	Mesh m_screen_quad;
 
 	/** Local simparams copy */
@@ -306,8 +358,6 @@ private:
 	bool createGLSLPrograms();
 
 	bool createMeshes();
-
-	bool createFramebuffers();
 
 	//void addBoundaryPieceToBar(std::string mode = "RW");
 	//void reloadSimParams(SimulationParameters& sim_params);
@@ -357,7 +407,24 @@ private:
 	{
 		/* get rid of stupid warnings: */
 		if( 1 || window || mods)
-		TwEventMouseButtonGLFW(button, action);
+		if( !TwEventMouseButtonGLFW(button, action))
+		{
+
+			if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+			{
+				CavityRenderer* renderer = reinterpret_cast<CavityRenderer*>(glfwGetWindowUserPointer(window));
+
+				double xPos, yPos;
+				glfwGetCursorPos(window, &xPos, &yPos);
+
+				yPos = renderer->getWindowHeight() - yPos;
+
+				renderer->addDyeSeedpoint(xPos,yPos);
+			}
+		}
+
+		//TODO read value from m_fieldClicking_fbo
+		// if inside field, add dye source
 	}
 	inline static void mousePositionCallback(GLFWwindow* window, double x, double y)
 	{
@@ -376,8 +443,8 @@ private:
 			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 			{
 				//TODO decent zoom depented movement speed
-				float speed = std::pow(renderer->getCamera().getFieldOfView()*0.001,2.0);
-				renderer->moveCamera(dx,-dy,0.0f,speed);
+				float speed = std::pow(renderer->getCamera().getFieldOfView()*0.001f,2.0f);
+				renderer->moveCamera((float)dx,(float)-dy,0.0f,speed);
 			}
 		}
 	}
