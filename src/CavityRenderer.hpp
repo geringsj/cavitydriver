@@ -258,7 +258,8 @@ public:
 
 		m_activeCamera.setAspectRatio((float)m_window_width/(float)m_window_height);
 
-		m_fieldPicking_fbo->resize(width,height);
+		if(m_fieldPicking_fbo != nullptr)
+			m_fieldPicking_fbo->resize(width,height);
 	}
 
 	void zoomCamera(float factor)

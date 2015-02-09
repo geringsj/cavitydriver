@@ -732,6 +732,7 @@ void CavityRenderer::BoundaryGlyphLayer::draw(CameraSystem& camera)
 				//
 				//if(boundary_piece.gridtype == Boundary::Grid::P &&  boundary_piece.condition==Boundary::Condition::OUTFLOW)
 				//	m_boundary_pnm_glyph_tx->bindTexture();
+				m_velocity_glyph_tx->bindTexture();
 
 				glm::mat4 proj_mat = glm::perspective(camera.getFieldOfView(), camera.getAspectRatio(), 0.1f, 100.0f);
 				glm::mat4 model_mat = glm::translate(glm::mat4(1.0),glm::vec3(velocity_glyph.first.x,velocity_glyph.first.y,velocity_glyph.first.z));
