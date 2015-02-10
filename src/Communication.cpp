@@ -235,6 +235,9 @@ void Communication::exchangeGridBoundaryValues(
 	case Communication::Handle::Pressure:
 		exchangeGridBoundaryValues(domain.p(), domain.getWholeInnerRange());
 		break;
+	case Communication::Handle::Temperature:
+		exchangeGridBoundaryValues(domain.t(), domain.getWholeInnerRange());
+		break;
 	case Communication::Handle::Velocities:
 		exchangeGridBoundaryValues(domain.u(), domain.getWholeInnerRange());
 		exchangeGridBoundaryValues(domain.v(), domain.getWholeInnerRange());

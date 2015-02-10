@@ -43,7 +43,10 @@ enum optionIndex
 	PI,
 	KA,
 	KOW,
-	INFLOW
+	INFLOW,
+	TI,
+	PR,
+	BETA
 };
 const option::Descriptor usage[] =
 {
@@ -67,6 +70,7 @@ SETTING:
    ChannelFlowUpperHalf (CFUH , 2)
    StepFlow (SF , 3)
    ObstacleChannelFlow (OCF , KarmanStreet , KS , 4)
+   HeatPlate (HP, 5)
 
 Options:)" },
 	{HELP, 0, "h", "help", option::Arg::None,
@@ -98,20 +102,26 @@ Options:)" },
 "  --omg=FLOAT  \tOmega factor for SOR calculation. [default: 1.7]" },
  {ALPHA, 0, "", "alpha", NonEmpty,
 "  --alpha=FLOAT  \tMixing factor for Donor-Cell scheme for next velocities. [default: 0.9]" },
+ {BETA, 0, "", "beta", NonEmpty,
+"  --beta=FLOAT  \tVolume expansion coefficient for temperature. [default: 0.3]" },
  {ITERMAX, 0, "", "iterMax", NonEmpty,
 "  --iterMax=INT  \tMaximum number of iterations for SOR solver. [default: 100]" },
  {RE, 0, "", "re", NonEmpty,
 "  --re=FLOAT\tReynolds number to be used. [default: 1000.0]" },
+ {PR, 0, "", "pr", NonEmpty,
+"  --pr=FLOAT\tPrandtl number to be used for temperature. [default: 0.001]" },
  {GX, 0, "", "gx", NonEmpty,
 "  --gx=FLOAT  \tExternal force in x direction. [default: 0.0]" },
  {GY, 0, "", "gy", NonEmpty,
-"  --gy=FLOAT  \tExternal force in y direction. [default: 0.0]" },
+"  --gy=FLOAT  \tExternal force in y direction. [default: 0.0, -1.0 for HeatPlate]" },
  {UI, 0, "", "ui", NonEmpty,
 "  --ui=FLOAT  \tConstant initial value for U-velocity field. [default: 0.0]" },
  {VI, 0, "", "vi", NonEmpty,
 "  --vi=FLOAT  \tConstant initial value for V-velocity field. [default: 0.0]" },
  {PI, 0, "", "pi", NonEmpty,
 "  --pi=FLOAT  \tConstant initial value for Pressure field. [default: 0.0]" },
+ {TI, 0, "", "ti", NonEmpty,
+"  --ti=FLOAT  \tConstant initial value for Temperature field. [default: 0.0]" },
  {KA, 0, "", "ka", NonEmpty,
 "  --ka=FLOAT  \tAngle of object for Karman Vortex Street SETTING specified in radiant. Will be ignored if other SETTING than 'ObstacleChannelFlow is used. [default: 45° in radiant]" },
  {KOW, 0, "", "kow", NonEmpty,
@@ -214,9 +224,15 @@ int initCLI(int& setting, bool& gui, Real& inflowVal, SimulationParameters& simp
 			"KS" == settingstr
 		)
  	setting = 4;
+	if(
+			"5" == settingstr ||
+			"HeatPlate" == settingstr ||
+			"HP" == settingstr
+		)
+ 	setting = 5;
 
 	gui = static_cast<bool>(options[GUI]);
-	if(!gui && (setting < 0 || setting > 4))
+	if(!gui && (setting < 0 || setting > 5))
 	{
 		std::cout << "Invalid SETTING parameter '"<< std::string(settingstr) 
 			<<"'. Call with '--help' for options.\n";
@@ -256,12 +272,14 @@ int initCLI(int& setting, bool& gui, Real& inflowVal, SimulationParameters& simp
 	getMaybeCLIDouble(simparam.eps, options, EPS);
 	getMaybeCLIDouble(simparam.omg, options, OMG);
 	getMaybeCLIDouble(simparam.alpha, options, ALPHA);
+	getMaybeCLIDouble(simparam.beta, options, BETA);
 	getMaybeCLIDouble(simparam.re, options, RE);
+	getMaybeCLIDouble(simparam.pr, options, PR);
 	getMaybeCLIDouble(simparam.gx, options, GX);
-	getMaybeCLIDouble(simparam.gy, options, GY);
 	getMaybeCLIDouble(simparam.ui, options, UI);
 	getMaybeCLIDouble(simparam.vi, options, VI);
 	getMaybeCLIDouble(simparam.pi, options, PI);
+	getMaybeCLIDouble(simparam.ti, options, TI);
 	getMaybeCLIInt(simparam.iterMax, options, ITERMAX);
 
 	switch(setting)
@@ -274,10 +292,14 @@ int initCLI(int& setting, bool& gui, Real& inflowVal, SimulationParameters& simp
 		case 4: /* Karman Object Street */
 			inflowVal = 0.5;
 			break;
+		case 5: /* Heat Plate */
+			inflowVal = 1.0;
+			simparam.gy = -1.0;
 		default: /* all other: fail */
 			break;
 	}
 	getMaybeCLIDouble(inflowVal, options, INFLOW);
+	getMaybeCLIDouble(simparam.gy, options, GY);
 
 	delete[] options; delete[] buffer;
 	return doexit;
@@ -289,6 +311,7 @@ void overwritePostBakeryParams(SimulationParameters& newsp, SimulationParameters
 
 	/* if user specifies another re than given in exercise sheet, use users re */
 	newsp.re = clisp.re;
+	newsp.gy = clisp.gy;
 }
 
 /**

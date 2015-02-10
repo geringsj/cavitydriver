@@ -37,6 +37,10 @@ void SimulationParameters::init()
 	this->vi = 0.0;
 	this->pi = 0.0;
 
+	this->ti = 0.0;
+	this->beta = 0.3; // TODO: sane default? 0 => no heat coupling
+	this->pr = 0.333; // sane default? 0 => somewhere division by 0
+
 	/* extended simulation parameters */
 	this->name = std::string("");
 	this->KarmanAngle = 2.0 * M_PI / 8.0; // 45°
@@ -79,7 +83,9 @@ void SimulationParameters::writeToSTDOUT()
 	std::cout << "eps=" << std::scientific << this->eps << "\n";
 	std::cout << "omg=" << std::scientific << this->omg << "\n";
 	std::cout << "alpha=" << std::scientific << this->alpha << "\n";
+	std::cout << "beta=" << std::scientific << this->beta << "\n";
 	std::cout << "re=" << std::scientific << this->re << "\n\n";
+	std::cout << "pr=" << std::scientific << this->pr << "\n\n";
 
 
 	std::cout << "-- Outside forces on the system\n";
@@ -90,6 +96,7 @@ void SimulationParameters::writeToSTDOUT()
 	std::cout << "ui=" << std::scientific << this->ui << "\n";
 	std::cout << "vi=" << std::scientific << this->vi << "\n";
 	std::cout << "pi=" << std::scientific << this->pi << "\n\n";
+	std::cout << "ti=" << std::scientific << this->ti << "\n\n";
 
 	std::cout << "-- Karman Parameters\n";
 	std::cout << "KarmanAngle=" << std::scientific << this->KarmanAngle << "\n";
@@ -154,7 +161,9 @@ void SimulationParameters::writeSettingsFile(
 	fs << "eps=" << std::scientific << this->eps << "\n";
 	fs << "omg=" << std::scientific << this->omg << "\n";
 	fs << "alpha=" << std::scientific << this->alpha << "\n";
+	fs << "beta=" << std::scientific << this->beta << "\n";
 	fs << "re=" << std::scientific << this->re << "\n\n";
+	fs << "pr=" << std::scientific << this->pr << "\n\n";
 
 
 	fs << "-- Outside forces on the system\n";
@@ -164,7 +173,8 @@ void SimulationParameters::writeSettingsFile(
 	fs << "-- Initial field values\n";
 	fs << "ui=" << std::scientific << this->ui << "\n";
 	fs << "vi=" << std::scientific << this->vi << "\n";
-	fs << "pi=" << std::scientific << this->pi << "\n\n";
+	fs << "pi=" << std::scientific << this->pi << "\n";
+	fs << "ti=" << std::scientific << this->ti << "\n\n";
 
 	fs << "-- Karman Parameters\n";
 	fs << "KarmanAngle=" << std::scientific << this->KarmanAngle << "\n";
@@ -305,13 +315,16 @@ bool SimulationParameters::readInputfile(std::string settingsfile)
 	 findReal(this->eps, std::string("eps="), buffer, settingsfile);
 	 findReal(this->omg, std::string("omg="), buffer, settingsfile);
 	 findReal(this->alpha, std::string("alpha="), buffer, settingsfile);
+	 findReal(this->beta, std::string("beta="), buffer, settingsfile);
 
 	 findReal(this->re, std::string("re="), buffer, settingsfile);
+	 findReal(this->pr, std::string("pr="), buffer, settingsfile);
 	 findReal(this->gx, std::string("gx="), buffer, settingsfile);
 	 findReal(this->gy, std::string("gy="), buffer, settingsfile);
 	 findReal(this->ui, std::string("ui="), buffer, settingsfile);
 	 findReal(this->vi, std::string("vi="), buffer, settingsfile);
 	 findReal(this->pi, std::string("pi="), buffer, settingsfile);
+	 findReal(this->ti, std::string("ti="), buffer, settingsfile);
 
 	 findReal(this->KarmanAngle, std::string("KarmanAngle="), buffer, settingsfile);
 	 findReal(this->KarmanObjectWidth, 

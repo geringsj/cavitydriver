@@ -53,7 +53,8 @@ public:
 	enum class Handle {
 		Pressure,
 		Velocities,
-		PreliminaryVelocities
+		PreliminaryVelocities,
+		Temperature
 	};
 
 	Communication(Dimension globalDomainDim);

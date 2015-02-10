@@ -16,79 +16,6 @@
 
 #include <chrono>
 
-// #define WITHUNCER
-
-#ifdef WITHUNCER
-	#if defined(__linux)
-	#include "sys/stat.h"
-	#endif
-	#if defined(_WIN64)
-	#include <Windows.h>
-	#endif
-	#if defined(_WIN32)
-	#include <Windows.h>
-	#endif
-	void checkOutputPath()
-	{
-		std::string filename("./uncertainty/");
-	
-		// Test if the directory exits, if not create it.
-		std::filebuf test_dir;
-		test_dir.open(const_cast < char *>(filename.c_str()), std::ios::out);
-		if (!test_dir.is_open())
-		{
-			// Directory doesn't exist.
-	#if defined(_WIN64)
-			CreateDirectory(filename.c_str(), NULL);
-	#elif defined(_WIN32)
-			CreateDirectory(filename.c_str(), NULL);
-	#elif defined(__linux)
-			mkdir(filename.c_str(), 0700);
-	#endif
-		}
-	}
-	
-	void appendCurrentData(Domain& domain, std::string& log, Real time)
-	{
-		Real u_val_120_5 = domain.u()(120, 5);
-		Real v_val_120_5 = domain.v()(120, 5);
-		Real u_val_64_64 = domain.u()(64, 64);
-		Real v_val_64_64 = domain.v()(64, 64);
-		Real u_val_5_120 = domain.u()(5, 120);
-		Real v_val_5_120 = domain.v()(5, 120);
-	
-		log.append(std::to_string(u_val_120_5));
-		log.append(",");
-		log.append(std::to_string(v_val_120_5));
-		log.append(" | ");
-		log.append(std::to_string(u_val_64_64));
-		log.append(",");
-		log.append(std::to_string(v_val_64_64));
-		log.append(" | ");
-		log.append(std::to_string(u_val_5_120));
-		log.append(",");
-		log.append(std::to_string(v_val_5_120));
-		log.append(" | ");
-		log.append(std::to_string(time));
-		log.append("\n");
-	
-	}
-	void printUncertainty(std::string name, std::string log)
-	{
-		std::string filename;
-		filename.append("./uncertainty/");
-		filename.append(name);
-		filename.append(".txt");
-	
-		std::ofstream write_uncer(filename);
-		if (write_uncer.is_open())
-		{
-			write_uncer << log;
-			write_uncer.close();
-		}
-	}
-#endif
-
 int main(int argc, char** argv)
 {
 	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
@@ -158,9 +85,11 @@ int main(int argc, char** argv)
 		/* outer forces */
 		simparam.gx, simparam.gy,
 		/* initial grid values */
-		simparam.ui, simparam.vi, simparam.pi, /* T: */ 0.0,
+		simparam.ui, simparam.vi, simparam.pi, simparam.ti,
 		/* color pattern */
 		communication.getFirstCellColor());
+
+	//debug("Pr=%f, beta*=%f", simparam.pr, simparam.beta);
 
 	Real global_fluidCellsCount = static_cast<Real>(
 		communication.getGlobalFluidCellsCount(domain.getFluidCellsCount()) );
@@ -181,17 +110,10 @@ int main(int argc, char** argv)
 	Real t = 0.0, dt = 0.0, res = 42.;
 	int it = 0, step=0;
 
-#ifdef WITHUNCER
-	checkOutputPath();
-	std::string uncertainty_log("");
-	appendCurrentData(domain, uncertainty_log, 0.0);
-	Real nextUncWrite = 0.0;
-#else
 	/* write initial state of velocities and pressure */
 	VTKOutput vtkoutput(domain, "out", communication);
 	vtkoutput.writeVTKFile(0.0); /* first vtk frame: all zero */
 	Real nextVTKWrite = 0.0;
-#endif
 
 	// testing binary output
 	BinaryOutput binary_output(domain, "out");
@@ -212,34 +134,22 @@ int main(int argc, char** argv)
 		communication.exchangeGridBoundaryValues
 			(domain, Communication::Handle::Velocities);
 
-#ifdef WITHUNCER
-		if((nextUncWrite += dt) >= 0.05)
-		{
-			appendCurrentData(domain, uncertainty_log, t);
-			nextUncWrite = 0.0;
-		}
-#else
 		/* maybe write vtk */
 		if((nextVTKWrite += dt) > simparam.deltaVec)
 		{ vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0; }
 
 		// further testing
 		binary_output.write();
-#endif
 
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		Delta maxVelocities(domain.u().getMaxValue(), domain.v().getMaxValue());
 		maxVelocities = communication.getGlobalMaxVelocities(maxVelocities);
 
-#ifdef WITHUNCER
-		dt = 0.002;
-#else
 		dt = Computation::computeTimestepFromMaxVelocities
-			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re);
-#endif
+			(maxVelocities, domain.getDelta(), simparam.tau, simparam.re, simparam.pr);
 		t += dt; /* for status output */
 
-		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha);
+		Computation::computePreliminaryVelocities(domain, dt, simparam.re, simparam.alpha, simparam.beta);
 		domain.setPreliminaryVelocitiesBoundaries();
 		communication.exchangeGridBoundaryValues
 			(domain, Communication::Handle::PreliminaryVelocities);
@@ -289,6 +199,12 @@ int main(int argc, char** argv)
 			(domain,Communication::Handle::Pressure);
 		Computation::computeNewVelocities(domain, dt);
 
+		communication.exchangeGridBoundaryValues
+			(domain, Communication::Handle::Temperature);
+		domain.setTemperatureBoundaries();
+		Computation::computeNewTemperature
+			(domain, dt, simparam.re, simparam.pr, simparam.alpha);
+
 		t_frame_end = std::chrono::steady_clock::now();
 		time_span = std::chrono::duration_cast<std::chrono::duration<double>>
 			(t_frame_end-t_frame_start); t_frame_avg += time_span.count();
@@ -302,10 +218,6 @@ int main(int argc, char** argv)
 	log_info("[P%i] Overall time: %fs | avg. frame time: %fs | avg. SOR time: %fs",
 		communication.getRank(), time_span.count(),
 		t_frame_avg/(double)(step-1), t_sor_avg/(double)(step-1) );
-
-#ifdef WITHUNCER
-	printUncertainty(simparam.name, uncertainty_log);
-#endif
 
 	/* end of magic */
 	return 0;

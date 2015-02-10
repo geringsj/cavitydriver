@@ -62,8 +62,10 @@ namespace Derivatives
 		/**< Corresponds to direction x. */
 		V = 2,
 		/**< Corresponds to direction y. */
-		W = 3
+		W = 3,
 		/**< Corresponds to direction z. */
+		T = 4
+		/**< Corresponds to temperature. */
 	};
 	typedef Function F;
 

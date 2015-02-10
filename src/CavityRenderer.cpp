@@ -503,7 +503,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 	//TODO upload position matrices
 	std::string uniform_name;
-	for(int instance=0; instance<m_dye_seedpoints.size(); instance++)
+	for(unsigned int instance=0; instance<m_dye_seedpoints.size(); instance++)
 	{
 		uniform_name = "dye_location[" + std::to_string(instance) + "]";
 		m_dyeInjection_prgm.setUniform(uniform_name.c_str(),glm::vec2((float)m_dye_seedpoints[instance].x,
@@ -948,6 +948,7 @@ bool CavityRenderer::GeometryLayer::createResources(SimulationParameters& simpar
 
 void CavityRenderer::GeometryLayer::draw(CameraSystem& camera)
 {
+	camera.GetRightVector();
 }
 
 bool CavityRenderer::InterfaceLayer::createResources(SimulationParameters& simparams)

@@ -6,7 +6,13 @@ int main(int argc, char** argv)
 {
 	argc = argc*(1+0*(**argv)); /* just to get rid of some warnings */
 
-	SimulationParameters simparam("drivencavity.conf");
+	if(argc != 2)
+	{
+		log_err("provide a config file to the program!");
+		exit(EXIT_FAILURE);
+	}
+	SimulationParameters simparam(argv[1]);
+
 
 	// Don't really need these, but current implementation of Renderer is quite chatty
 	MTQueue<SimulationParameters> outbox;

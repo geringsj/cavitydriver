@@ -40,9 +40,11 @@ public:
 	Real omg;
 	Real alpha;
 	int iterMax;
+	Real beta; // temperature
 
 	/* forces and constants */
 	Real re;
+	Real pr; // temperature
 	Real gx;
 	Real gy;
 
@@ -50,6 +52,7 @@ public:
 	Real ui;
 	Real vi;
 	Real pi;
+	Real ti; // temperature
 
 	/* extended simulation parameters */
 	std::string name;
@@ -62,6 +65,7 @@ public:
 	 * ChannelFlowUpperHalf = 2
 	 * StepFlow = 3
 	 * ObstacleChannelFlow = 4
+	 * HeatPlate = 5
 	 */
 	int useComplexGeometry;
 

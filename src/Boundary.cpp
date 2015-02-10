@@ -118,7 +118,8 @@ std::vector<Range> Boundary::getInnerRanges(
 			return getInnerRanges(m_inner_extent, m_boundaries_V);
 			break;
 		case Grid::T:
-			/* don't know what to do :( */
+			return getInnerRanges(m_inner_extent, m_boundaries_T);
+			break;
 		default:
 			return std::vector<Range>(); /* empty... */
 			break;
@@ -138,7 +139,7 @@ std::vector<Range> Boundary::getInnerRanges(
 		pattern(i,j) = -1.0;
 	/* mark all boundary and neighbour inner cells as such */
 	for(int i : {0,1,2,3} )
-	for(auto cell : boundary[i])
+	for(auto& cell : boundary[i])
 	{
 		pattern(cell.iposition) = 1.0;
 		pattern(cell.bposition) = 0.0;
@@ -149,8 +150,8 @@ std::vector<Range> Boundary::getInnerRanges(
 	while(! cells.empty())
 	{
 		Index ci = cells.front(); cells.pop_front();
-		for(int i : {1, -1})
-		for(int j : {1, -1})
+		for(int i : {1, 0, -1})
+		for(int j : {1, 0, -1})
 		{
 			Index ni(ci.i+i, ci.j+j);
 			if( pattern(ni) == -1.0 && IndexIsInRange(ni,inner_extent)) 
@@ -280,6 +281,9 @@ void Boundary::initBoundaries(
 			case Grid::V:
 				this->m_boundaries_V[0].push_back(te);
 				break;
+			case Grid::T:
+				this->m_boundaries_T[0].push_back(te);
+				break;
 			default:
 				break;
 		}
@@ -289,7 +293,7 @@ void Boundary::initBoundaries(
 	 * up to this point boundary and inner indices are at the 
 	 * inner cell next to the boundary cell */
 	for(auto& blist : 
-			{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0]}
+			{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0], &this->m_boundaries_T[0]}
 		)
 	for(auto& entry : *blist)
 	{
@@ -309,7 +313,7 @@ void Boundary::initBoundaries(
 
 	/* sort boundary cells in column major order */
 	for(auto& blist : 
-		{&(this->m_boundaries_U[0]),&(this->m_boundaries_V[0]),&(this->m_boundaries_P[0])})
+		{&this->m_boundaries_U[0], &this->m_boundaries_V[0], &this->m_boundaries_P[0], &this->m_boundaries_T[0]} )
 	if(! blist->empty())
 	std::sort(blist->begin(), blist->end(),
 			[](const Entry& a, const Entry& b)
@@ -358,6 +362,27 @@ Boundary::Boundary(
 		if(competence.Right)
 		boundary_conditions.push_back(
 			BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::P, 0.0, Range(
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+
+		if(competence.Up)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Up, Condition::OUTFLOW, Grid::T, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
+		if(competence.Down)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Down, Condition::OUTFLOW, Grid::T, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j) ) ));
+		if(competence.Left)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Left, Condition::OUTFLOW, Grid::T, 0.0, Range(
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.begin.j),
+				Index(localSubInnerPRange.begin.i, localSubInnerPRange.end.j) ) ));
+		if(competence.Right)
+		boundary_conditions.push_back(
+			BoundaryPiece(Direction::Right, Condition::OUTFLOW, Grid::T, 0.0, Range(
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.begin.j),
 				Index(localSubInnerPRange.end.i, localSubInnerPRange.end.j) ) ));
 
@@ -420,7 +445,7 @@ Boundary::Boundary(
 
 void Boundary::splitBoundaryTypes()
 {
-	for(auto& bnds : {m_boundaries_U, m_boundaries_V, m_boundaries_P} )
+	for(auto& bnds : {m_boundaries_U, m_boundaries_V, m_boundaries_P, m_boundaries_T} )
 	{
 	for(auto e : bnds[0])
 		for(auto cond : {Condition::INFLOW, Condition::OUTFLOW, Condition::SLIP} )
@@ -472,7 +497,8 @@ void Boundary::setBoundary(
 			workBoundaries(&m_boundaries_P[0], Grid::P, gf);
 			break;
 		case Grid::T:
-			/* still don't know what to do :( */
+			workBoundaries(&m_boundaries_T[0], Grid::T, gf);
+			break;
 		default:
 			break;
 	}

@@ -157,6 +157,18 @@ void VTKOutput::writeVTKSingleFile()
 	}
 	os << "</DataArray>" << std::endl;
 
+	/* write inner of T*/
+	os << "<DataArray type=\"Float64\" Name=\"T\" format=\"ascii\">" << std::endl;
+	for(int j = yMin; j <= yMax; ++j)
+	{
+		for(int i = xMin; i <= xMax; ++i)
+		{
+			os << std::scientific << domain.t()(i, j) << " ";
+		}
+		os << std::endl;
+	}
+	os << "</DataArray>" << std::endl;
+
 	/* write the vorticity */
 	os << "<DataArray type=\"Float64\" Name=\"Vorticity\" format=\"ascii\">" << std::endl;
 	for (int j = yMin; j <= yMax; ++j)
@@ -271,9 +283,10 @@ void VTKOutput::writeVTKMasterFile()
 	}
 
 	/* standard fields: */
-	os << "<PPointData Vectors=\"Field\" Scalars=\"P\">"<< std::endl; // , Vorticity, Stream
+	os << "<PPointData Vectors=\"Field\" Scalars=\"P, T\">"<< std::endl; // , Vorticity, Stream
 	os << "<PDataArray type=\"Float64\" NumberOfComponents=\"3\" Name=\"Field\" format=\"ascii\"/>"<< std::endl;
 	os << "<PDataArray type=\"Float64\" Name=\"P\" format=\"ascii\"/>"<< std::endl;
+	os << "<PDataArray type=\"Float64\" Name=\"T\" format=\"ascii\"/>"<< std::endl;
 
 	/* new fields: vorticity and stream */
 	//os << "<PDataArray type=\"Float64\" Name=\"Vorticity\" format=\"ascii\"/>"<< std::endl;
@@ -350,7 +363,7 @@ void VTKOutput::writeVTKSlaveFile()
 	os << "<DataArray type=\"Float64\" format=\"ascii\">0 0</DataArray>" << std::endl;
 	os << "</Coordinates>" << std::endl;
 
-	os << "<PointData Vectors=\"Field\" Scalars=\"P\">" << std::endl; // , Vorticity, Stream
+	os << "<PointData Vectors=\"Field\" Scalars=\"P, T\">" << std::endl; // , Vorticity, Stream
 	os << "<DataArray Name=\"Field\" NumberOfComponents=\"3\" type=\"Float64\" format=\"ascii\">" << std::endl;
 
 	/* write grid values with boundaries.
@@ -405,7 +418,19 @@ void VTKOutput::writeVTKSlaveFile()
 		}
 		os << std::endl;
 	}
+	os << "</DataArray>" << std::endl;
 
+	/* write out T as it is */
+	os << "<DataArray type=\"Float64\" Name=\"T\" format=\"ascii\">"<< std::endl;
+	/* note: the loops first write in x direction, then in y direction */
+	for (int j = yBegin; j <= yEnd; j++)
+	{
+		for (int i = xBegin; i <= xEnd; i++)
+		{
+			os << std::scientific << domain.t()(i, j) << " ";
+		}
+		os << std::endl;
+	}
 	os << "</DataArray>" << std::endl;
 
 	//	os << "<DataArray type=\"Float64\" Name=\"vorticity\" format=\"ascii\">"
