@@ -43,7 +43,8 @@ void BinaryOutput::writePfm()
 	out.close();
 	
 	//unsigned int data_size = ((xMax-xMin)+1) * ((yMax-yMin)+1) * 3;
-	unsigned int data_size = ((xMax-xMin)+3) * ((yMax-yMin)+3) * 3;
+	unsigned int cell_entries = 4;
+	unsigned int data_size = ((xMax-xMin)+3) * ((yMax-yMin)+3) * cell_entries;
 	float* data = new float[data_size];
 
 	unsigned int data_index = 0;
@@ -71,6 +72,8 @@ void BinaryOutput::writePfm()
 				data[data_index++] = (float)(m_domain.v()(i, j) + m_domain.v()(i, j - 1)) / 2.0;
 
 			data[data_index++] = (float)m_domain.p()(i,j);
+
+			data[data_index++] = (float)m_domain.t()(i,j);
 		}
 	}
 

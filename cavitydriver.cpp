@@ -136,10 +136,10 @@ int main(int argc, char** argv)
 
 		/* maybe write vtk */
 		if((nextVTKWrite += dt) > simparam.deltaVec)
-		{ vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0; }
-
-		// further testing
-		binary_output.write();
+		{
+			vtkoutput.writeVTKFile(dt); nextVTKWrite = 0.0;
+			binary_output.write();
+		}
 
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
 		Delta maxVelocities(domain.u().getMaxValue(), domain.v().getMaxValue());

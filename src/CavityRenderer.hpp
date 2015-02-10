@@ -121,8 +121,8 @@ private:
 
 		Dimension m_field_dimension;
 		std::vector<std::vector<float>> m_field_data;
-		std::vector<glm::vec3> m_field_max_values;
-		std::vector<glm::vec3> m_field_min_values;
+		std::vector<glm::vec4> m_field_max_values;
+		std::vector<glm::vec4> m_field_min_values;
 		int m_num_fields;
 		int m_current_field;
 		int m_display_mode;

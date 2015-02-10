@@ -313,13 +313,13 @@ void CavityRenderer::FieldLayer::setFieldData(std::string path)
 		if(!Renderer::IO::readPfmHeader(filename.c_str(), header_end_pos, dim_x, dim_y)) {std::cout<<"Failed to open pfm header of file \""<<filename<<"\""<<std::endl;}
 
 		//TODO do something if image size stays not the same
-		m_field_data.push_back(std::vector<float>( dim_x * dim_y * 3));
+		m_field_data.push_back(std::vector<float>( dim_x * dim_y * 4));
 
 		if(!Renderer::IO::readPfmData(filename.c_str(), m_field_data.back().data(), header_end_pos)) {std::cout<<"Failed to read pfm data of file \""<<filename<<"\""<<std::endl;}
 
 		//TODO compute min/max
-		m_field_max_values.push_back(glm::vec3(std::numeric_limits<float>::min()));
-		m_field_min_values.push_back(glm::vec3(std::numeric_limits<float>::max()));
+		m_field_max_values.push_back(glm::vec4(std::numeric_limits<float>::min()));
+		m_field_min_values.push_back(glm::vec4(std::numeric_limits<float>::max()));
 
 		//m_field_max_values.push_back(glm::vec3(0.0));
 		//m_field_min_values.push_back(glm::vec3(1.0));
@@ -329,7 +329,7 @@ void CavityRenderer::FieldLayer::setFieldData(std::string path)
 		{
 			for(int y=0; y<dim_y; y++)
 			{
-				for(int c=0; c<3; c++)
+				for(int c=0; c<4; c++)
 				{
 					m_field_max_values.back()[c] = std::max(m_field_max_values.back()[c],m_field_data.back()[index]);
 					m_field_min_values.back()[c] = std::min(m_field_max_values.back()[c],m_field_data.back()[index]);
@@ -436,10 +436,10 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 	//TODO use reload function
 	m_field_tx = std::make_shared<Texture2D>( "m_field_tx",
-											GL_RGB32F,
+											GL_RGBA32F,
 											m_field_dimension.i,
 											m_field_dimension.j,
-											GL_RGB, GL_FLOAT,
+											GL_RGBA, GL_FLOAT,
 											m_field_data[m_current_field].data());
 
 	m_field_tx->texParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -540,15 +540,15 @@ void CavityRenderer::FieldLayer::interpolateUV(PointVertex p, float& u, float& v
 	float y_2 = (float)(j)*m_dy - (m_dy / 2.0);
 
 	// step3: bilinear interpolation
-	u = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][(i - 1) * 3 + (j - 1)*m_field_dimension.i] +
-		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][(i)* 3 + (j - 1)*m_field_dimension.i*3] +
-		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][(i - 1) * 3 + (j)*m_field_dimension.i*3] +
-		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][(i)* 3 + (j)*m_field_dimension.i*3]);
+	u = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][(i - 1) * 4 + (j - 1)*m_field_dimension.i*4] +
+		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][(i)* 4 + (j - 1)*m_field_dimension.i*4] +
+		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][(i - 1) * 4 + (j)*m_field_dimension.i*4] +
+		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][(i)* 4 + (j)*m_field_dimension.i*4]);
 
-	v = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][((i - 1) * 3) + 1 + (j - 1)*m_field_dimension.i] +
-		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][((i)* 3) + 1 + (j - 1)*m_field_dimension.i*3] +
-		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][((i - 1) * 3) + 1 + (j)*m_field_dimension.i*3] +
-		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][((i)* 3) + 1 + (j)*m_field_dimension.i*3]);
+	v = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][((i - 1) * 4) + 1 + (j - 1)*m_field_dimension.i*4] +
+		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][((i)* 4) + 1 + (j - 1)*m_field_dimension.i*4] +
+		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][((i - 1) * 4) + 1 + (j)*m_field_dimension.i*4] +
+		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][((i)* 4) + 1 + (j)*m_field_dimension.i*4]);
 }
 
 void CavityRenderer::FieldLayer::addStreamlineSeedpoint(float x, float y)
@@ -1406,7 +1406,7 @@ void CavityRenderer::initPainterTweakBar()
 	addBoolParam("m_show_field", " label='Show field' group='Field' ", &m_field_layer.m_show);
 	addBoolParam("m_show_streamlines", " label='Show streamlines' group='Field' ", &m_field_layer.m_show_streamlines);
 	addIntParam("m_current_field", " label='Frame' group='Field' ", &m_field_layer.m_current_field, "RW", 0, m_field_layer.m_num_fields-1);
-	addIntParam("m_display_mode", " label='Mode' group='Field' ", &m_field_layer.m_display_mode, "RW", 0, 5);
+	addIntParam("m_display_mode", " label='Mode' group='Field' ", &m_field_layer.m_display_mode, "RW", 0, 6);
 	addBoolParam("m_play_animation", " label='Play animation' group='Field' ", &m_field_layer.m_play_animation);
 	addDoubleParam("m_requested_frametime", " step=0.001 label='Frametime' group='Field' ", &m_field_layer.m_requested_frametime, "RW");
 	addButtonParam("m_clearDye", " label='Clear dye' group='Field' ", ClearDye);

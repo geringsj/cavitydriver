@@ -4,8 +4,8 @@ uniform int mode;
 
 uniform sampler2D field_tx2D;
 uniform sampler2D ibfv_tx2D;
-uniform vec3 min_values;
-uniform vec3 max_values;
+uniform vec4 min_values;
+uniform vec4 max_values;
 
 in vec2 uv;
 
@@ -33,32 +33,36 @@ void main()
 {
 	frag_colour = vec4(0.0,0.0,0.0,1.0);
 	
-	vec3 field_uvp = texture(field_tx2D,uv).rgb;
+	vec4 field_uvpt = texture(field_tx2D,uv);
 	
 	if(mode == 0) // u velocity
 	{
-		frag_colour.rgb = transferFuncton(scaleValue(field_uvp.r,min_values.x,max_values.x));
+		frag_colour.rgb = transferFuncton(scaleValue(field_uvpt.r,min_values.x,max_values.x));
 	}
 	else if(mode == 1) // v velocity
 	{
-		frag_colour.rgb = transferFuncton(scaleValue(field_uvp.g,min_values.y,max_values.y));
+		frag_colour.rgb = transferFuncton(scaleValue(field_uvpt.g,min_values.y,max_values.y));
 	}
 	else if(mode == 2) // uv magnitude
 	{
-		float magnitude = sqrt(field_uvp.r * field_uvp.r + field_uvp.g * field_uvp.g);
+		float magnitude = sqrt(field_uvpt.r * field_uvpt.r + field_uvpt.g * field_uvpt.g);
 		frag_colour.rgb = transferFuncton(scaleValue(magnitude,min_values.z,max_values.z));
 	}
 	else if(mode == 3) // pressure
 	{
-		frag_colour.rgb = transferFuncton(scaleValue(field_uvp.b,min_values.z,max_values.z));
+		frag_colour.rgb = transferFuncton(scaleValue(field_uvpt.b,min_values.z,max_values.z));
 	}
-	else if(mode == 4)
+	else if(mode == 4) // temperature
+	{
+		frag_colour.rgb = transferFuncton(scaleValue(field_uvpt.a,min_values.w,max_values.w));
+	}
+	else if(mode == 5)
 	{
 		frag_colour.rgb = texture(ibfv_tx2D,uv).xyz;
 	}
-	else if(mode == 5) //combine 2 and 4
+	else if(mode == 6) //combine 2 and 5
 	{
-		float magnitude = sqrt(field_uvp.r * field_uvp.r + field_uvp.g * field_uvp.g);
+		float magnitude = sqrt(field_uvpt.r * field_uvpt.r + field_uvpt.g * field_uvpt.g);
 		frag_colour.rgb = transferFuncton(scaleValue(magnitude,min_values.z,max_values.z))/2.0;
 		frag_colour.rgb += texture(ibfv_tx2D,uv).xyz/2.0;
 	}
