@@ -189,14 +189,16 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	m_streamline_prgm.init();
 	std::string streamline_vertex = Renderer::IO::readShaderFile("./shader/streamlinesVertex.glsl");
 	if (!m_streamline_prgm.compileShaderFromString(&streamline_vertex, GL_VERTEX_SHADER))
-		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+		{ std::cout << m_streamline_prgm.getLog(); return false; };
 
 	std::string streamline_fragment = Renderer::IO::readShaderFile("./shader/streamlinesFragment.glsl");
 	if (!m_streamline_prgm.compileShaderFromString(&streamline_fragment, GL_FRAGMENT_SHADER))
-		{ std::cout << m_fieldPicking_prgm.getLog(); return false; };
+		{ std::cout << m_streamline_prgm.getLog(); return false; };
 
 	m_streamline_prgm.bindAttribLocation(0, "v_position");
-	
+
+	if (!m_streamline_prgm.link())
+		{ std::cout << m_streamline_prgm.getLog(); return false; };
 
 	// Create framebuffers "ping-pong" ibfv rendering
 	m_ibfv_fbo0 = std::make_shared<FramebufferObject>(10*(float)simparams.iMax,10*(float)simparams.jMax,false,false);
@@ -386,26 +388,27 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 		Real domain_size_y = (Real)dim_y * m_dy;
 
 		// build streamlines
-		Real start_x = m_dx;
-		Real start_y = 0.0;
 		unsigned int index = 0;
 		for (auto& seedpoint : m_streamline_seedpoints)
 		{
 			std::vector<PointVertex> points;
 			std::vector<unsigned int> points_index;
-			unsigned int vi_index = 0;
-			while (0.0 < seedpoint.x && seedpoint.x < domain_size_x &&
-				0.0 < seedpoint.y && seedpoint.y < domain_size_y)
+
+			points.push_back(PointVertex(seedpoint.x,seedpoint.y,-1.0f));
+			points_index.push_back(0);
+
+			unsigned int vi_index = 1;
+			while (0.0 < points.back().x && points.back().x < domain_size_x &&
+				0.0 < points.back().y && points.back().y < domain_size_y)
 			{
-				Point p = seedpoint;
-				Real u, v;
-				interpolateUV(p, u, v);
+				float u, v;
+				interpolateUV(points.back(), u, v);
 
 				if (!((u + v)>0.0))
 					break;
 
-				Real scaling = cell_size / std::sqrt(u*u + v*v);
-				PointVertex p_new(p.x + scaling*u, p.y + scaling * v, -1.0f);
+				float scaling = cell_size / std::sqrt(u*u + v*v);
+				PointVertex p_new(points.back().x + scaling*u, points.back().y + scaling * v, -1.0f);
 				points.push_back(p_new);
 				points_index.push_back(vi_index);
 				vi_index++;
@@ -414,6 +417,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 					break;
 			}
 			m_streamlines[index]->bufferDataFromArray(points.data(), points_index.data(),sizeof(PointVertex)*points.size(),sizeof(unsigned int) * points_index.size(),GL_LINE_STRIP);
+			m_streamlines[index]->setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*4,0);
 			index++;
 		}
 		// Streamlines end
@@ -505,7 +509,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 void CavityRenderer::FieldLayer::addDyeSeedpoint(float x, float y)
 {
-	m_dye_seedpoints.push_back(Point(x,y,0.0));
+	m_dye_seedpoints.push_back(Point(x,y,0.0f));
 }
 
 void CavityRenderer::FieldLayer::clearDye()
@@ -513,7 +517,7 @@ void CavityRenderer::FieldLayer::clearDye()
 	m_dye_seedpoints.clear();
 }
 
-void CavityRenderer::FieldLayer::interpolateUV(Point p, Real& u, Real& v)
+void CavityRenderer::FieldLayer::interpolateUV(PointVertex p, float& u, float& v)
 {
 	// step1: find grid cell
 	int i = (int)(p.x / m_dx) + 1;
@@ -539,8 +543,8 @@ void CavityRenderer::FieldLayer::interpolateUV(Point p, Real& u, Real& v)
 
 void CavityRenderer::FieldLayer::addStreamlineSeedpoint(float x, float y)
 {
-	m_streamline_seedpoints.push_back(Point(x, y, 0.0));
-	m_streamlines.push_back(std::make_shared<Mesh> ());
+	m_streamline_seedpoints.push_back(Point(x,y,0.0f));
+	m_streamlines.push_back(std::make_shared<Mesh>());
 }
 
 void CavityRenderer::FieldLayer::clearStreamline()

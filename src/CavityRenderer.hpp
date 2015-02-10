@@ -143,7 +143,7 @@ private:
 		void updateFieldTexture(double current_time);
 		void addDyeSeedpoint(float x, float y);
 		void clearDye();
-		void interpolateUV(Point p, Real& u, Real& v);
+		void interpolateUV(PointVertex p, float& u, float& v);
 		void addStreamlineSeedpoint(float x, float y);
 		void clearStreamline();
 	};
@@ -249,6 +249,22 @@ public:
 			// check if click was inside field
 			if(data[3]>0.5)
 				m_field_layer.addDyeSeedpoint(data[0],data[1]);
+
+			delete[] data;
+		}
+	}
+	void addStreamline(int x, int y)
+	{
+		if(m_fieldPicking_fbo != nullptr)
+		{
+			GLfloat* data = new GLfloat[4];
+			m_fieldPicking_fbo->bind();
+			glReadBuffer(GL_COLOR_ATTACHMENT0);
+			glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, data);
+
+			// check if click was inside field
+			if(data[3]>0.5)
+				m_field_layer.addStreamlineSeedpoint(data[0],data[1]);
 
 			delete[] data;
 		}
@@ -420,11 +436,9 @@ private:
 				yPos = renderer->getWindowHeight() - yPos;
 
 				renderer->addDyeSeedpoint(xPos,yPos);
+				renderer->addStreamline(xPos,yPos);
 			}
 		}
-
-		//TODO read value from m_fieldClicking_fbo
-		// if inside field, add dye source
 	}
 	inline static void mousePositionCallback(GLFWwindow* window, double x, double y)
 	{
