@@ -25,9 +25,10 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 
 	std::array< GLuint, 6 > index_array = {{ 0,2,1,2,0,3 }};
 
-	if(!(m_field_quad.bufferDataFromArray(vertex_array.data(),index_array.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
-	m_field_quad.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
-	m_field_quad.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
+	m_field_quad = std::make_shared<Mesh>();
+	if(!(m_field_quad->bufferDataFromArray(vertex_array.data(),index_array.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
+	m_field_quad->setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
+	m_field_quad->setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
 
 	// Create grid mesh for ibfv
 	std::vector<VertexUV> ibfv_vertex_array;
@@ -76,9 +77,10 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 		}
 	}
 
-	if(!(m_ibfv_grid.bufferDataFromArray(ibfv_vertex_array.data(),ibfv_index_array.data(),sizeof(VertexUV)*ibfv_vertex_array.size(),sizeof(GLuint)*ibfv_index_array.size(),GL_TRIANGLES))) return false;
-	m_ibfv_grid.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
-	m_ibfv_grid.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
+	m_ibfv_grid = std::make_shared<Mesh>();
+	if(!(m_ibfv_grid->bufferDataFromArray(ibfv_vertex_array.data(),ibfv_index_array.data(),sizeof(VertexUV)*ibfv_vertex_array.size(),sizeof(GLuint)*ibfv_index_array.size(),GL_TRIANGLES))) return false;
+	m_ibfv_grid->setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
+	m_ibfv_grid->setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
 
 	// Fullscreen quad
 	std::array< VertexUV, 4 > fullscreenQuad_va = {{ VertexUV(-1.0,-1.0,-1.0,0.0,0.0),
@@ -87,9 +89,10 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 											VertexUV(1.0,-1.0,-1.0,1.0,0.0) }};
 	std::array< GLuint, 6 > fullscreenQuad_ia = {{ 0,2,1,2,0,3 }};
 
-	if(!(m_fullscreen_quad.bufferDataFromArray(fullscreenQuad_va.data(),fullscreenQuad_ia.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
-	m_fullscreen_quad.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
-	m_fullscreen_quad.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
+	m_fullscreen_quad = std::make_shared<Mesh>();
+	if(!(m_fullscreen_quad->bufferDataFromArray(fullscreenQuad_va.data(),fullscreenQuad_ia.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
+	m_fullscreen_quad->setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
+	m_fullscreen_quad->setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
 
 	// Dye injection sprite
 	float blob_size = (1.0f/(float)simparams.xLength);
@@ -100,9 +103,10 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 											VertexUV(blob_size,-blob_size,-1.0,1.0,0.0) }};
 	std::array< GLuint, 6 > dyeBlobSprite_ia = {{ 0,2,1,2,0,3 }};
 
-	if(!(m_dye_blob.bufferDataFromArray(dyeBlobSprite_va.data(),dyeBlobSprite_ia.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
-	m_dye_blob.setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
-	m_dye_blob.setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
+	m_dye_blob = std::make_shared<Mesh>();
+	if(!(m_dye_blob->bufferDataFromArray(dyeBlobSprite_va.data(),dyeBlobSprite_ia.data(),sizeof(VertexUV)*4,sizeof(GLuint)*6,GL_TRIANGLES))) return false;
+	m_dye_blob->setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexUV), 0);
+	m_dye_blob->setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
 
 	// Shader program for rendering field quad
 	m_prgm.init();
@@ -254,7 +258,7 @@ void CavityRenderer::FieldLayer::draw(CameraSystem& camera)
 		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
 		m_prgm.setUniform("mvp_matrix", mvp_mat);
 
-		m_field_quad.draw();
+		m_field_quad->draw();
 
 		m_show_streamlines = true;
 
@@ -285,7 +289,7 @@ void CavityRenderer::FieldLayer::drawFieldPicking(CameraSystem& camera)
 		glm::mat4 mvp_mat = proj_mat * view_mat * model_mat;
 		m_fieldPicking_prgm.setUniform("mvp_matrix", mvp_mat);
 
-		m_field_quad.draw();
+		m_field_quad->draw();
 	}
 }
 
@@ -412,11 +416,9 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 			while (0.0 < points.back().x && points.back().x < domain_size_x &&
 				0.0 < points.back().y && points.back().y < domain_size_y)
 			{
-				printf("size: %i \n", points.size());
 				float u, v;
 				interpolateUV(points.back(), u, v);
-				printf("u: %f v: %f \n", u,v);
-			
+	
 				if (!((abs(u) + abs(v))>0.0))
 					break;
 			
@@ -426,7 +428,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 				points_index.push_back(vi_index);
 				vi_index++;
 			
-				if ((int)points.size() > std::max(dim_x, dim_y))
+				if ((int)points.size() > 4*std::min(dim_x,dim_y))
 					break;
 			}
 			m_streamlines[index]->bufferDataFromArray(points.data(), points_index.data(),sizeof(PointVertex)*points.size(),sizeof(unsigned int) * points_index.size(),GL_LINE_STRIP);
@@ -484,7 +486,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 	m_ibfvAdvection_prgm.setUniform("previous_frame_tx2d",1);
 	m_ibfv_fbo1->bindColorbuffer(0);
 
-	m_ibfv_grid.draw();
+	m_ibfv_grid->draw();
 
 	m_ibfv_fbo1->bind();
 	//glClearColor(0.0f,0.0f,0.0f,0.0f);
@@ -500,7 +502,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 	m_ibfvMerge_prgm.setUniform("advected_tx2D",1);
 	m_ibfv_fbo0->bindColorbuffer(0);
 
-	m_fullscreen_quad.draw();
+	m_fullscreen_quad->draw();
 
 	m_dyeInjection_prgm.use();
 	glActiveTexture(GL_TEXTURE0);
@@ -517,7 +519,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 	}
 
 	//TODO instanced draw call
-	m_dye_blob.draw(m_dye_seedpoints.size());
+	m_dye_blob->draw(m_dye_seedpoints.size());
 }
 
 void CavityRenderer::FieldLayer::addDyeSeedpoint(float x, float y)
@@ -544,14 +546,14 @@ void CavityRenderer::FieldLayer::interpolateUV(PointVertex p, float& u, float& v
 
 	// step3: bilinear interpolation
 	u = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][(i - 1) * 3 + (j - 1)*m_field_dimension.i] +
-		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][(i)* 3 + (j - 1)*m_field_dimension.i] +
-		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][(i - 1) * 3 + (j)*m_field_dimension.i] +
-		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][(i)* 3 + (j)*m_field_dimension.i]);
+		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][(i)* 3 + (j - 1)*m_field_dimension.i*3] +
+		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][(i - 1) * 3 + (j)*m_field_dimension.i*3] +
+		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][(i)* 3 + (j)*m_field_dimension.i*3]);
 
 	v = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][((i - 1) * 3) + 1 + (j - 1)*m_field_dimension.i] +
-		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][((i)* 3) + 1 + (j - 1)*m_field_dimension.i] +
-		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][((i - 1) * 3) + 1 + (j)*m_field_dimension.i] +
-		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][((i)* 3) + 1 + (j)*m_field_dimension.i]);
+		(p.x - x_1)*(y_2 - p.y) * m_field_data[m_current_field][((i)* 3) + 1 + (j - 1)*m_field_dimension.i*3] +
+		(x_2 - p.x)*(p.y - y_1) * m_field_data[m_current_field][((i - 1) * 3) + 1 + (j)*m_field_dimension.i*3] +
+		(p.x - x_1)*(p.y - y_1) * m_field_data[m_current_field][((i)* 3) + 1 + (j)*m_field_dimension.i*3]);
 }
 
 void CavityRenderer::FieldLayer::addStreamlineSeedpoint(float x, float y)
@@ -562,6 +564,7 @@ void CavityRenderer::FieldLayer::addStreamlineSeedpoint(float x, float y)
 
 void CavityRenderer::FieldLayer::clearStreamline()
 {
+	m_streamline_seedpoints.clear();
 	m_streamlines.clear();
 }
 

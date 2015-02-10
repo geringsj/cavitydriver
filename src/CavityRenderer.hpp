@@ -106,10 +106,10 @@ private:
 
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo0;
 		std::shared_ptr<FramebufferObject> m_ibfv_fbo1;
-		Mesh m_field_quad;
-		Mesh m_ibfv_grid;
-		Mesh m_dye_blob;
-		Mesh m_fullscreen_quad;
+		std::shared_ptr<Mesh> m_field_quad;
+		std::shared_ptr<Mesh> m_ibfv_grid;
+		std::shared_ptr<Mesh> m_dye_blob;
+		std::shared_ptr<Mesh> m_fullscreen_quad;
 		std::vector<std::shared_ptr<Mesh>> m_streamlines;
 		std::shared_ptr<Texture2D> m_field_tx;
 		std::shared_ptr<Texture2D> m_ibfvBackground_tx;
