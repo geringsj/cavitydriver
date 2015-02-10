@@ -135,6 +135,9 @@ private:
 		double m_time_tracker = 0.0;
 		double m_elapsed_time;
 
+		bool m_place_dye;
+		bool m_place_stream;
+
 		bool createResources(SimulationParameters& simparams);
 		void draw(CameraSystem& camera);
 		void drawFieldPicking(CameraSystem& camera);
@@ -325,8 +328,6 @@ private:
 	unsigned int m_window_width; /**< Store the window width in pixel. */
 	unsigned int m_window_height; /**< Store the window height in pixel. */
 	GLfloat m_window_background_colour[3];
-	bool m_dye;
-	bool m_stream;
 	TwBar* bar;
 
 	/* Individual layers of the visualization */

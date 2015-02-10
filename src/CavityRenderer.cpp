@@ -385,62 +385,54 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 			m_current_field = (m_current_field + (int)std::floor(m_elapsed_time / m_requested_frametime)) % m_field_data.size();
 			m_elapsed_time = 0.0;
 		}
-
-		//Streamlines begin
-		int dim_x = m_field_dimension.i;
-		int dim_y = m_field_dimension.j;
-		Real cell_size = std::sqrt(m_dx*m_dx + m_dy*m_dy);
-		Real domain_size_x = (Real)dim_x * m_dx;
-		Real domain_size_y = (Real)dim_y * m_dy;
-
-		// build streamlines
-		unsigned int index = 0;
-		for (auto& seedpoint : m_streamline_seedpoints)
-		{
-			std::vector<PointVertex> points;
-			std::vector<unsigned int> points_index;
-
-			points.push_back(PointVertex(seedpoint.x,seedpoint.y,-1.0f));
-			points_index.push_back(0);
-
-			//points.push_back(PointVertex(0.0,0.0,-1.0f));
-			//points_index.push_back(0);
-
-			//points.push_back(PointVertex(1.0,1.0,-1.0f));
-			//points_index.push_back(1);
-			//
-			//points.push_back(PointVertex(1.0,0.0,-1.0f));
-			//points_index.push_back(2);
-
-			unsigned int vi_index = 1;
-			while (0.0 < points.back().x && points.back().x < domain_size_x &&
-				0.0 < points.back().y && points.back().y < domain_size_y)
-			{
-				float u, v;
-				interpolateUV(points.back(), u, v);
-	
-				if (!((abs(u) + abs(v))>0.0))
-					break;
-			
-				float scaling = cell_size / std::sqrt(u*u + v*v);
-				PointVertex p_new(points.back().x + scaling*u, points.back().y + scaling * v, -1.0f);
-				points.push_back(p_new);
-				points_index.push_back(vi_index);
-				vi_index++;
-			
-				if ((int)points.size() > 4*std::min(dim_x,dim_y))
-					break;
-			}
-			m_streamlines[index]->bufferDataFromArray(points.data(), points_index.data(),sizeof(PointVertex)*points.size(),sizeof(unsigned int) * points_index.size(),GL_LINE_STRIP);
-			m_streamlines[index]->setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*4,0);
-			index++;
-		}
-		// Streamlines end
 	}
 	else
 	{
 		m_elapsed_time = 0.0;
 	}
+
+	//Streamlines begin
+	int dim_x = m_field_dimension.i;
+	int dim_y = m_field_dimension.j;
+	Real cell_size = std::sqrt(m_dx*m_dx + m_dy*m_dy);
+	Real domain_size_x = (Real)dim_x * m_dx;
+	Real domain_size_y = (Real)dim_y * m_dy;
+
+	// build streamlines
+	unsigned int index = 0;
+	for (auto& seedpoint : m_streamline_seedpoints)
+	{
+		std::vector<PointVertex> points;
+		std::vector<unsigned int> points_index;
+
+		points.push_back(PointVertex(seedpoint.x,seedpoint.y,-1.0f));
+		points_index.push_back(0);
+
+		unsigned int vi_index = 1;
+		while (0.0 < points.back().x && points.back().x < domain_size_x &&
+			0.0 < points.back().y && points.back().y < domain_size_y)
+		{
+			float u, v;
+			interpolateUV(points.back(), u, v);
+	
+			if (!((abs(u) + abs(v))>0.0))
+				break;
+		
+			float scaling = cell_size / (16*std::sqrt(u*u + v*v));
+			PointVertex p_new(points.back().x + scaling*u, points.back().y + scaling * v, -1.0f);
+			points.push_back(p_new);
+			points_index.push_back(vi_index);
+			vi_index++;
+		
+			if ((int)points.size() > 32*std::min(dim_x,dim_y))
+				break;
+		}
+		m_streamlines[index]->bufferDataFromArray(points.data(), points_index.data(),sizeof(PointVertex)*points.size(),sizeof(unsigned int) * points_index.size(),GL_LINE_STRIP);
+		m_streamlines[index]->setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*4,0);
+		index++;
+	}
+	// Streamlines end
+
 
 	m_time_tracker = current_time;
 
@@ -524,7 +516,10 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 void CavityRenderer::FieldLayer::addDyeSeedpoint(float x, float y)
 {
-	m_dye_seedpoints.push_back(Point(x,y,0.0f));
+	if(m_place_dye)
+	{
+		m_dye_seedpoints.push_back(Point(x,y,0.0f));
+	}
 }
 
 void CavityRenderer::FieldLayer::clearDye()
@@ -535,14 +530,14 @@ void CavityRenderer::FieldLayer::clearDye()
 void CavityRenderer::FieldLayer::interpolateUV(PointVertex p, float& u, float& v)
 {
 	// step1: find grid cell
-	int i = (int)(p.x / m_dx) + 1;
-	int j = (int)((p.y + (m_dy / 2.0)) / m_dy) + 1;
+	int i = std::round(p.x / m_dx);
+	int j = std::round((p.y + (m_dy / 2.0)) / m_dy);
 
 	// step2: find neighbour cells
-	Real x_1 = (Real)(i - 1) * m_dx;
-	Real x_2 = (Real)i * m_dx;
-	Real y_1 = (Real)(j - 1)*m_dy - (m_dy / 2.0);
-	Real y_2 = (Real)(j)*m_dy - (m_dy / 2.0);
+	float x_1 = (float)(i - 1) * m_dx;
+	float x_2 = (float)i * m_dx;
+	float y_1 = (float)(j - 1)*m_dy - (m_dy / 2.0);
+	float y_2 = (float)(j)*m_dy - (m_dy / 2.0);
 
 	// step3: bilinear interpolation
 	u = 1.0 / (m_dx*m_dy) * ((x_2 - p.x)*(y_2 - p.y) * m_field_data[m_current_field][(i - 1) * 3 + (j - 1)*m_field_dimension.i] +
@@ -558,8 +553,15 @@ void CavityRenderer::FieldLayer::interpolateUV(PointVertex p, float& u, float& v
 
 void CavityRenderer::FieldLayer::addStreamlineSeedpoint(float x, float y)
 {
-	m_streamline_seedpoints.push_back(Point(x,y,0.0f));
-	m_streamlines.push_back(std::make_shared<Mesh>());
+	if(m_place_stream)
+	{
+		// correct for something
+		float shifted_x = x * (m_field_dimension.i*m_dx) ;
+		float shifted_y = y * (m_field_dimension.j*m_dy) ;
+
+		m_streamline_seedpoints.push_back(Point(shifted_x,shifted_y,0.0f));
+		m_streamlines.push_back(std::make_shared<Mesh>());
+	}
 }
 
 void CavityRenderer::FieldLayer::clearStreamline()
@@ -1407,8 +1409,8 @@ void CavityRenderer::initPainterTweakBar()
 	addDoubleParam("m_requested_frametime", " step=0.001 label='Frametime' group='Field' ", &m_field_layer.m_requested_frametime, "RW");
 	addButtonParam("m_clearDye", " label='Clear dye' group='Field' ", ClearDye);
 	addButtonParam("m_clearStream", "label = 'Clear streamlines' group = 'Field' ", ClearStream);
-	addBoolParam("m_dye", "label = 'Place dye' group = 'Field' ", &m_dye, "RW"); 
-	addBoolParam("m_stream", "label = 'Place streamline' group = 'Field' ", &m_stream, "RW");
+	addBoolParam("m_dye", "label = 'Place dye' group = 'Field' ", &m_field_layer.m_place_dye, "RW"); 
+	addBoolParam("m_stream", "label = 'Place streamline' group = 'Field' ", &m_field_layer.m_place_stream, "RW");
 	TwAddVarRW(bar, "m_stream_colour", TW_TYPE_COLOR3F, &m_field_layer.m_stream_colour, " label='Streamline color' group='Field' ");
 
 	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
