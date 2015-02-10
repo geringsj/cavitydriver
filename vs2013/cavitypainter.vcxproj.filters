@@ -91,5 +91,11 @@
     <None Include="..\shader\streamlinesVertex.glsl">
       <Filter>shader</Filter>
     </None>
+    <None Include="..\shader\dyeInjectionFragment.glsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\shader\dyeInjectionVertex.glsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

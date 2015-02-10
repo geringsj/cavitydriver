@@ -128,6 +128,7 @@ private:
 		int m_display_mode;
 		Real m_dx, m_dy;
 		GLfloat m_stream_colour[3];
+		GLfloat m_dye_colour[3];
 
 		bool m_show_streamlines = false;
 		bool m_play_animation = false;

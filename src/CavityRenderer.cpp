@@ -260,8 +260,6 @@ void CavityRenderer::FieldLayer::draw(CameraSystem& camera)
 
 		m_field_quad->draw();
 
-		m_show_streamlines = true;
-
 		if(m_show_streamlines)
 		{
 			//TODO draw streamlines
@@ -382,7 +380,7 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 		if(m_elapsed_time > m_requested_frametime)
 		{
-			m_current_field = (m_current_field + (int)std::floor(m_elapsed_time / m_requested_frametime)) % m_field_data.size();
+			m_current_field = (m_current_field + (int)std::floor(m_elapsed_time / m_requested_frametime)) % (m_field_data.size()-1);
 			m_elapsed_time = 0.0;
 		}
 	}
@@ -498,7 +496,9 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 
 	m_dyeInjection_prgm.use();
 	glActiveTexture(GL_TEXTURE0);
+	glm::vec4 col = glm::vec4(m_dye_colour[0], m_dye_colour[1], m_dye_colour[2], 1.0);
 	m_dyeInjection_prgm.setUniform("dyeBlob_tx2D",0);
+	m_dyeInjection_prgm.setUniform("dye_colour", col);
 	m_dyeBlob_tx->bindTexture();
 
 	//TODO upload position matrices
@@ -1404,7 +1404,8 @@ void CavityRenderer::initPainterTweakBar()
 	TwAddVarRW(bar, "m_grid_colour", TW_TYPE_COLOR3F, &m_overlayGrid_layer.m_colour, " label='Grid color' group='Grid' ");
 
 	addBoolParam("m_show_field", " label='Show field' group='Field' ", &m_field_layer.m_show);
-	addIntParam("m_current_field", " label='Frame' group='Field' ", &m_field_layer.m_current_field, "RW", 0, m_field_layer.m_num_fields);
+	addBoolParam("m_show_streamlines", " label='Show streamlines' group='Field' ", &m_field_layer.m_show_streamlines);
+	addIntParam("m_current_field", " label='Frame' group='Field' ", &m_field_layer.m_current_field, "RW", 0, m_field_layer.m_num_fields-1);
 	addIntParam("m_display_mode", " label='Mode' group='Field' ", &m_field_layer.m_display_mode, "RW", 0, 5);
 	addBoolParam("m_play_animation", " label='Play animation' group='Field' ", &m_field_layer.m_play_animation);
 	addDoubleParam("m_requested_frametime", " step=0.001 label='Frametime' group='Field' ", &m_field_layer.m_requested_frametime, "RW");
@@ -1413,6 +1414,7 @@ void CavityRenderer::initPainterTweakBar()
 	addBoolParam("m_dye", "label = 'Place dye' group = 'Field' ", &m_field_layer.m_place_dye, "RW"); 
 	addBoolParam("m_stream", "label = 'Place streamline' group = 'Field' ", &m_field_layer.m_place_stream, "RW");
 	TwAddVarRW(bar, "m_stream_colour", TW_TYPE_COLOR3F, &m_field_layer.m_stream_colour, " label='Streamline color' group='Field' ");
+	TwAddVarRW(bar, "m_dye_colour", TW_TYPE_COLOR3F, &m_field_layer.m_dye_colour, " label='Dye color' group='Field' ");
 
 	addBoolParam("m_show_boundary_cells", " label='Show boundary cells' group='Boundary' ", &m_boundaryCells_layer.m_show);
 	addBoolParam("m_show_boundary_glyphs", " label='Show boundary glyphs' group='Boundary' ", &m_boundaryGlyph_layer.m_show);

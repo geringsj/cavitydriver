@@ -170,6 +170,8 @@
     <None Include="..\shader\arrowVertex.glsl" />
     <None Include="..\shader\boundaryCellFragment.glsl" />
     <None Include="..\shader\boundaryCellVertex.glsl" />
+    <None Include="..\shader\dyeInjectionFragment.glsl" />
+    <None Include="..\shader\dyeInjectionVertex.glsl" />
     <None Include="..\shader\fieldFragment.glsl" />
     <None Include="..\shader\fieldVertex.glsl" />
     <None Include="..\shader\gridFragment.glsl" />
