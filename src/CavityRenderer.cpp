@@ -256,6 +256,8 @@ void CavityRenderer::FieldLayer::draw(CameraSystem& camera)
 
 		m_field_quad.draw();
 
+		m_show_streamlines = true;
+
 		if(m_show_streamlines)
 		{
 			//TODO draw streamlines
@@ -397,22 +399,33 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 			points.push_back(PointVertex(seedpoint.x,seedpoint.y,-1.0f));
 			points_index.push_back(0);
 
+			//points.push_back(PointVertex(0.0,0.0,-1.0f));
+			//points_index.push_back(0);
+
+			//points.push_back(PointVertex(1.0,1.0,-1.0f));
+			//points_index.push_back(1);
+			//
+			//points.push_back(PointVertex(1.0,0.0,-1.0f));
+			//points_index.push_back(2);
+
 			unsigned int vi_index = 1;
 			while (0.0 < points.back().x && points.back().x < domain_size_x &&
 				0.0 < points.back().y && points.back().y < domain_size_y)
 			{
+				printf("size: %i \n", points.size());
 				float u, v;
 				interpolateUV(points.back(), u, v);
-
-				if (!((u + v)>0.0))
+				printf("u: %f v: %f \n", u,v);
+			
+				if (!((abs(u) + abs(v))>0.0))
 					break;
-
+			
 				float scaling = cell_size / std::sqrt(u*u + v*v);
 				PointVertex p_new(points.back().x + scaling*u, points.back().y + scaling * v, -1.0f);
 				points.push_back(p_new);
 				points_index.push_back(vi_index);
 				vi_index++;
-
+			
 				if ((int)points.size() > std::max(dim_x, dim_y))
 					break;
 			}
