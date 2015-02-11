@@ -116,13 +116,15 @@ private:
 		std::shared_ptr<Texture2D> m_dyeBlob_tx;
 
 		// coordinates given in uv space of field
-		std::vector<Point> m_dye_seedpoints;
+		std::vector<std::vector<Point>> m_dye_seedpoints = std::vector<std::vector<Point>>(1);
 		std::vector<Point> m_streamline_seedpoints;
 
 		Dimension m_field_dimension;
 		std::vector<std::vector<float>> m_field_data;
 		std::vector<glm::vec4> m_field_max_values;
 		std::vector<glm::vec4> m_field_min_values;
+		float m_field_global_maxU;
+		float m_field_global_maxV;
 		int m_num_fields;
 		int m_current_field;
 		int m_display_mode;
@@ -130,7 +132,7 @@ private:
 		GLfloat m_stream_colour[3];
 		GLfloat m_dye_colour[3];
 
-		bool m_show_streamlines = false;
+		bool m_show_streamlines = true;
 		bool m_play_animation = false;
 		double m_requested_frametime = 0.033;
 		double m_time_tracker = 0.0;
@@ -150,6 +152,9 @@ private:
 		void interpolateUV(PointVertex p, float& u, float& v);
 		void addStreamlineSeedpoint(float x, float y);
 		void clearStreamline();
+
+	private:
+		void contructStreamlines();
 	};
 
 	struct OverlayGridLayer : public Layer
@@ -456,11 +461,15 @@ private:
 			last_mouse_x = x;
 			last_mouse_y = y;
 
-			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+			if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 			{
 				//TODO decent zoom depented movement speed
 				float speed = std::pow(renderer->getCamera().getFieldOfView()*0.001f,2.0f);
 				renderer->moveCamera((float)dx,(float)-dy,0.0f,speed);
+			}
+			if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+			{
+				renderer->addDyeSeedpoint(x,renderer->getWindowHeight()-y);
 			}
 		}
 	}

@@ -34,7 +34,7 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	std::vector<VertexUV> ibfv_vertex_array;
 	std::vector<GLuint> ibfv_index_array;
 
-	int base_subdivisions = std::min(simparams.iMax,simparams.jMax)/2;
+	int base_subdivisions = std::min(simparams.iMax,simparams.jMax);
 	int iSubdivisions, jSubdivisions;
 
 	// Build vertex array
@@ -95,12 +95,13 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	m_fullscreen_quad->setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexUV), (GLvoid*) (sizeof(float)*3));
 
 	// Dye injection sprite
-	float blob_size = (1.0f/(float)simparams.xLength);
-	blob_size = 0.05f;
-	std::array< VertexUV, 4 > dyeBlobSprite_va = {{ VertexUV(-blob_size,-blob_size,-1.0,0.0,0.0),
-											VertexUV(-blob_size,blob_size,-1.0,0.0,1.0),
-											VertexUV(blob_size,blob_size,-1.0,1.0,1.0),
-											VertexUV(blob_size,-blob_size,-1.0,1.0,0.0) }};
+	float blob_sizeX = 0.025f;
+	float blob_sizeY = blob_sizeX * ((float)simparams.xLength/(float)simparams.yLength);
+
+	std::array< VertexUV, 4 > dyeBlobSprite_va = {{ VertexUV(-blob_sizeX,-blob_sizeY,-1.0,0.0,0.0),
+											VertexUV(-blob_sizeX,blob_sizeY,-1.0,0.0,1.0),
+											VertexUV(blob_sizeX,blob_sizeY,-1.0,1.0,1.0),
+											VertexUV(blob_sizeX,-blob_sizeY,-1.0,1.0,0.0) }};
 	std::array< GLuint, 6 > dyeBlobSprite_ia = {{ 0,2,1,2,0,3 }};
 
 	m_dye_blob = std::make_shared<Mesh>();
@@ -217,7 +218,10 @@ bool CavityRenderer::FieldLayer::createResources(SimulationParameters& simparams
 	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
 	// Create empty texture for holding ibfv background/source image
-	m_ibfvBackground_tx = std::make_shared<Texture2D>("m_ibfvBackground_tx",GL_RGB, 512, 512, GL_RGB, GL_FLOAT, nullptr);
+	m_ibfvBackground_tx = std::make_shared<Texture2D>("m_ibfvBackground_tx",GL_RGB,
+														simparams.iMax*4,
+														simparams.jMax*4,
+														GL_RGB, GL_FLOAT, nullptr);
 
 	// Load mask texture for dye injection blob
 	unsigned long begin_pos;
@@ -337,6 +341,9 @@ void CavityRenderer::FieldLayer::setFieldData(std::string path)
 				}
 			}
 		}
+		
+		m_field_global_maxU = std::max(m_field_max_values.back()[0],m_field_global_maxU);
+		m_field_global_maxV = std::max(m_field_max_values.back()[1],m_field_global_maxU);
 
 		i++;
 		filename = path;
@@ -348,6 +355,17 @@ void CavityRenderer::FieldLayer::setFieldData(std::string path)
 	m_field_dimension.i = dim_x;
 	m_field_dimension.j = dim_y;
 	m_num_fields = m_field_data.size();
+
+	// Load first field to texture
+	//m_field_tx = std::make_shared<Texture2D>( "m_field_tx",
+	//										GL_RGBA32F,
+	//										m_field_dimension.i,
+	//										m_field_dimension.j,
+	//										GL_RGBA, GL_FLOAT,
+	//										m_field_data[0].data());
+	//
+	//m_field_tx->texParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//m_field_tx->texParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 bool CavityRenderer::FieldLayer::setFieldTexture(unsigned int requested_frame)
@@ -389,52 +407,10 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 		m_elapsed_time = 0.0;
 	}
 
-	//Streamlines begin
-	int dim_x = m_field_dimension.i;
-	int dim_y = m_field_dimension.j;
-	Real cell_size = std::sqrt(m_dx*m_dx + m_dy*m_dy);
-	Real domain_size_x = (Real)dim_x * m_dx;
-	Real domain_size_y = (Real)dim_y * m_dy;
-
-	// build streamlines
-	unsigned int index = 0;
-	for (auto& seedpoint : m_streamline_seedpoints)
-	{
-		std::vector<PointVertex> points;
-		std::vector<unsigned int> points_index;
-
-		points.push_back(PointVertex(seedpoint.x,seedpoint.y,-1.0f));
-		points_index.push_back(0);
-
-		unsigned int vi_index = 1;
-		while (0.0 < points.back().x && points.back().x < domain_size_x &&
-			0.0 < points.back().y && points.back().y < domain_size_y)
-		{
-			float u, v;
-			interpolateUV(points.back(), u, v);
-	
-			if (!((abs(u) + abs(v))>0.0))
-				break;
-		
-			float scaling = cell_size / (16*std::sqrt(u*u + v*v));
-			PointVertex p_new(points.back().x + scaling*u, points.back().y + scaling * v, -1.0f);
-			points.push_back(p_new);
-			points_index.push_back(vi_index);
-			vi_index++;
-		
-			if ((int)points.size() > 32*std::min(dim_x,dim_y))
-				break;
-		}
-		m_streamlines[index]->bufferDataFromArray(points.data(), points_index.data(),sizeof(PointVertex)*points.size(),sizeof(unsigned int) * points_index.size(),GL_LINE_STRIP);
-		m_streamlines[index]->setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*4,0);
-		index++;
-	}
-	// Streamlines end
-
-
 	m_time_tracker = current_time;
 
-	//TODO use reload function
+	// load current field to texture
+	//m_field_tx->reload(m_field_dimension.i,m_field_dimension.j,m_field_data[m_current_field].data());
 	m_field_tx = std::make_shared<Texture2D>( "m_field_tx",
 											GL_RGBA32F,
 											m_field_dimension.i,
@@ -445,6 +421,8 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 	m_field_tx->texParameteri(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	m_field_tx->texParameteri(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+	// (re)construct streamlines
+	contructStreamlines();
 
 	// Generate noise texture
 	std::mt19937 rg(std::chrono::system_clock::now().time_since_epoch().count());
@@ -476,6 +454,8 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 	m_ibfvAdvection_prgm.setUniform("previous_frame_tx2d",1);
 	m_ibfv_fbo1->bindColorbuffer(0);
 
+	m_ibfvAdvection_prgm.setUniform("field_global_maxU",m_field_global_maxU);
+
 	m_ibfv_grid->draw();
 
 	m_ibfv_fbo1->bind();
@@ -501,30 +481,48 @@ void CavityRenderer::FieldLayer::updateFieldTexture(double current_time)
 	m_dyeInjection_prgm.setUniform("dye_colour", col);
 	m_dyeBlob_tx->bindTexture();
 
-	//TODO upload position matrices
-	std::string uniform_name;
-	for(unsigned int instance=0; instance<m_dye_seedpoints.size(); instance++)
+	// upload position matrices
+	for(auto& seedpoint_batch : m_dye_seedpoints)
 	{
-		uniform_name = "dye_location[" + std::to_string(instance) + "]";
-		m_dyeInjection_prgm.setUniform(uniform_name.c_str(),glm::vec2((float)m_dye_seedpoints[instance].x,
-																(float)m_dye_seedpoints[instance].y));
-	}
+		std::string uniform_name;
+		unsigned int instance = 0;
+		for(auto& seedpoint : seedpoint_batch)
+		{
+			uniform_name = "dye_location[" + std::to_string(instance) + "]";
+			m_dyeInjection_prgm.setUniform(uniform_name.c_str(),glm::vec2((float)seedpoint.x,
+																	(float)seedpoint.y));
+			instance++;
+		}
 
-	//TODO instanced draw call
-	m_dye_blob->draw(m_dye_seedpoints.size());
+		// instanced draw call
+		m_dye_blob->draw(seedpoint_batch.size());
+	}
 }
 
 void CavityRenderer::FieldLayer::addDyeSeedpoint(float x, float y)
 {
 	if(m_place_dye)
 	{
-		m_dye_seedpoints.push_back(Point(x,y,0.0f));
+		if(m_dye_seedpoints.back().size() < 128)
+		{
+			m_dye_seedpoints.back().push_back(Point(x,y,0.0f));
+		}
+		else
+		{
+			m_dye_seedpoints.push_back(std::vector<Point>());
+			m_dye_seedpoints.back().push_back(Point(x,y,0.0f));
+		}
 	}
 }
 
 void CavityRenderer::FieldLayer::clearDye()
 {
+	for(auto& seedpoint_batch : m_dye_seedpoints)
+	{
+		seedpoint_batch.clear();
+	}
 	m_dye_seedpoints.clear();
+	m_dye_seedpoints.push_back(std::vector<Point>());
 }
 
 void CavityRenderer::FieldLayer::interpolateUV(PointVertex p, float& u, float& v)
@@ -568,6 +566,50 @@ void CavityRenderer::FieldLayer::clearStreamline()
 {
 	m_streamline_seedpoints.clear();
 	m_streamlines.clear();
+}
+
+void CavityRenderer::FieldLayer::contructStreamlines()
+{
+	int dim_x = m_field_dimension.i;
+	int dim_y = m_field_dimension.j;
+	Real cell_size = std::sqrt(m_dx*m_dx + m_dy*m_dy);
+	Real domain_size_x = (Real)dim_x * m_dx;
+	Real domain_size_y = (Real)dim_y * m_dy;
+
+	// build streamlines
+	unsigned int index = 0;
+	for (auto& seedpoint : m_streamline_seedpoints)
+	{
+		std::vector<PointVertex> points;
+		std::vector<unsigned int> points_index;
+
+		points.push_back(PointVertex(seedpoint.x,seedpoint.y,-1.0f));
+		points_index.push_back(0);
+
+		unsigned int vi_index = 1;
+		while (0.0 < points.back().x && points.back().x < domain_size_x &&
+			0.0 < points.back().y && points.back().y < domain_size_y)
+		{
+			float u, v;
+			interpolateUV(points.back(), u, v);
+	
+			if (!((abs(u) + abs(v))>0.0))
+				break;
+		
+			float scaling = cell_size / (16*std::sqrt(u*u + v*v));
+			PointVertex p_new(points.back().x + scaling*u, points.back().y + scaling * v, -1.0f);
+			points.push_back(p_new);
+			points_index.push_back(vi_index);
+			vi_index++;
+		
+			//if ((int)points.size() > 32*std::min(dim_x,dim_y))
+			if ((int)points.size() > 16*(dim_x+dim_y))
+				break;
+		}
+		m_streamlines[index]->bufferDataFromArray(points.data(), points_index.data(),sizeof(PointVertex)*points.size(),sizeof(unsigned int) * points_index.size(),GL_LINE_STRIP);
+		m_streamlines[index]->setVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*4,0);
+		index++;
+	}
 }
 
 bool CavityRenderer::OverlayGridLayer::createResources(SimulationParameters& simparams)
