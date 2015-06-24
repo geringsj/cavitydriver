@@ -80,7 +80,7 @@ namespace Computation
 			auto Tintp = 
 				[&domain, D](int i, int j)
 				{
-					return (domain.t()(i,j) + domain.t()(i +(D==1),j +(D==2))) / 2.0;
+					return (domain.t()(i,j) + domain.t()(i +(D==0),j +(D==1))) / 2.0;
 				};
 
 			/* the formula: */

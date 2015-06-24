@@ -56,7 +56,7 @@ Usage: cavitybaker SETTING [options]
 
 Examples:
   Generate a driven cavity with RE=500 in a 3x1.5 box:
-    cavitybaker DrivenCavity --re=500 -xLength==3 --yLength=1.5
+    cavitybaker DrivenCavity --re=500 --xLength==3 --yLength=1.5
 
   Generate a Karman street with object width beeing object 
   height(=yLength/2) with 1000 max iterations for SOR:
