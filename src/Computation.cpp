@@ -9,18 +9,18 @@ namespace Computation
 
 	Real computeTimestep(Domain& domain, const Real tau, const Real Re, const Real Pr)
 	{
-		Real uMax = domain.getVelocity().m_u.getMaxValue();
-		Real vMax = domain.getVelocity().m_v.getMaxValue();
-		Delta maxVels(uMax, vMax);
+		Real uMax = domain.getVelocity().m_u.getMaxAbsValue();
+		Real vMax = domain.getVelocity().m_v.getMaxAbsValue();
+		Delta maxAbsVals(uMax, vMax);
 
-		return computeTimestepFromMaxVelocities(maxVels, domain.getDelta(), tau, Re, Pr);
+		return computeTimestepFromMaxVelocities(maxAbsVals, domain.getDelta(), tau, Re, Pr);
 	}
 
 	Real computeTimestepFromMaxVelocities(
-			Delta maxVelocities, Delta cellsDelta, const Real tau, const Real Re, const Real Pr)
+			Delta maxAbsVelocities, Delta cellsDelta, const Real tau, const Real Re, const Real Pr)
 	{
-		Real uMax = maxVelocities.x;
-		Real vMax = maxVelocities.y;
+		Real uMaxAbs = maxAbsVelocities.x;
+		Real vMaxAbs = maxAbsVelocities.y;
 
 		Real dxx = pow(cellsDelta.x, 2.0);
 		Real dyy = pow(cellsDelta.y, 2.0);
@@ -34,9 +34,9 @@ namespace Computation
 				)
 				,
 				std::fmin(
-					cellsDelta.x / std::fabs(uMax)
+					cellsDelta.x / uMaxAbs
 					,
-					cellsDelta.y / std::fabs(vMax)
+					cellsDelta.y / vMaxAbs
 				)
 			);
 

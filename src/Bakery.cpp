@@ -287,7 +287,8 @@ namespace Bakery {
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::P,
 			Boundary::Condition::OUTFLOW, 0.0, /* UP */
 			Boundary::Condition::OUTFLOW, 0.0, /* DOWN */
-			Boundary::Condition::INFLOW, inflowVal, /* LEFT */
+			//Boundary::Condition::INFLOW, inflowVal, /* LEFT */ // TODO: old value wrong?!
+			Boundary::Condition::NOSLIP, 0.0, /* LEFT */
 			Boundary::Condition::NOSLIP, 0.0); /* RIGHT */
 		/* set T */
 		setOuterBoundariesWithObstacle(simpams, inner, field, Boundary::Grid::T,
@@ -302,7 +303,8 @@ namespace Bakery {
 			Boundary::Grid::U,
 			Boundary::Condition::NOSLIP, 0.0,
 			Boundary::Condition::NOSLIP, 0.0,
-			Boundary::Condition::OUTFLOW, 0.0,
+			//Boundary::Condition::OUTFLOW, 0.0, // TODO: old value
+			Boundary::Condition::INFLOW, inflowVal,
 			Boundary::Condition::OUTFLOW, 0.0);
 		/* set V */
 		setOuterBoundariesWithObstacle(simpams,

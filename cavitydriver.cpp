@@ -142,7 +142,7 @@ int main(int argc, char** argv)
 		}
 
 		//dt = Computation::computeTimestep(domain, simparam.tau, simparam.re);
-		Delta maxVelocities(domain.u().getMaxValue(), domain.v().getMaxValue());
+		Delta maxVelocities(domain.u().getMaxAbsValue(), domain.v().getMaxAbsValue());
 		maxVelocities = communication.getGlobalMaxVelocities(maxVelocities);
 
 		dt = Computation::computeTimestepFromMaxVelocities

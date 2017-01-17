@@ -44,10 +44,10 @@ optmpi: all
 opt: CPPFLAGS += -O3 -flto -fwhole-program -DNDEBUG
 opt: all
 
-painter: LDFLAGS += -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
+painter: LDFLAGS +=  -ldl -lAntTweakBar -lglowl -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
 painter: build $(PAINTER_BIN)
 
-baker: LDFLAGS +=  -ldl -lglowl -lAntTweakBar -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
+baker: LDFLAGS +=  -ldl -lAntTweakBar -lglowl -lglfw -lGLEW -lGL -lm -lrt -Lexternal/lib/ -Wl,-Rexternal/lib/
 baker: CPPFLAGS +=  -pthread -Wl,--no-as-needed
 baker: build $(BAKER_BIN)
 

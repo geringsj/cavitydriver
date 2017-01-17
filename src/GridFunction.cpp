@@ -1,4 +1,5 @@
 #include "GridFunction.hpp"
+#include <cmath>
 
 GridFunction::GridFunction(Index dims) 
 {
@@ -25,14 +26,14 @@ Index GridFunction::getGridDimension() const
 	return this->dimension;
 }
 
-Real GridFunction::getMaxValue()
+Real GridFunction::getMaxAbsValue()
 {
 	Real max = this->operator()(0,0);
 
 	for_range(i,j,this->wholeRange)
 	{
-		if(max < this->operator()(i,j))
-			max = this->operator()(i,j);
+		if(max < std::fabs( this->operator()(i,j) ))
+			max = std::fabs( this->operator()(i,j) );
 	}
 	return max;
 }

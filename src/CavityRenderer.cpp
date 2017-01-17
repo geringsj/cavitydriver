@@ -1161,6 +1161,8 @@ bool CavityRenderer::initPainterVis(unsigned int window_width, unsigned int wind
 
 	/* Create a windowed mode window and its OpenGL context */
 	glfwWindowHint(GLFW_SAMPLES, 8);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	m_window = glfwCreateWindow(window_width, window_height, "Cavity", NULL, NULL);
 	if (!m_window)
 	{

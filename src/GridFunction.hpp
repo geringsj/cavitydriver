@@ -76,10 +76,10 @@ public:
 	Dimension getGridDimension() const;
 
 	/** 
-	 * Determines the maximum value out of all grid entries.
-	 * @return Maximum grid value.
+	 * Determines the maximum of all absolute values of grid entries.
+	 * @return Maximum of absolute grid values.
 	 */
-	Real getMaxValue();
+	Real getMaxAbsValue();
 
 	/** Prints 2D grid to stdout in a nicely formatted manner, for debugging purposes. */
 	void printSTDOUT();
